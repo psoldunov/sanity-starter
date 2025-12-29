@@ -1,0 +1,33 @@
+{
+	"biome.enabled": true,
+	"prettier.enable": false,
+	"editor.tabSize": 2,
+	"npm.packageManager": "bun",
+	"figma.assetExportDirectory": "export/assets",
+	"editor.defaultFormatter": "biomejs.biome",
+	"[javascript]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[json]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[typescript]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[typescriptreact]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"typescript.preferences.autoImportFileExcludePatterns": [
+		"next/router.d.ts",
+		"next/dist/client/router.d.ts"
+	],
+	"editor.codeActionsOnSave": {
+		"source.organizeImports.biome": "explicit",
+		"source.fixAll.biome": "explicit",
+		"source.addMissingImports.ts": "explicit",
+		"source.removeUnusedImports": "explicit"
+	}
+}

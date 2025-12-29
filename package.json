@@ -10,12 +10,15 @@
     "format": "biome format --write"
   },
   "dependencies": {
+    "@sanity/orderable-document-list": "^1.4.2",
+    "jotai": "^2.16.1",
     "next": "16.1.0",
+    "next-sanity": "^12.0.5",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.2.0",
+    "@biomejs/biome": "2.3.8",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
