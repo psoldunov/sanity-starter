@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { SectionRenderer } from '@/components/utility/SectionRenderer';
 import {
 	getSiteUrl,
@@ -10,10 +10,11 @@ import { sanityFetch } from '@/sanity/lib/live';
 import {
 	PAGE_QUERY,
 	PAGES_QUERY,
+	REDIRECT_QUERY,
 	SITE_SETTINGS_QUERY,
 } from '@/sanity/lib/queries';
 import { getCachedOGImageUrl } from '@/sanity/lib/utils';
-import type { Page, Settings } from '@/types';
+import type { Page, Redirect, Settings } from '@/types';
 
 export const dynamicParams = true;
 
@@ -93,6 +94,15 @@ export default async function PageComponent({
 	});
 
 	if (!page) {
+		const { data: redirectData }: { data: Redirect } = await sanityFetch({
+			query: REDIRECT_QUERY,
+			params: { slug: normalizeSlug(slug) },
+		});
+
+		if (redirectData) {
+			redirect(redirectData.destination.route.current);
+		}
+
 		return notFound();
 	}
 
@@ -106,17 +116,13 @@ export default async function PageComponent({
 
 	return (
 		<main>
-			{page.sections.map((section, index) => {
-				// console.log(section);
-
-				return (
-					<SectionRenderer
-						key={section._key || index}
-						section={section}
-						searchParams={searchParamsObj}
-					/>
-				);
-			})}
+			{page.sections.map((section, index) => (
+				<SectionRenderer
+					key={section._key || index}
+					section={section}
+					searchParams={searchParamsObj}
+				/>
+			))}
 		</main>
 	);
 }

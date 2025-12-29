@@ -1,11 +1,6 @@
+import type { SanityImageSource } from '@sanity/asset-utils';
 import type { SanityReference } from 'next-sanity';
-import type {
-	ImageAsset,
-	ImageCrop,
-	ImageHotspot,
-	Reference,
-	Slug,
-} from 'sanity';
+import type { ImageAsset, ImageCrop, ImageHotspot, Slug } from 'sanity';
 import type { SectionProps } from './sections';
 
 export type BaseSectionProps = {
@@ -49,9 +44,9 @@ export type Settings = {
 	_id: string;
 	_createdAt: string;
 	_updatedAt: string;
-	siteName: string;
-	siteDescription: string;
-	siteOgImage: SmartImageObject;
+	siteName?: string;
+	siteDescription?: string;
+	siteOgImage?: SanityImageSource;
 };
 
 export type Page = {
@@ -64,7 +59,7 @@ export type Page = {
 	sections: SectionProps[];
 	metaTitle?: string;
 	metaDescription?: string;
-	ogImage?: Reference; // TODO: Add image type
+	ogImage?: SanityImageSource;
 	noIndex: boolean;
 };
 
