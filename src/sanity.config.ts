@@ -4,7 +4,7 @@ import type { ComponentType } from 'react';
 import { defineConfig, type SchemaTypeDefinition } from 'sanity';
 import { presentationTool } from 'sanity/presentation';
 import { type StructureBuilder, structureTool } from 'sanity/structure';
-// import { media, mediaAssetSource } from 'sanity-plugin-media';
+import { media, mediaAssetSource } from 'sanity-plugin-media';
 import { apiVersion, dataset, projectId } from '@/sanity/env';
 import { resolve } from '@/sanity/lib/resolve';
 import schemaTypes from '@/sanity/schema';
@@ -81,7 +81,7 @@ export default defineConfig({
 					]);
 			},
 		}),
-		// media(),
+		media(),
 		presentationTool({
 			title: 'Presentation',
 			resolve,
@@ -93,15 +93,15 @@ export default defineConfig({
 		}),
 	],
 
-	// form: {
-	// 	image: {
-	// 		assetSources: (previousAssetSources) => {
-	// 			return previousAssetSources.filter(
-	// 				(assetSource) => assetSource === mediaAssetSource,
-	// 			);
-	// 		},
-	// 	},
-	// },
+	form: {
+		image: {
+			assetSources: (previousAssetSources) => {
+				return previousAssetSources.filter(
+					(assetSource) => assetSource === mediaAssetSource,
+				);
+			},
+		},
+	},
 
 	schema: {
 		types: schemaTypes as SchemaTypeDefinition[],

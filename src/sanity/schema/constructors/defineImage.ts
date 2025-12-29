@@ -1,4 +1,4 @@
-import { defineField, type FieldDefinition, type ImageRule } from "sanity";
+import { defineField, type FieldDefinition, type ImageRule } from 'sanity';
 
 /**
  * Defines a Sanity image field with common configuration.
@@ -14,8 +14,8 @@ import { defineField, type FieldDefinition, type ImageRule } from "sanity";
  * @returns A Sanity field definition for an image type
  */
 export default function defineImage({
-	title = "Image",
-	name = "image",
+	title = 'Image',
+	name = 'image',
 	validation,
 	alt = true,
 	fields,
@@ -30,27 +30,14 @@ export default function defineImage({
 }) {
 	return defineField({
 		name,
-		type: "image",
+		type: 'image',
 		title,
 		validation,
 		options: {
-			accept: "image/webp, image/png, image/jpeg, image/avif",
-			metadata: ["blurhash"],
+			accept: 'image/webp, image/png, image/jpeg, image/avif',
+			metadata: ['blurhash'],
 			hotspot,
 		},
-		fields: [
-			...(fields || []),
-			...(alt
-				? [
-						{
-							name: "alt",
-							type: "string",
-							title: "Alt Text",
-							description:
-								"A short description of the image for accessibility.",
-						},
-					]
-				: []),
-		],
+		fields: [...(fields || [])],
 	});
 }
