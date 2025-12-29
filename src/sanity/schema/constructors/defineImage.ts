@@ -8,7 +8,6 @@ import { defineField, type FieldDefinition, type ImageRule } from 'sanity';
  * @param title - Display title for the image field (default: 'Image')
  * @param name - Field name/identifier (default: 'image')
  * @param validation - Optional validation rule function for the image field
- * @param alt - Whether to include the alt text field (default: true)
  * @param fields - Optional additional fields to include with the image
  * @param hotspot - Whether to include the hotspot field (default: false)
  * @returns A Sanity field definition for an image type
@@ -17,14 +16,12 @@ export default function defineImage({
 	title = 'Image',
 	name = 'image',
 	validation,
-	alt = true,
 	fields,
 	hotspot = false,
 }: {
 	title?: string;
 	name?: string;
 	validation?: (rule: ImageRule) => ImageRule;
-	alt?: boolean;
 	fields?: FieldDefinition[];
 	hotspot?: boolean;
 }) {
