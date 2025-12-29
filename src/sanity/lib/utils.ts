@@ -1,12 +1,12 @@
 import {
-  getFileAsset,
-  type SanityFileSource,
-  type SanityImageSource,
-} from "@sanity/asset-utils";
-import { createImageUrlBuilder } from "@sanity/image-url";
-import type { PortableTextBlock, Slug } from "sanity";
-import { PROTECTED_ROUTE_PATTERNS } from "@/config";
-import { client as sanityClient } from "@/sanity/lib/client";
+	getFileAsset,
+	type SanityFileSource,
+	type SanityImageSource,
+} from '@sanity/asset-utils';
+import { createImageUrlBuilder } from '@sanity/image-url';
+import type { PortableTextBlock, Slug } from 'sanity';
+import { PROTECTED_ROUTE_PATTERNS } from '@/config';
+import { client as sanityClient } from '@/sanity/lib/client';
 
 const builder = createImageUrlBuilder(sanityClient);
 
@@ -17,10 +17,10 @@ const builder = createImageUrlBuilder(sanityClient);
  * @returns The file asset object containing URL and metadata
  */
 export function getSanityFileUrl(sanityFile: SanityFileSource) {
-  return getFileAsset(sanityFile, {
-    projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
-    dataset: process.env.NEXT_PUBLIC_SANITY_DATASET,
-  });
+	return getFileAsset(sanityFile, {
+		projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
+		dataset: process.env.NEXT_PUBLIC_SANITY_DATASET,
+	});
 }
 
 /**
@@ -29,7 +29,7 @@ export function getSanityFileUrl(sanityFile: SanityFileSource) {
  * @returns Image URL builder instance that can be chained with transformation methods
  */
 export default function urlFor(source: SanityImageSource) {
-  return builder.image(source);
+	return builder.image(source);
 }
 
 /**
@@ -37,16 +37,16 @@ export default function urlFor(source: SanityImageSource) {
  * Takes a SanityImage, optimizes it for OG dimensions, and returns a cached URL
  */
 export function getCachedOGImageUrl(image: SanityImageSource): string {
-  const sanityImageUrl = urlFor(image)
-    .width(1200)
-    .height(630)
-    .format("jpg")
-    .quality(85)
-    .url();
+	const sanityImageUrl = urlFor(image)
+		.width(1200)
+		.height(630)
+		.format('jpg')
+		.quality(85)
+		.url();
 
-  // Use Next.js image optimization API to cache the image
-  const encodedImageUrl = encodeURIComponent(sanityImageUrl);
-  return `/_next/image?url=${encodedImageUrl}&w=1200&q=85`;
+	// Use Next.js image optimization API to cache the image
+	const encodedImageUrl = encodeURIComponent(sanityImageUrl);
+	return `/_next/image?url=${encodedImageUrl}&w=1200&q=85`;
 }
 
 /**
@@ -55,11 +55,11 @@ export function getCachedOGImageUrl(image: SanityImageSource): string {
  * @returns The formatted string with normalized line breaks
  */
 export function stripNonPrintables(input: string): string {
-  const formatted = input
-    .replace(/&zwnj;/g, "\n")
-    .replace(/\\n/g, "\n")
-    .replace(/\\n/g, " ");
-  return formatted;
+	const formatted = input
+		.replace(/&zwnj;/g, '\n')
+		.replace(/\\n/g, '\n')
+		.replace(/\\n/g, ' ');
+	return formatted;
 }
 
 /**
@@ -69,20 +69,20 @@ export function stripNonPrintables(input: string): string {
  * @returns A single string containing all extracted text, with blocks joined by spaces
  */
 export function extractPortableText(portableText: PortableTextBlock[]): string {
-  return portableText
-    .map((block) => {
-      if (
-        "children" in block &&
-        Array.isArray(block.children) &&
-        block.children.length > 0
-      ) {
-        return (block.children as Array<{ text?: string }>)
-          .map((child) => child.text || "")
-          .join(" ");
-      }
-      return "";
-    })
-    .join(" ");
+	return portableText
+		.map((block) => {
+			if (
+				'children' in block &&
+				Array.isArray(block.children) &&
+				block.children.length > 0
+			) {
+				return (block.children as Array<{ text?: string }>)
+					.map((child) => child.text || '')
+					.join(' ');
+			}
+			return '';
+		})
+		.join(' ');
 }
 
 /**
@@ -93,10 +93,10 @@ export function extractPortableText(portableText: PortableTextBlock[]): string {
  * @returns `true` if the slug's current value starts with any protected route prefix, `false` otherwise
  */
 export function isProtectedRoute(slug: Slug): boolean {
-  return PROTECTED_ROUTE_PATTERNS.some((pattern) => {
-    const patternPrefix = pattern.replace("/*", "");
-    return slug?.current?.startsWith(patternPrefix);
-  });
+	return PROTECTED_ROUTE_PATTERNS.some((pattern) => {
+		const patternPrefix = pattern.replace('/*', '');
+		return slug?.current?.startsWith(patternPrefix);
+	});
 }
 
 /**
@@ -108,14 +108,14 @@ export function isProtectedRoute(slug: Slug): boolean {
  * @returns An error message string describing the route conflict
  */
 export function getProtectedRouteError(slug: Slug): string {
-  const conflictingPattern = PROTECTED_ROUTE_PATTERNS.find((pattern) => {
-    const patternPrefix = pattern.replace("/*", "");
-    return slug?.current?.startsWith(patternPrefix);
-  });
+	const conflictingPattern = PROTECTED_ROUTE_PATTERNS.find((pattern) => {
+		const patternPrefix = pattern.replace('/*', '');
+		return slug?.current?.startsWith(patternPrefix);
+	});
 
-  if (conflictingPattern) {
-    return `Route cannot start with "${conflictingPattern.replace("/*", "")}" as this path is protected`;
-  }
+	if (conflictingPattern) {
+		return `Route cannot start with "${conflictingPattern.replace('/*', '')}" as this path is protected`;
+	}
 
-  return "This route conflicts with a protected path";
+	return 'This route conflicts with a protected path';
 }

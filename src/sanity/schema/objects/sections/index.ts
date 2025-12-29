@@ -1,5 +1,7 @@
-import heroSection from "./heroSection";
+import cardsSection from './cardsSection';
+import heroSection from './heroSection';
+import imageTextSection from './imageTextSection';
 
-const sectionTypes = [heroSection];
+const sectionTypes = [heroSection, cardsSection, imageTextSection];
 
 export default sectionTypes;

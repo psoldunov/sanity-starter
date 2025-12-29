@@ -6,6 +6,7 @@ import type {
 	Reference,
 	Slug,
 } from 'sanity';
+import type { SectionProps } from './sections';
 
 export type BaseSectionProps = {
 	_type: string;
@@ -20,11 +21,27 @@ export type BaseSectionProps = {
 };
 
 export type SmartImageObject = {
-	asset: SanityReference | ImageAsset;
-	alt?: string;
+	asset:
+		| SanityReference
+		| (ImageAsset & {
+				altText?: string;
+				title?: string;
+				description?: string;
+		  });
 	caption?: string;
 	crop?: ImageCrop;
 	hotspot?: ImageHotspot;
+};
+
+export type SmartImageProps = {
+	image: SmartImageObject;
+	width?: number;
+	height?: number;
+	className?: string;
+	quality?: number;
+	priority?: boolean;
+	fill?: boolean;
+	sizes?: string;
 };
 
 export type Settings = {
@@ -44,7 +61,7 @@ export type Page = {
 	_updatedAt: string;
 	title: string;
 	route: Slug;
-	sections: unknown[]; // TODO: Add section type
+	sections: SectionProps[];
 	metaTitle?: string;
 	metaDescription?: string;
 	ogImage?: Reference; // TODO: Add image type

@@ -49,6 +49,10 @@ const page = defineType({
 			validation: (rule) =>
 				rule.required().min(1).error('At least one section is required'),
 			options: {
+				modal: {
+					type: 'dialog',
+					// width: 'auto',
+				},
 				insertMenu: {
 					filter: true,
 					views: [

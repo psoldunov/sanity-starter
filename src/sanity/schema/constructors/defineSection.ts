@@ -1,7 +1,7 @@
-import type { ComponentType, ReactElement } from "react";
-import { defineType, type FieldDefinition, type PreviewConfig } from "sanity";
-import { PADDING_OPTIONS } from "@/config";
-import PaddingInput from "@/sanity/components/padding-input";
+import type { ComponentType, ReactElement } from 'react';
+import { defineType, type FieldDefinition, type PreviewConfig } from 'sanity';
+import { PADDING_OPTIONS } from '@/config';
+import PaddingInput from '@/sanity/components/padding-input';
 
 /**
  * Defines a Sanity section schema with common fields.
@@ -29,42 +29,42 @@ export default function defineSection({
 }) {
 	return defineType({
 		name,
-		type: "object",
+		type: 'object',
 		title,
 		icon,
 		groups: [
 			{
-				name: "content",
-				title: "Content",
+				name: 'content',
+				title: 'Content',
 				default: true,
 			},
 			{
-				name: "configuration",
-				title: "Configuration",
+				name: 'configuration',
+				title: 'Configuration',
 			},
 		],
 		fields: [
 			...(fields.map((field) => ({
 				...field,
-				group: "content",
+				group: 'content',
 			})) || []),
 			{
-				type: "object",
-				name: "padding",
-				title: "Padding",
-				group: "configuration",
+				type: 'object',
+				name: 'padding',
+				title: 'Padding',
+				group: 'configuration',
 
 				fields: [
 					{
-						type: "string",
-						name: "top",
-						title: "Top",
-						initialValue: "small",
+						type: 'string',
+						name: 'top',
+						title: 'Top',
+						initialValue: 'small',
 						components: {
 							input: PaddingInput,
 						},
 						options: {
-							layout: "select",
+							layout: 'select',
 							list: PADDING_OPTIONS.map(({ label, value }) => ({
 								title: label,
 								value,
@@ -72,15 +72,15 @@ export default function defineSection({
 						},
 					},
 					{
-						type: "string",
-						name: "bottom",
-						title: "Bottom",
-						initialValue: "small",
+						type: 'string',
+						name: 'bottom',
+						title: 'Bottom',
+						initialValue: 'small',
 						components: {
 							input: PaddingInput,
 						},
 						options: {
-							layout: "select",
+							layout: 'select',
 							list: PADDING_OPTIONS.map(({ label, value }) => ({
 								title: label,
 								value,
@@ -91,20 +91,20 @@ export default function defineSection({
 				validation: (rule) => rule.required(),
 			},
 			{
-				type: "string",
-				name: "id",
-				title: "ID",
-				group: "configuration",
-				description: "The ID of the section for internal linking (optional)",
+				type: 'string',
+				name: 'id',
+				title: 'ID',
+				group: 'configuration',
+				description: 'The ID of the section for internal linking (optional)',
 				validation: (rule) => rule.optional(),
 			},
 			{
-				type: "boolean",
-				name: "hidden",
-				title: "Hidden",
-				group: "configuration",
+				type: 'boolean',
+				name: 'hidden',
+				title: 'Hidden',
+				group: 'configuration',
 				description:
-					"Prevents the section from being displayed in the frontend",
+					'Prevents the section from being displayed in the frontend',
 				initialValue: false,
 			},
 		],

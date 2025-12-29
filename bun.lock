@@ -6,6 +6,7 @@
       "name": "sanity-starter",
       "dependencies": {
         "@sanity/orderable-document-list": "^1.4.2",
+        "blurhash-base64": "^0.0.3",
         "jotai": "^2.16.1",
         "next": "16.1.0",
         "next-sanity": "^12.0.5",
@@ -931,6 +932,10 @@
     "binary-extensions": ["binary-extensions@2.3.0", "", {}, "sha512-Ceh+7ox5qe7LJuLHoY0feh3pHuUDHAcRUeyL2VYghZwfpkNIy/+8Ocg0a3UuSoYzavmylwuLWQOf3hl0jjMMIw=="],
 
     "bl": ["bl@4.1.0", "", { "dependencies": { "buffer": "^5.5.0", "inherits": "^2.0.4", "readable-stream": "^3.4.0" } }, "sha512-1W07cM9gS6DcLperZfFSj+bWLtaPGSOHWhPiGzXmvVJbRLdG82sH/Kn8EtW1VqWVA54AKf2h5k5BbnIbwF3h6w=="],
+
+    "blurhash": ["blurhash@2.0.5", "", {}, "sha512-cRygWd7kGBQO3VEhPiTgq4Wc43ctsM+o46urrmPOiuAe+07fzlSB9OJVdpgDL0jPqXUVQ9ht7aq7kxOeJHRK+w=="],
+
+    "blurhash-base64": ["blurhash-base64@0.0.3", "", { "dependencies": { "blurhash": "^2.0.5" } }, "sha512-9cK+r4IZ73Bn6ee2ukHhURAkYX/aMvpHzuZHAe+y0mPqc2rsjpUwHBAv0HHHaOkeneQF+Odt1Qfps2K1wm7r5w=="],
 
     "boolbase": ["boolbase@1.0.0", "", {}, "sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww=="],
 
