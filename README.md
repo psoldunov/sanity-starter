@@ -60,7 +60,7 @@ Create a `.env.local` file in the root directory:
 # Sanity Configuration
 NEXT_PUBLIC_SANITY_PROJECT_ID=your-project-id
 NEXT_PUBLIC_SANITY_DATASET=production
-NEXT_PUBLIC_SANITY_API_VERSION=2024-01-01
+NEXT_PUBLIC_SANITY_API_VERSION=2025-12-12
 NEXT_PUBLIC_SANITY_API_READ_TOKEN=your-read-token
 SANITY_API_WRITE_TOKEN=your-write-token
 
@@ -185,6 +185,19 @@ The smart link system supports three link types:
 - **External URL**: Link to external websites, email, or phone numbers
 
 Links automatically determine the target attribute (`_blank` for external links).
+
+**Important:** When querying links that use `defineLink`, you must dereference the `page` field in your GROQ query to access `page.route`. Example:
+
+```groq
+*[_type == "settings"][0] {
+  headerMenu[] {
+    ...,
+    page->
+  }
+}
+```
+
+Without dereferencing (`page->`), you'll only get the reference object (`_ref`, `_type`) and won't have access to `page.route.current`. The dereferenced page object includes the full page document with `route.current` available.
 
 ### Sanity Schema Constructors
 
@@ -402,7 +415,27 @@ The project uses Tailwind CSS. Customize:
 
 ## License
 
-[Add your license here]
+MIT License
+
+Copyright (c) 2025
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ## Support
 
