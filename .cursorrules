@@ -1,0 +1,176 @@
+# Sanity Starter Project Rules
+
+## Tech Stack
+- Next.js 16 with App Router
+- React 19 (Server Components by default)
+- TypeScript (strict mode)
+- Sanity CMS
+- Tailwind CSS
+- Biome for linting/formatting
+
+## Code Style
+
+### Formatting
+- Use tabs for indentation (not spaces)
+- Use single quotes for strings
+- Use semicolons
+- Maximum line length: reasonable (no hard limit, but keep readable)
+- Trailing commas in multi-line objects/arrays
+
+### TypeScript
+- Always use strict TypeScript
+- Prefer explicit types over `any`
+- Use type imports: `import type { ... }`
+- Use path aliases: `@/` for `src/`
+- Export types from dedicated type files
+
+### Naming Conventions
+- Components: PascalCase, default exports
+- Functions: camelCase
+- Files: PascalCase for components, camelCase for utilities
+- Types/Interfaces: PascalCase
+- Constants: UPPER_SNAKE_CASE or camelCase depending on context
+
+## Project Structure
+
+### Components
+- Organize by purpose: `layout/`, `sections/`, `utility/`
+- Use default exports for React components
+- Components should be in PascalCase files
+- Keep components focused and single-purpose
+
+### Sanity Schema
+- Use constructor functions for reusable definitions: `defineLink`, `defineSection`, `defineImage`
+- Schema files in `schema/` organized by type:
+  - `documents/` - document types
+  - `objects/` - object types
+  - `constructors/` - reusable schema constructors
+- Use `defineField` for inline field definitions
+- Use `defineType` for registered schema types
+- Include preview configurations for better Studio UX
+
+### Types
+- Centralize types in `types/` directory
+- Export types from `types/index.ts` or dedicated files
+- Use descriptive type names
+
+### Utilities
+- Place utility functions in `lib/`
+- Add JSDoc comments to utility functions (no examples)
+- Keep utilities pure and testable
+
+## Code Patterns
+
+### React Components
+- Use Server Components by default
+- Add `'use client'` directive only when needed
+- Prefer function components
+- Use TypeScript for props with explicit types
+- Destructure props at the top of the component
+
+### Sanity Schema
+- Use conditional field visibility: `hidden: ({ parent }) => condition`
+- Include descriptions for all fields
+- Use validation rules where appropriate
+- Add icons to schema types using lucide-react
+- Preview configs should be informative and concise
+
+### JSDoc Comments
+- Add JSDoc to all exported functions
+- Include parameter descriptions with `@param`
+- Include return type with `@returns`
+- Do NOT include `@example` sections
+- Keep descriptions clear and concise
+
+### Imports
+- Group imports: external packages, then internal with `@/` aliases
+- Use type imports for types: `import type { ... }`
+- Sort imports logically (React, Next.js, Sanity, then project files)
+
+### Error Handling
+- Use try-catch for async operations
+- Log errors with `console.error`
+- Provide fallback values where appropriate
+
+## Sanity-Specific Patterns
+
+### Custom Input Components
+- Place in `sanity/components/`
+- Use Sanity UI components from `@sanity/ui`
+- Access sibling fields using `useFormValue` with parent path
+- Handle loading and error states
+- Clear dependent fields when parent changes
+
+### Schema Constructors
+- Return field definitions using `defineField` for inline use
+- Return type definitions using `defineType` for registered types
+- Accept configuration options with sensible defaults
+- Include JSDoc documentation
+
+### Queries
+- Organize queries in `sanity/lib/queries/`
+- Use fragments for reusable query parts
+- Keep queries focused and efficient
+
+## Next.js Patterns
+
+### App Router
+- Use route groups: `(site)`, `(studio)`
+- Server Components by default
+- API routes in `app/api/`
+- Metadata generation functions
+
+### Data Fetching
+- Use Sanity client for data fetching
+- Implement draft mode for preview
+- Use proper caching strategies
+
+## Best Practices
+
+### General
+- Write self-documenting code (prefer clear code over comments)
+- Remove unnecessary comments
+- Keep functions small and focused
+- Extract reusable logic into utilities
+- Use meaningful variable names
+- Prefer early returns over nested conditionals
+
+### Performance
+- Use React hooks appropriately (useMemo, useCallback when needed)
+- Optimize Sanity image queries
+- Implement proper loading states
+- Use Next.js Image component for images
+
+### Accessibility
+- Use semantic HTML
+- Include proper ARIA attributes
+- Ensure keyboard navigation works
+- Test with screen readers
+
+## What NOT to Do
+
+- Don't use `any` type without good reason
+- Don't create unnecessary wrapper components
+- Don't mix client and server component patterns unnecessarily
+- Don't hardcode values that should be configurable
+- Don't skip error handling
+- Don't use `console.log` in production code (use `console.error` for errors)
+- Don't include example code in JSDoc comments
+
+## File Naming
+
+- Components: `ComponentName.tsx`
+- Utilities: `utilityName.ts`
+- Types: `types.ts` or `typeName.ts`
+- Schema: `schemaName.ts`
+- Constructors: `defineName.ts`
+
+## When Creating New Code
+
+1. Check if similar patterns exist in the codebase
+2. Follow existing file organization
+3. Add JSDoc to exported functions
+4. Use TypeScript strictly
+5. Test the code works as expected
+6. Ensure it follows Biome formatting rules
+
