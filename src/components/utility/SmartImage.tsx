@@ -28,8 +28,6 @@ export default function SmartImage({
 	fill,
 	sizes,
 }: SmartImageProps & { alt?: string }) {
-	console.log(image.crop, image.hotspot);
-
 	const { asset } = image;
 	const isDereferenced = isDereferencedAsset(asset);
 

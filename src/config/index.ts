@@ -47,4 +47,4 @@ export const PADDING_CONFIG: Record<
 	},
 };
 
-export const PROTECTED_ROUTE_PATTERNS = ['/api/*', '/admin/*'];
+export const PROTECTED_ROUTE_PATTERNS = ['/api/*', '/admin/*', '/posts/*'];

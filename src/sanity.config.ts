@@ -1,5 +1,5 @@
 import { orderableDocumentListDeskItem } from '@sanity/orderable-document-list';
-import { FilesIcon, Settings, ShuffleIcon } from 'lucide-react';
+import { FilesIcon, NewspaperIcon, Settings, ShuffleIcon } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { defineConfig, type SchemaTypeDefinition } from 'sanity';
 import { presentationTool } from 'sanity/presentation';
@@ -75,6 +75,14 @@ export default defineConfig({
 							title: 'Redirects',
 							type: 'redirect',
 							icon: ShuffleIcon,
+							S,
+							context,
+						}),
+						S.divider(),
+						orderableDocumentListDeskItem({
+							title: 'Posts',
+							type: 'post',
+							icon: NewspaperIcon,
 							S,
 							context,
 						}),
