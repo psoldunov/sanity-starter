@@ -19,9 +19,12 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
 			disallow: pages
 				.filter((page) => page.noIndex)
 				.map((page) => page.route.current),
-			allow: pages
-				.filter((page) => !page.noIndex)
-				.map((page) => page.route.current),
+			allow: [
+				...pages
+					.filter((page) => !page.noIndex)
+					.map((page) => page.route.current),
+				'/posts/*',
+			],
 		},
 		sitemap: `${baseUrl}/sitemap.xml`,
 	};

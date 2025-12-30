@@ -1,6 +1,12 @@
 import type { SanityImageSource } from '@sanity/asset-utils';
 import type { SanityReference } from 'next-sanity';
-import type { ImageAsset, ImageCrop, ImageHotspot, Slug } from 'sanity';
+import type {
+	ImageAsset,
+	ImageCrop,
+	ImageHotspot,
+	PortableTextBlock,
+	Slug,
+} from 'sanity';
 import type { SectionProps } from './sections';
 
 export type PaddingSize = 'small' | 'medium' | 'large' | 'xlarge' | 'none';
@@ -72,4 +78,14 @@ export type Redirect = {
 	_updatedAt: string;
 	route: Slug;
 	destination: Page;
+};
+
+export type Post = {
+	_type: 'post';
+	_id: string;
+	_createdAt: string;
+	_updatedAt: string;
+	title: string;
+	slug: Slug;
+	content: PortableTextBlock[];
 };
