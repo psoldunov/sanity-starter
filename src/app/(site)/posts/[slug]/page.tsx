@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { groq } from 'next-sanity';
+import Container from '@/components/layout/Container';
 import { sanityFetch } from '@/sanity/lib/live';
 
 export default async function PostPage({
@@ -20,5 +21,11 @@ export default async function PostPage({
 		return notFound();
 	}
 
-	return <h1>{post.title}</h1>;
+	return (
+		<section className='py-12'>
+			<Container>
+				<h1>{post.title}</h1>
+			</Container>
+		</section>
+	);
 }
