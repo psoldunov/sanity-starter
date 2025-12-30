@@ -13,6 +13,13 @@ export const REDIRECT_QUERY =
   destination->
 }`);
 
+export const POSTS_QUERY = defineQuery(`*[_type == "post"]`);
+
+export const POST_QUERY =
+	defineQuery(`*[_type == "post" && slug.current == $slug][0]{
+  ...,
+}`);
+
 export const PAGE_QUERY =
 	defineQuery(`*[_type == "page" && route.current == $slug][0]{
   ...,

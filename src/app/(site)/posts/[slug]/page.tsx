@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
-import { groq } from 'next-sanity';
 import Container from '@/components/layout/Container';
 import { sanityFetch } from '@/sanity/lib/live';
+import { POST_QUERY } from '@/sanity/lib/queries';
 
 export default async function PostPage({
 	params,
@@ -11,9 +11,7 @@ export default async function PostPage({
 	const { slug } = await params;
 
 	const { data: post } = await sanityFetch({
-		query: groq`*[_type == "post" && slug.current == $slug][0]{
-			...,
-		}`,
+		query: POST_QUERY,
 		params: { slug },
 	});
 
