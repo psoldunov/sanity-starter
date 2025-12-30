@@ -1,5 +1,5 @@
 import { MonitorIcon } from 'lucide-react';
-import { extractPortableText, stripNonPrintables } from '@/sanity/lib/utils';
+import { stripNonPrintables } from '@/sanity/lib/utils';
 import defineImage from '@/sanity/schema/constructors/defineImage';
 import defineSection from '@/sanity/schema/constructors/defineSection';
 
@@ -16,8 +16,7 @@ const heroSection = defineSection({
 		},
 		{
 			name: 'paragraph',
-			type: 'array',
-			of: [{ type: 'block', styles: [], lists: [], marks: { decorators: [] } }],
+			type: 'text',
 			title: 'Paragraph',
 			validation: (rule) => rule.required(),
 		},
@@ -36,7 +35,7 @@ const heroSection = defineSection({
 		prepare({ heading, paragraph, media }) {
 			return {
 				title: heading ? stripNonPrintables(heading) : undefined,
-				subtitle: paragraph ? extractPortableText(paragraph) : undefined,
+				subtitle: paragraph ? paragraph : undefined,
 				media: media,
 			};
 		},

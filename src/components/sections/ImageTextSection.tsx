@@ -1,16 +1,17 @@
 import Container from '@/components/layout/Container';
 import type { ImageTextSectionProps } from '@/types/sections';
+import Section from '../utility/Section';
 import SmartImage from '../utility/SmartImage';
 
 export default function ImageTextSection(props: ImageTextSectionProps) {
 	const { heading, paragraph, image } = props;
 
 	return (
-		<section className='bg-background py-20'>
+		<Section {...props}>
 			<Container>
 				<div className='grid grid-cols-1 items-center gap-12 md:grid-cols-2'>
 					{!!image && (
-						<SmartImage image={image} className='h-96 w-full rounded-lg' />
+						<SmartImage image={image} className='w-full rounded-lg' />
 					)}
 					<div>
 						{!!heading && (
@@ -26,6 +27,6 @@ export default function ImageTextSection(props: ImageTextSectionProps) {
 					</div>
 				</div>
 			</Container>
-		</section>
+		</Section>
 	);
 }

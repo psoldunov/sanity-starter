@@ -3,6 +3,8 @@ import type { SanityReference } from 'next-sanity';
 import type { ImageAsset, ImageCrop, ImageHotspot, Slug } from 'sanity';
 import type { SectionProps } from './sections';
 
+export type PaddingSize = 'small' | 'medium' | 'large' | 'xlarge' | 'none';
+
 export type BaseSectionProps = {
 	_type: string;
 	_key: string;
@@ -10,8 +12,8 @@ export type BaseSectionProps = {
 	id?: string;
 	hidden?: boolean;
 	padding?: {
-		top?: string;
-		bottom?: string;
+		top?: PaddingSize;
+		bottom?: PaddingSize;
 	};
 };
 

@@ -1,7 +1,16 @@
 import type { ComponentType, ReactElement } from 'react';
 import { defineType, type FieldDefinition, type PreviewConfig } from 'sanity';
-import { PADDING_OPTIONS } from '@/config';
+import { PADDING_CONFIG } from '@/config';
 import PaddingInput from '@/sanity/components/padding-input';
+import SectionPreview from '@/sanity/components/section-preview';
+import type { PaddingSize } from '@/types';
+
+export const PADDING_OPTIONS = Object.entries(PADDING_CONFIG).map(
+	([value, config]) => ({
+		value: value as PaddingSize,
+		label: config.label,
+	}),
+) as Array<{ value: PaddingSize; label: string }>;
 
 /**
  * Defines a Sanity section schema with common fields.
@@ -32,6 +41,9 @@ export default function defineSection({
 		type: 'object',
 		title,
 		icon,
+		components: {
+			preview: SectionPreview,
+		},
 		groups: [
 			{
 				name: 'content',
@@ -108,6 +120,20 @@ export default function defineSection({
 				initialValue: false,
 			},
 		],
-		preview,
+		preview: {
+			select: {
+				...preview?.select,
+				hidden: 'hidden',
+			},
+			prepare: (...args) => {
+				const prepared = preview?.prepare?.(...args) || {};
+				return {
+					...prepared,
+					title: args[0].hidden
+						? JSON.stringify({ title: prepared.title, hidden: true })
+						: prepared.title,
+				};
+			},
+		},
 	});
 }

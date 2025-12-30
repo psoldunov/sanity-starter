@@ -1,4 +1,3 @@
-import type { PortableTextBlock } from 'next-sanity';
 import type { BaseSectionProps, SmartImageObject } from '.';
 
 export type SectionProps =
@@ -9,7 +8,7 @@ export type SectionProps =
 export type HeroSectionProps = BaseSectionProps & {
 	_type: 'heroSection';
 	heading: string;
-	paragraph: PortableTextBlock[];
+	paragraph: string;
 	image: SmartImageObject;
 };
 

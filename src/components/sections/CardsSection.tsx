@@ -1,12 +1,13 @@
 import Container from '@/components/layout/Container';
 import type { CardsSectionProps } from '@/types/sections';
+import Section from '../utility/Section';
 import SmartImage from '../utility/SmartImage';
 
 export default function CardsSection(props: CardsSectionProps) {
 	const { heading, cards } = props;
 
 	return (
-		<section className='bg-background py-20'>
+		<Section {...props}>
 			<Container>
 				{!!heading && (
 					<h2 className='mb-12 text-center font-bold text-4xl text-foreground'>
@@ -37,6 +38,6 @@ export default function CardsSection(props: CardsSectionProps) {
 					))}
 				</div>
 			</Container>
-		</section>
+		</Section>
 	);
 }
