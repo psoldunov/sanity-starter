@@ -4,6 +4,7 @@ import Image from 'next/image';
 import type { ImageAsset } from 'sanity';
 import { buildOptimizedImageUrl } from '@/lib/utils';
 import { dataset, projectId } from '@/sanity/env';
+import urlFor from '@/sanity/lib/utils';
 import type { SmartImageProps } from '@/types';
 
 function isDereferencedAsset(asset: unknown): asset is ImageAsset {
@@ -23,9 +24,12 @@ export default function SmartImage({
 	className,
 	quality,
 	priority,
+	alt,
 	fill,
 	sizes,
-}: SmartImageProps) {
+}: SmartImageProps & { alt?: string }) {
+	console.log(image.crop, image.hotspot);
+
 	const { asset } = image;
 	const isDereferenced = isDereferencedAsset(asset);
 
@@ -39,6 +43,8 @@ export default function SmartImage({
 		? asset
 		: getImage(image, { projectId, dataset }).asset;
 
+	const isCroppedAndHotspot = image.crop && image.hotspot;
+
 	const blurHash = isDereferenced ? imageAsset.metadata.blurHash : undefined;
 	const dimensions = imageAsset.metadata.dimensions;
 	const altText =
@@ -46,11 +52,14 @@ export default function SmartImage({
 
 	return (
 		<Image
-			src={buildOptimizedImageUrl(imageAsset.url, {
-				width,
-				height,
-			})}
-			alt={altText || ''}
+			src={buildOptimizedImageUrl(
+				isCroppedAndHotspot ? urlFor(image).url() : imageAsset.url,
+				{
+					width,
+					height,
+				},
+			)}
+			alt={altText || alt || ''}
 			width={!fill ? width || dimensions?.width : undefined}
 			height={!fill ? height || dimensions?.height : undefined}
 			placeholder={blurHash ? 'blur' : undefined}
