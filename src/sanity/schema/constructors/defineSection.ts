@@ -1,8 +1,8 @@
 import type { ComponentType, ReactElement } from 'react';
 import { defineType, type FieldDefinition, type PreviewConfig } from 'sanity';
 import { PADDING_CONFIG } from '@/config';
-import PaddingInput from '@/sanity/components/padding-input';
-import SectionPreview from '@/sanity/components/section-preview';
+import PaddingInput from '@/sanity/components/PaddingInput';
+import SectionPreview from '@/sanity/components/SectionPreview';
 import type { PaddingSize } from '@/types';
 
 export const PADDING_OPTIONS = Object.entries(PADDING_CONFIG).map(
