@@ -8,6 +8,7 @@ import Header from '@/components/layout/Header';
 import DisableDraftMode from '@/components/utility/DIsableDraftMode';
 import { geistMono, geistSans } from '@/fonts';
 import { cn } from '@/lib/utils';
+import { SanityLive } from '@/sanity/lib/live';
 
 export const metadata: Metadata = {
 	title: 'Create Next App',
@@ -28,6 +29,7 @@ export default async function RootLayout({
 					<Header />
 					{children}
 					<Footer />
+					<SanityLive />
 					{(await draftMode()).isEnabled && (
 						<>
 							<DisableDraftMode />
