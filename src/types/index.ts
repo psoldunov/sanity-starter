@@ -89,3 +89,11 @@ export type Post = {
 	slug: Slug;
 	content: PortableTextBlock[];
 };
+
+export type SmartLinkProps = {
+	_type: 'smartLink';
+	_key?: string;
+	page?: Page;
+	sectionId?: string;
+	url?: string;
+};

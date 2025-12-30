@@ -1,6 +1,7 @@
 import { orderRankField } from '@sanity/orderable-document-list';
 import { NewspaperIcon } from 'lucide-react';
 import { defineType } from 'sanity';
+import defineLink from '../constructors/defineLink';
 
 const post = defineType({
 	name: 'post',
@@ -22,6 +23,16 @@ const post = defineType({
 				source: 'title',
 			},
 			validation: (rule) => rule.required(),
+		},
+		defineLink({
+			name: 'smartLink',
+			withLabel: true,
+		}),
+		{
+			name: 'links',
+			type: 'array',
+			title: 'Links',
+			of: [defineLink({})],
 		},
 		{
 			type: 'array',
