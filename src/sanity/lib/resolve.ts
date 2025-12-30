@@ -19,7 +19,7 @@ export const locations = {
 
 export const mainDocuments = defineDocuments([
 	{
-		route: ':slug',
+		route: '{:slug(.*)}',
 		filter: `_type == "page" && route.current == $slug`,
 	},
 ]);
