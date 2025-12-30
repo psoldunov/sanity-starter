@@ -162,7 +162,7 @@ Pages are composed of reusable sections. Each section can have:
 - Custom content fields
 - Padding configuration (top/bottom)
 - Optional section ID for anchor linking
-- Hidden state for conditional display
+- Hidden state for temporarily hiding sections without removing them completely
 
 **Available Sections:**
 - Hero Section
@@ -331,7 +331,7 @@ Sections can be:
 - Reordered via drag-and-drop
 - Configured with padding (top/bottom)
 - Given an ID for anchor linking
-- Hidden from display (useful for conditional content)
+- Hidden from display (useful for temporarily hiding sections without removing them completely)
 
 ### Settings
 
