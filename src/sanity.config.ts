@@ -6,7 +6,7 @@ import { presentationTool } from 'sanity/presentation';
 import { type StructureBuilder, structureTool } from 'sanity/structure';
 import { media, mediaAssetSource } from 'sanity-plugin-media';
 import { apiVersion, dataset, projectId } from '@/sanity/env';
-import { resolve } from '@/sanity/lib/resolve';
+import { locations, mainDocuments } from '@/sanity/lib/resolve';
 import schemaTypes from '@/sanity/schema';
 
 const readOnlyTypes = new Set<string>([]);
@@ -84,7 +84,10 @@ export default defineConfig({
 		media(),
 		presentationTool({
 			title: 'Presentation',
-			resolve,
+			resolve: {
+				locations,
+				mainDocuments,
+			},
 			previewUrl: {
 				previewMode: {
 					enable: '/api/draft-mode/enable',
