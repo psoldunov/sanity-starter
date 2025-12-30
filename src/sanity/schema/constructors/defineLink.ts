@@ -1,3 +1,4 @@
+import { LinkIcon } from 'lucide-react';
 import { defineField } from 'sanity';
 import SectionIdInput from '@/sanity/components/SectionIdInput';
 
@@ -23,6 +24,7 @@ export default function defineLink({
 	return defineField({
 		name,
 		title,
+		icon: LinkIcon,
 		type: 'object',
 		fields: [
 			...(withLabel
@@ -81,7 +83,7 @@ export default function defineLink({
 						? `${pageRoute}${sectionId ? `#${sectionId}` : ''}`
 						: url
 							? url
-							: 'No link',
+							: 'No URL selected',
 				};
 			},
 		},

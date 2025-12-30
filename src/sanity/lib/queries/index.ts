@@ -3,6 +3,10 @@ import { SECTIONS_FRAGMENTS } from './fragments';
 
 export const SITE_SETTINGS_QUERY = defineQuery(`*[_type == "settings"][0]{
   ...,
+  headerMenu[] {
+    ...,
+    page->
+  }
 }`);
 
 export const PAGES_QUERY = defineQuery(`*[_type == "page"]`);

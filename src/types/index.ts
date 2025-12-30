@@ -54,6 +54,7 @@ export type Settings = {
 	_updatedAt: string;
 	siteName?: string;
 	siteDescription?: string;
+	headerMenu?: SmartLinkProps[];
 	siteOgImage?: SanityImageSource;
 };
 
@@ -91,8 +92,9 @@ export type Post = {
 };
 
 export type SmartLinkProps = {
-	_type: 'smartLink';
+	_type: string;
 	_key?: string;
+	label?: string;
 	page?: Page;
 	sectionId?: string;
 	url?: string;

@@ -1,5 +1,6 @@
 import { SettingsIcon } from 'lucide-react';
 import { defineType } from 'sanity';
+import defineLink from '../../constructors/defineLink';
 
 const settings = defineType({
 	name: 'settings',
@@ -11,6 +12,10 @@ const settings = defineType({
 		{
 			name: 'general',
 			title: 'General',
+		},
+		{
+			name: 'navigation',
+			title: 'Navigation',
 		},
 		{
 			name: 'seo',
@@ -32,6 +37,14 @@ const settings = defineType({
 			type: 'text',
 			validation: (rule) =>
 				rule.required().error('Site Description is required'),
+		},
+		{
+			name: 'headerMenu',
+			title: 'Header Menu',
+			type: 'array',
+			group: 'navigation',
+			of: [defineLink({ withLabel: true })],
+			validation: (rule) => rule.required().error('Header Menu is required'),
 		},
 		{
 			name: 'siteOgImage',

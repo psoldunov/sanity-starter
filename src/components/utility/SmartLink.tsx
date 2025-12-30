@@ -1,0 +1,36 @@
+import type { LinkProps } from 'next/link';
+import Link from 'next/link';
+import { cn, getTarget } from '@/lib/utils';
+import type { SmartLinkProps } from '@/types';
+
+export default function SmartLink(
+	props: Omit<LinkProps, 'href'> & {
+		link: SmartLinkProps;
+		children?: React.ReactNode;
+		className?: string;
+		style?: React.CSSProperties;
+		disabled?: boolean;
+	},
+) {
+	const { link, children, onClick, disabled, className, ...linkProps } = props;
+
+	const routeSlug = link.page?.route?.current;
+	const sectionId = link.sectionId;
+
+	const url =
+		link.url ??
+		(routeSlug ? `${routeSlug}${sectionId ? `#${sectionId}` : ''}` : '#');
+
+	return (
+		<Link
+			href={url}
+			aria-disabled={disabled}
+			target={getTarget(url)}
+			className={cn(className, { 'pointer-events-none opacity-33': disabled })}
+			{...linkProps}
+			onClick={onClick}
+		>
+			{children || link.label || 'Link'}
+		</Link>
+	);
+}

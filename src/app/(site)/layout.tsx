@@ -47,13 +47,17 @@ export default async function RootLayout({
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
+	const { data: settings }: { data: Settings } = await sanityFetch({
+		query: SITE_SETTINGS_QUERY,
+	});
+
 	return (
 		<Provider>
 			<html lang='en'>
 				<body
 					className={cn(geistSans.variable, geistMono.variable, 'antialiased')}
 				>
-					<Header />
+					<Header menu={settings?.headerMenu} />
 					{children}
 					<Footer />
 					<SanityLive />

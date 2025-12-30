@@ -109,3 +109,21 @@ export function getSiteUrl(): string {
 
 	return 'http://localhost:3000';
 }
+
+/**
+ * Determines the target attribute for a link based on its URL
+ * @param url - The URL to check
+ * @returns '_blank' if the URL is external, otherwise undefined
+ */
+export function getTarget(url: string | undefined): '_blank' | undefined {
+	if (!url) return undefined;
+
+	if (
+		url.startsWith('http') ||
+		url.startsWith('mailto:') ||
+		url.startsWith('tel:')
+	) {
+		return '_blank';
+	}
+	return undefined;
+}
