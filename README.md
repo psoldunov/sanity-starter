@@ -2,6 +2,19 @@
 
 A modern, full-featured starter template for building content-driven websites with Next.js 16, React 19, and Sanity CMS. This starter includes a flexible section-based page builder, smart linking system, and comprehensive content management capabilities.
 
+## About This Project
+
+This project is a ready-to-go boilerplate designed to provide a complete foundation for building page builder functionality within Sanity CMS. The goal is to eliminate the initial setup overhead and provide a production-ready starting point that includes:
+
+- **Pre-configured page builder** with a flexible section-based architecture
+- **Smart link system** supporting page references, section anchors, and external URLs
+- **Live preview integration** through Sanity's Presentation Tool
+- **Optimized development workflow** with TypeScript, modern tooling, and best practices
+
+This boilerplate is intended for use in both personal and professional projects, providing a solid foundation that can be customized and extended based on specific project requirements. All the common patterns, configurations, and integrations are already set up, allowing you to focus on building unique features rather than boilerplate code.
+
+**Contributions and use of this project are welcome by anybody.** Feel free to use it for your own projects, fork it, modify it, and contribute improvements back to the community.
+
 ## Features
 
 - 🚀 **Next.js 16** with App Router and React Server Components
