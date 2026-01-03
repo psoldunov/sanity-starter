@@ -1,4 +1,4 @@
-import { LinkIcon } from 'lucide-react';
+import { FileIcon, HashIcon, LinkIcon, PaperclipIcon } from 'lucide-react';
 import { defineField } from 'sanity';
 import SectionIdInput from '@/sanity/components/SectionIdInput';
 
@@ -88,6 +88,13 @@ export default function defineLink({
 			prepare({ label, pageRoute, sectionId, url, fileName }) {
 				return {
 					title: label || 'Link',
+					media: pageRoute
+						? FileIcon
+						: url
+							? LinkIcon
+							: fileName
+								? PaperclipIcon
+								: HashIcon,
 					subtitle: pageRoute
 						? `${pageRoute}${sectionId ? `#${sectionId}` : ''}`
 						: url
