@@ -45,7 +45,7 @@ export default function defineLink({
 				options: {
 					disableNew: true,
 				},
-				hidden: ({ parent }) => !!parent?.url,
+				hidden: ({ parent }) => !!parent?.url || !!parent?.file,
 			},
 			{
 				name: 'sectionId',
@@ -55,7 +55,7 @@ export default function defineLink({
 					input: SectionIdInput,
 				},
 				description: 'The ID of the section to link to',
-				hidden: ({ parent }) => !parent?.page,
+				hidden: ({ parent }) => !parent?.page || !!parent?.file,
 			},
 			{
 				name: 'url',
@@ -66,7 +66,18 @@ export default function defineLink({
 						scheme: ['http', 'https', 'mailto', 'tel'],
 						allowRelative: true,
 					}),
-				hidden: ({ parent }) => !!parent?.page,
+				hidden: ({ parent }) => !!parent?.page || !!parent?.file,
+			},
+			{
+				name: 'file',
+				type: 'file',
+				title: 'File',
+				description: 'The file to link to',
+				options: {
+					accept:
+						'application/pdf, application/zip, application/msword, text/plain',
+				},
+				hidden: ({ parent }) => !!parent?.page || !!parent?.url,
 			},
 		],
 		preview: {
@@ -74,16 +85,19 @@ export default function defineLink({
 				label: 'label',
 				pageRoute: 'page.route.current',
 				sectionId: 'sectionId',
+				fileName: 'file.asset.originalFilename',
 				url: 'url',
 			},
-			prepare({ label, pageRoute, sectionId, url }) {
+			prepare({ label, pageRoute, sectionId, url, fileName }) {
 				return {
 					title: label || 'Link',
 					subtitle: pageRoute
 						? `${pageRoute}${sectionId ? `#${sectionId}` : ''}`
 						: url
 							? url
-							: 'No URL selected',
+							: fileName
+								? fileName
+								: 'No URL selected',
 				};
 			},
 		},

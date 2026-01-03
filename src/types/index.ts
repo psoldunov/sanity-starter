@@ -1,4 +1,4 @@
-import type { SanityImageSource } from '@sanity/asset-utils';
+import type { SanityFileSource, SanityImageSource } from '@sanity/asset-utils';
 import type { SanityReference } from 'next-sanity';
 import type {
 	ImageAsset,
@@ -98,4 +98,5 @@ export type SmartLinkProps = {
 	page?: Page;
 	sectionId?: string;
 	url?: string;
+	file?: SanityFileSource;
 };
