@@ -112,6 +112,13 @@ export default defineConfig({
 				);
 			},
 		},
+		file: {
+			assetSources: (previousAssetSources) => {
+				return previousAssetSources.filter(
+					(assetSource) => assetSource === mediaAssetSource,
+				);
+			},
+		},
 	},
 
 	schema: {

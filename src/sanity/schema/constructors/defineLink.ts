@@ -41,7 +41,6 @@ export default function defineLink({
 				title: 'Page',
 				type: 'reference',
 				to: [{ type: 'page' }],
-				description: 'The page to link to',
 				options: {
 					disableNew: true,
 				},
@@ -54,8 +53,7 @@ export default function defineLink({
 				components: {
 					input: SectionIdInput,
 				},
-				description: 'The ID of the section to link to',
-				hidden: ({ parent }) => !parent?.page || !!parent?.file,
+				hidden: ({ parent }) => !parent?.page,
 			},
 			{
 				name: 'url',
@@ -72,7 +70,6 @@ export default function defineLink({
 				name: 'file',
 				type: 'file',
 				title: 'File',
-				description: 'The file to link to',
 				options: {
 					accept:
 						'application/pdf, application/zip, application/msword, text/plain',
