@@ -1,3 +1,4 @@
+import { LinkIcon as SanityLinkIcon } from '@sanity/icons';
 import { FileIcon, HashIcon, LinkIcon, PaperclipIcon } from 'lucide-react';
 import { defineField } from 'sanity';
 import SectionIdInput from '@/sanity/components/SectionIdInput';
@@ -24,7 +25,7 @@ export default function defineLink({
 	return defineField({
 		name,
 		title,
-		icon: LinkIcon,
+		icon: SanityLinkIcon,
 		type: 'object',
 		fields: [
 			...(withLabel
@@ -44,7 +45,7 @@ export default function defineLink({
 				options: {
 					disableNew: true,
 				},
-				hidden: ({ parent }) => !!parent?.url || !!parent?.file,
+				hidden: ({ parent }) => !!parent?.href || !!parent?.file,
 			},
 			{
 				name: 'sectionId',
@@ -56,7 +57,7 @@ export default function defineLink({
 				hidden: ({ parent }) => !parent?.page,
 			},
 			{
-				name: 'url',
+				name: 'href',
 				type: 'url',
 				title: 'URL',
 				validation: (rule) =>
@@ -67,6 +68,26 @@ export default function defineLink({
 				hidden: ({ parent }) => !!parent?.page || !!parent?.file,
 			},
 			{
+				name: 'rel',
+				type: 'string',
+				title: 'rel',
+				description: 'The rel attribute for the link',
+				options: {
+					list: [
+						{
+							title: 'noopener',
+							value: 'noopener',
+						},
+						{
+							title: 'noopener noreferrer',
+							value: 'noopener noreferrer',
+						},
+					],
+				},
+				hidden: ({ parent }) =>
+					!parent?.href || !parent.href.startsWith('http'),
+			},
+			{
 				name: 'file',
 				type: 'file',
 				title: 'File',
@@ -74,7 +95,7 @@ export default function defineLink({
 					accept:
 						'application/pdf, application/zip, application/msword, text/plain',
 				},
-				hidden: ({ parent }) => !!parent?.page || !!parent?.url,
+				hidden: ({ parent }) => !!parent?.page || !!parent?.href,
 			},
 		],
 		preview: {
@@ -83,22 +104,22 @@ export default function defineLink({
 				pageRoute: 'page.route.current',
 				sectionId: 'sectionId',
 				fileName: 'file.asset.originalFilename',
-				url: 'url',
+				href: 'href',
 			},
-			prepare({ label, pageRoute, sectionId, url, fileName }) {
+			prepare({ label, pageRoute, sectionId, href, fileName }) {
 				return {
 					title: label || 'Link',
 					media: pageRoute
 						? FileIcon
-						: url
+						: href
 							? LinkIcon
 							: fileName
 								? PaperclipIcon
 								: HashIcon,
 					subtitle: pageRoute
 						? `${pageRoute}${sectionId ? `#${sectionId}` : ''}`
-						: url
-							? url
+						: href
+							? href
 							: fileName
 								? fileName
 								: 'No URL selected',

@@ -97,6 +97,7 @@ export type SmartLinkProps = {
 	label?: string;
 	page?: Page;
 	sectionId?: string;
-	url?: string;
+	href?: string;
+	rel?: 'noopener' | 'noopener noreferrer';
 	file?: SanityFileSource;
 };
