@@ -11,22 +11,26 @@ import SectionIdInput from '@/sanity/components/SectionIdInput';
  * @param withLabel - Whether to include a label field for the link text (default: false)
  * @param name - The field name/identifier (default: 'link')
  * @param title - The display title for the field (default: 'Link')
+ * @param group - The group for the field
  * @returns A Sanity field definition for a link object type
  */
 export default function defineLink({
 	withLabel = false,
 	name = 'link',
 	title = 'Link',
+	group,
 }: {
 	withLabel?: boolean;
 	name?: string;
 	title?: string;
+	group?: string;
 }) {
 	return defineField({
 		name,
 		title,
 		icon: SanityLinkIcon,
 		type: 'object',
+		group,
 		fields: [
 			...(withLabel
 				? [
