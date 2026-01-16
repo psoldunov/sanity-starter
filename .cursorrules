@@ -59,6 +59,18 @@
 - Add JSDoc comments to utility functions (no examples)
 - Keep utilities pure and testable
 
+
+### Hooks
+- Place custom React hooks in `hooks/`
+- Export all hooks from `hooks/index.ts`
+- Add JSDoc comments to hooks (no examples)
+- Hooks should handle SSR safely (check for `typeof window !== 'undefined'`)
+- Clean up event listeners and subscriptions in `useEffect` cleanup functions
+
+
+
+- Use custom hooks from `@/hooks` for client-side functionality
+
 ## Code Patterns
 
 ### React Components
@@ -94,23 +106,22 @@
 
 ## Sanity-Specific Patterns
 
-### Custom Input Components
-- Place in `sanity/components/`
-- Use Sanity UI components from `@sanity/ui`
 - Access sibling fields using `useFormValue` with parent path
 - Handle loading and error states
 - Clear dependent fields when parent changes
 
 ### Schema Constructors
-- Return field definitions using `defineField` for inline use
-- Return type definitions using `defineType` for registered types
-- Accept configuration options with sensible defaults
 - Include JSDoc documentation
+- `defineSection()`: Automatically adds padding, id, hidden fields with configuration group
+- `defineLink()`: Supports page references, section anchors, external URLs, and file downloads
+- `defineImage()`: Includes blurhash metadata and optional hotspot support
 
 ### Queries
 - Organize queries in `sanity/lib/queries/`
 - Use fragments for reusable query parts
 - Keep queries focused and efficient
+- Add section fragments to `SECTIONS_FRAGMENTS` array in `fragments.ts`
+- Use Sanity client for data fetching
 
 ## Next.js Patterns
 
@@ -121,7 +132,8 @@
 - Metadata generation functions
 
 ### Data Fetching
-- Use Sanity client for data fetching
+- Use `sanityFetch()` from `src/sanity/lib/live.ts` for live preview support
+- Access via `const { data } = await sanityFetch({ query, params })`
 - Implement draft mode for preview
 - Use proper caching strategies
 
@@ -151,6 +163,8 @@
 
 - Don't use `any` type without good reason
 - Don't create unnecessary wrapper components
+- Hooks: `hooks/index.ts` (export all hooks from single file)
+
 - Don't mix client and server component patterns unnecessarily
 - Don't hardcode values that should be configurable
 - Don't skip error handling
@@ -159,18 +173,17 @@
 
 ## File Naming
 
-- Components: `ComponentName.tsx`
-- Utilities: `utilityName.ts`
-- Types: `types.ts` or `typeName.ts`
-- Schema: `schemaName.ts`
-- Constructors: `defineName.ts`
-
-## When Creating New Code
-
-1. Check if similar patterns exist in the codebase
-2. Follow existing file organization
-3. Add JSDoc to exported functions
-4. Use TypeScript strictly
 5. Test the code works as expected
 6. Ensure it follows Biome formatting rules
 
+## Section Creation Workflow
+
+When adding a new section type:
+
+1. Create schema in `src/sanity/schema/objects/sections/` using `defineSection()`
+2. Create component in `src/components/sections/` matching the `_type` name
+3. Register schema in `src/sanity/schema/objects/sections/index.ts`
+4. Register component in `src/lib/sections.ts` with key matching `_type`
+5. Add type to `src/types/sections.ts` and update `SectionProps` union
+6. Add GROQ fragment to `SECTIONS_FRAGMENTS` in `src/sanity/lib/queries/fragments.ts`
+7. If section needs `searchParams`, add `_type` to `dynamicSections` array in `src/lib/sections.ts`

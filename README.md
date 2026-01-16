@@ -21,7 +21,7 @@ This boilerplate is intended for use in both personal and professional projects,
 - 📝 **Sanity CMS** integration with live preview and draft mode
 - 🎨 **Section-based page builder** for flexible content composition
 - 🔗 **Smart link system** supporting page references, section anchors, and external URLs
-- 🖼️ **Image optimization** with Sanity CDN and Next.js Image
+- 🖼️ **Image optimization** with Sanity CDN, Next.js Image, and blurhash support
 - 📱 **Responsive design** with Tailwind CSS
 - ♿ **Accessibility** built-in with semantic HTML and ARIA attributes
 - 🔍 **SEO optimized** with metadata generation and sitemap support
@@ -38,8 +38,11 @@ This boilerplate is intended for use in both personal and professional projects,
 - **Deployment**: Vercel (assumed platform, uses Vercel global environment variables)
 - **Styling**: Tailwind CSS 4.1.18
 - **State Management**: Jotai 2.16.1
-- **Icons**: Lucide React 0.562.0
+- **Icons**: Lucide React 0.562.0, React Icons 5.5.0
 - **Linting/Formatting**: Biome 2.3.8
+- **Sanity Plugins**: 
+  - `@sanity/orderable-document-list` - Drag-and-drop reordering for documents
+  - `sanity-plugin-media` - Enhanced media management
 
 ## Prerequisites
 
@@ -155,6 +158,8 @@ src/
 │       │   └── post.ts
 │       └── objects/         # Object types
 │           └── sections/    # Section schemas
+├── hooks/                   # Custom React hooks
+│   └── index.ts
 ├── lib/                     # Utility functions
 │   ├── actions.ts
 │   ├── sections.ts
@@ -180,24 +185,26 @@ Pages are composed of reusable sections. Each section can have:
 **Available Sections:**
 - Hero Section
 - Cards Section
-- CTA Section
 - Image Text Section
 
 **Adding New Sections:**
 
-1. Create a section schema in `src/sanity/schema/objects/sections/`
+1. Create a section schema in `src/sanity/schema/objects/sections/` using `defineSection()`
 2. Create a section component in `src/components/sections/`
 3. Register the section in `src/sanity/schema/objects/sections/index.ts`
-4. Add the section type to `src/types/sections.ts`
+4. Add the section to the registry in `src/lib/sections.ts`
+5. Add the section type to `src/types/sections.ts`
+6. Add a GROQ fragment in `src/sanity/lib/queries/fragments.ts` to `SECTIONS_FRAGMENTS` array
 
 ### Smart Links
 
-The smart link system supports three link types:
+The smart link system supports four link types:
 - **Page Reference**: Link to an internal page
 - **Section Anchor**: Link to a specific section within a page (requires page reference)
 - **External URL**: Link to external websites, email, or phone numbers
+- **File Download**: Link to uploaded files (PDF, ZIP, DOC, TXT)
 
-Links automatically determine the target attribute (`_blank` for external links).
+Links automatically determine the target attribute (`_blank` for external links and file downloads). The `rel` attribute can be configured for external links.
 
 **Important:** When querying links that use `defineLink`, you must dereference the `page` field in your GROQ query to access `page.route`. Example:
 
@@ -216,9 +223,9 @@ Without dereferencing (`page->`), you'll only get the reference object (`_ref`, 
 
 Reusable schema constructors make it easy to create consistent field definitions:
 
-- `defineSection()`: Creates section schemas with common fields (padding, ID, hidden)
-- `defineLink()`: Creates link fields with page/section/URL support
-- `defineImage()`: Creates image fields with optimization settings
+- `defineSection()`: Creates section schemas with common fields (padding, ID, hidden, groups)
+- `defineLink()`: Creates link fields with page/section/URL/file support and optional label
+- `defineImage()`: Creates image fields with optimization settings, blurhash, and optional hotspot
 
 ### Draft Mode & Live Preview
 
@@ -229,6 +236,21 @@ The project includes full support for Sanity's draft mode and live preview:
 - **Live Updates**: Real-time content updates via Sanity Live
 
 Access draft mode by enabling it in Sanity Studio or using the preview URL.
+
+### Custom Hooks
+
+The project includes custom React hooks for common client-side functionality:
+
+- **`useIsMainWindow()`**: Checks if the component is running in the main window (not in an iframe and not opened by another window). Returns `false` during SSR and until client-side hydration. Useful for conditionally rendering components only in the main window context (e.g., draft mode controls).
+
+- **`useVerticalScroll()`**: Tracks the current vertical scroll position of the window. Returns the scroll position in pixels. Automatically updates on scroll events.
+
+- **`useViewportSize()`**: Tracks the current viewport size. Returns an object with `width` and `height` properties in pixels. Automatically updates on window resize events.
+
+All hooks are exported from `src/hooks/index.ts` and can be imported as:
+```typescript
+import { useIsMainWindow, useVerticalScroll, useViewportSize } from '@/hooks';
+```
 
 ## Development
 
@@ -389,7 +411,41 @@ export default function MySection({ ...props }: MySectionProps) {
 }
 ```
 
-3. **Register** in `src/sanity/schema/objects/sections/index.ts` and `src/types/sections.ts`
+3. **Register Schema** in `src/sanity/schema/objects/sections/index.ts`:
+```typescript
+import mySection from './mySection';
+const sectionTypes = [..., mySection];
+```
+
+4. **Register Component** in `src/lib/sections.ts`:
+```typescript
+import MySection from '@/components/sections/MySection';
+const sections = {
+  ...,
+  mySection: MySection,
+};
+```
+
+5. **Add Type** to `src/types/sections.ts`:
+```typescript
+export type MySectionProps = BaseSectionProps & {
+  _type: 'mySection';
+  // Your section fields
+};
+export type SectionProps = ... | MySectionProps;
+```
+
+6. **Add Query Fragment** in `src/sanity/lib/queries/fragments.ts` to the `SECTIONS_FRAGMENTS` array:
+```groq
+export const SECTIONS_FRAGMENTS = [
+  ...,
+  `_type == "mySection" => {
+    _type,
+    _key,
+    // Your section fields
+  }`,
+];
+```
 
 ### Styling
 
