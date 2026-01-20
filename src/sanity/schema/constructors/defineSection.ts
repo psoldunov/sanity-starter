@@ -1,5 +1,10 @@
 import type { ComponentType, ReactElement } from 'react';
-import { defineType, type FieldDefinition, type PreviewConfig } from 'sanity';
+import {
+	defineType,
+	type FieldDefinition,
+	type PreviewConfig,
+	type Rule,
+} from 'sanity';
 import { PADDING_CONFIG } from '@/config';
 import PaddingInput from '@/sanity/components/PaddingInput';
 import SectionPreview from '@/sanity/components/SectionPreview';
@@ -21,6 +26,7 @@ export const PADDING_OPTIONS = Object.entries(PADDING_CONFIG).map(
  * @param icon - Optional React component or element to use as the section icon
  * @param fields - Array of field definitions specific to this section
  * @param preview - Preview configuration for how the section appears in the studio
+ * @param disablePadding - Whether to disable the padding fields for the section
  * @returns A Sanity type definition for the section
  */
 export default function defineSection({
@@ -29,43 +35,28 @@ export default function defineSection({
 	icon,
 	fields,
 	preview,
+	disablePadding = false,
 }: {
 	name: string;
 	title: string;
 	icon?: ComponentType | ReactElement;
 	fields: Array<FieldDefinition>;
 	preview?: PreviewConfig;
+	disablePadding?: boolean;
 }) {
-	return defineType({
-		name,
-		type: 'object',
-		title,
-		icon,
-		components: {
-			preview: SectionPreview,
-		},
-		groups: [
-			{
-				name: 'content',
-				title: 'Content',
-				default: true,
-			},
-			{
-				name: 'configuration',
-				title: 'Configuration',
-			},
-		],
-		fields: [
-			...(fields.map((field) => ({
-				...field,
-				group: 'content',
-			})) || []),
-			{
+	const contentFields: FieldDefinition[] =
+		fields?.map((field) => ({
+			...field,
+			group: 'content',
+		})) ?? [];
+
+	const paddingField: FieldDefinition | null = disablePadding
+		? null
+		: ({
 				type: 'object',
 				name: 'padding',
 				title: 'Padding',
 				group: 'configuration',
-
 				fields: [
 					{
 						type: 'string',
@@ -100,8 +91,31 @@ export default function defineSection({
 						},
 					},
 				],
-				validation: (rule) => rule.required(),
+				validation: (rule: Rule) => rule.required(),
+			} as FieldDefinition);
+
+	return defineType({
+		name,
+		type: 'object',
+		title,
+		icon,
+		components: {
+			preview: SectionPreview,
+		},
+		groups: [
+			{
+				name: 'content',
+				title: 'Content',
+				default: true,
 			},
+			{
+				name: 'configuration',
+				title: 'Configuration',
+			},
+		],
+		fields: [
+			...contentFields,
+			...(paddingField ? [paddingField] : []),
 			{
 				type: 'string',
 				name: 'id',
