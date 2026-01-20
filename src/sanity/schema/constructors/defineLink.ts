@@ -12,17 +12,25 @@ import type { DefineLinkOptions } from '@/types';
  * @param options - Configuration options for the link field
  * @param options.withLabel - Whether to include a label field for the link text (default: false)
  * @param options.name - The field name/identifier (default: 'link')
+ * @param options.description - Optional description for the link field
  * @param options.title - The display title for the field (default: 'Link')
  * @param options.group - Optional field group to assign the link to
  * @returns A Sanity field definition for a link object type
  */
 export default function defineLink(options: DefineLinkOptions = {}) {
-	const { withLabel = false, name = 'link', title = 'Link', group } = options;
+	const {
+		withLabel = false,
+		name = 'link',
+		title = 'Link',
+		group,
+		description,
+	} = options;
 
 	return defineField({
 		name,
 		title,
 		icon: SanityLinkIcon,
+		description,
 		type: 'object',
 		group,
 		fields: [

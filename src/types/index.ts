@@ -18,6 +18,8 @@ export type PaddingSize = 'small' | 'medium' | 'large' | 'xlarge' | 'none';
 export type DefineImageOptions = {
 	title?: string;
 	name?: string;
+	group?: string;
+	description?: string;
 	validation?: (rule: ImageRule) => ImageRule;
 	fields?: FieldDefinition[];
 	hotspot?: boolean;
@@ -27,6 +29,7 @@ export type DefineLinkOptions = {
 	withLabel?: boolean;
 	name?: string;
 	title?: string;
+	description?: string;
 	group?: string;
 };
 
