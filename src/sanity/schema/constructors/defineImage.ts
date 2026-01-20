@@ -1,30 +1,28 @@
-import { defineField, type FieldDefinition, type ImageRule } from 'sanity';
+import { defineField } from 'sanity';
+import type { DefineImageOptions } from '@/types';
 
 /**
  * Defines a Sanity image field with common configuration.
  * Automatically configures image formats, hotspot, and blurhash metadata.
  * Optionally includes an alt text field for accessibility.
  *
- * @param title - Display title for the image field (default: 'Image')
- * @param name - Field name/identifier (default: 'image')
- * @param validation - Optional validation rule function for the image field
- * @param fields - Optional additional fields to include with the image
- * @param hotspot - Whether to include the hotspot field (default: false)
+ * @param options - Configuration for the image field
+ * @param options.title - Display title (default: 'Image')
+ * @param options.name - Field name/identifier (default: 'image')
+ * @param options.validation - Optional validation rule function for the image field
+ * @param options.fields - Optional additional fields to include with the image
+ * @param options.hotspot - Whether to include the hotspot field (default: false)
  * @returns A Sanity field definition for an image type
  */
-export default function defineImage({
-	title = 'Image',
-	name = 'image',
-	validation,
-	fields,
-	hotspot = false,
-}: {
-	title?: string;
-	name?: string;
-	validation?: (rule: ImageRule) => ImageRule;
-	fields?: FieldDefinition[];
-	hotspot?: boolean;
-}) {
+export default function defineImage(options: DefineImageOptions = {}) {
+	const {
+		title = 'Image',
+		name = 'image',
+		validation,
+		fields,
+		hotspot = false,
+	} = options;
+
 	return defineField({
 		name,
 		type: 'image',

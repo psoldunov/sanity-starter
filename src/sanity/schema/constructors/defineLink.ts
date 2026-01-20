@@ -2,29 +2,23 @@ import { LinkIcon as SanityLinkIcon } from '@sanity/icons';
 import { FileIcon, HashIcon, LinkIcon, PaperclipIcon } from 'lucide-react';
 import { defineField } from 'sanity';
 import SectionIdInput from '@/sanity/components/SectionIdInput';
+import type { DefineLinkOptions } from '@/types';
 
 /**
  * Defines a Sanity link field with support for page references, section IDs, and external URLs.
  * The field automatically shows/hides relevant inputs based on the selected link type.
  * When a page is selected, users can optionally link to a specific section within that page.
  *
- * @param withLabel - Whether to include a label field for the link text (default: false)
- * @param name - The field name/identifier (default: 'link')
- * @param title - The display title for the field (default: 'Link')
- * @param group - The group for the field
+ * @param options - Configuration options for the link field
+ * @param options.withLabel - Whether to include a label field for the link text (default: false)
+ * @param options.name - The field name/identifier (default: 'link')
+ * @param options.title - The display title for the field (default: 'Link')
+ * @param options.group - Optional field group to assign the link to
  * @returns A Sanity field definition for a link object type
  */
-export default function defineLink({
-	withLabel = false,
-	name = 'link',
-	title = 'Link',
-	group,
-}: {
-	withLabel?: boolean;
-	name?: string;
-	title?: string;
-	group?: string;
-}) {
+export default function defineLink(options: DefineLinkOptions = {}) {
+	const { withLabel = false, name = 'link', title = 'Link', group } = options;
+
 	return defineField({
 		name,
 		title,

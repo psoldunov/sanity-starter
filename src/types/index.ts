@@ -1,15 +1,43 @@
 import type { SanityFileSource, SanityImageSource } from '@sanity/asset-utils';
 import type { SanityReference } from 'next-sanity';
+import type { ComponentType, ReactElement } from 'react';
 import type {
+	FieldDefinition,
 	ImageAsset,
 	ImageCrop,
 	ImageHotspot,
+	ImageRule,
 	PortableTextBlock,
+	PreviewConfig,
 	Slug,
 } from 'sanity';
 import type { SectionProps } from './sections';
 
 export type PaddingSize = 'small' | 'medium' | 'large' | 'xlarge' | 'none';
+
+export type DefineImageOptions = {
+	title?: string;
+	name?: string;
+	validation?: (rule: ImageRule) => ImageRule;
+	fields?: FieldDefinition[];
+	hotspot?: boolean;
+};
+
+export type DefineLinkOptions = {
+	withLabel?: boolean;
+	name?: string;
+	title?: string;
+	group?: string;
+};
+
+export type DefineSectionOptions = {
+	name: string;
+	title: string;
+	icon?: ComponentType | ReactElement;
+	fields: Array<FieldDefinition>;
+	preview?: PreviewConfig;
+	disablePadding?: boolean;
+};
 
 export type BaseSectionProps = {
 	_type: string;

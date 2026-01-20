@@ -1,14 +1,8 @@
-import type { ComponentType, ReactElement } from 'react';
-import {
-	defineType,
-	type FieldDefinition,
-	type PreviewConfig,
-	type Rule,
-} from 'sanity';
+import { defineType, type FieldDefinition, type Rule } from 'sanity';
 import { PADDING_CONFIG } from '@/config';
 import PaddingInput from '@/sanity/components/PaddingInput';
 import SectionPreview from '@/sanity/components/SectionPreview';
-import type { PaddingSize } from '@/types';
+import type { DefineSectionOptions, PaddingSize } from '@/types';
 
 export const PADDING_OPTIONS = Object.entries(PADDING_CONFIG).map(
 	([value, config]) => ({
@@ -29,21 +23,16 @@ export const PADDING_OPTIONS = Object.entries(PADDING_CONFIG).map(
  * @param disablePadding - Whether to disable the padding fields for the section
  * @returns A Sanity type definition for the section
  */
-export default function defineSection({
-	name,
-	title,
-	icon,
-	fields,
-	preview,
-	disablePadding = false,
-}: {
-	name: string;
-	title: string;
-	icon?: ComponentType | ReactElement;
-	fields: Array<FieldDefinition>;
-	preview?: PreviewConfig;
-	disablePadding?: boolean;
-}) {
+export default function defineSection(options: DefineSectionOptions) {
+	const {
+		name,
+		title,
+		icon,
+		fields,
+		preview,
+		disablePadding = false,
+	} = options;
+
 	const contentFields: FieldDefinition[] =
 		fields?.map((field) => ({
 			...field,
