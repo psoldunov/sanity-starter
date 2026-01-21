@@ -11,7 +11,7 @@ import type {
 	PreviewConfig,
 	Slug,
 } from 'sanity';
-import type { SectionProps } from './sections';
+import type { SectionProps } from '@/sanity/schema/objects/sections';
 
 export type PaddingSize = 'small' | 'medium' | 'large' | 'xlarge' | 'none';
 

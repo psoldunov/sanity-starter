@@ -1,5 +1,5 @@
 import { defineQuery } from 'next-sanity';
-import { SECTIONS_FRAGMENTS } from './fragments';
+import { SECTIONS_FRAGMENTS } from '@/sanity/schema/objects/sections';
 
 export const SITE_SETTINGS_QUERY = defineQuery(`*[_type == "settings"][0]{
   ...,

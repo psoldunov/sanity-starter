@@ -1,5 +1,5 @@
 import Container from '@/components/layout/Container';
-import type { CardsSectionProps } from '@/types/sections';
+import type { CardsSectionProps } from '@/sanity/schema/objects/sections/cardsSection';
 import Section from '../utility/Section';
 import SmartImage from '../utility/SmartImage';
 

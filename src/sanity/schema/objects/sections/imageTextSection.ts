@@ -1,7 +1,23 @@
 import { ImageIcon } from 'lucide-react';
+import { groq } from 'next-sanity';
+import { getImageFragment } from '@/sanity/lib/queries/helpers';
 import { stripNonPrintables } from '@/sanity/lib/utils';
+import type { BaseSectionProps, SmartImageObject } from '@/types';
 import defineImage from '../../constructors/defineImage';
 import defineSection from '../../constructors/defineSection';
+
+export const IMAGE_TEXT_SECTION_FRAGMENT = groq`
+	_type == "imageTextSection" => {
+		...,
+		${getImageFragment('image')}
+	}`;
+
+export type ImageTextSectionProps = BaseSectionProps & {
+	_type: 'imageTextSection';
+	heading: string;
+	paragraph: string;
+	image: SmartImageObject;
+};
 
 const imageTextSection = defineSection({
 	name: 'imageTextSection',

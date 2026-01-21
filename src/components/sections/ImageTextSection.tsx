@@ -1,5 +1,5 @@
 import Container from '@/components/layout/Container';
-import type { ImageTextSectionProps } from '@/types/sections';
+import type { ImageTextSectionProps } from '@/sanity/schema/objects/sections/imageTextSection';
 import Section from '../utility/Section';
 import SmartImage from '../utility/SmartImage';
 

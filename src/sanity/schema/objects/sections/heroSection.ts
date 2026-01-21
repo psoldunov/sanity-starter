@@ -1,7 +1,23 @@
 import { MonitorIcon } from 'lucide-react';
+import { groq } from 'next-sanity';
+import { getImageFragment } from '@/sanity/lib/queries/helpers';
 import { stripNonPrintables } from '@/sanity/lib/utils';
 import defineImage from '@/sanity/schema/constructors/defineImage';
 import defineSection from '@/sanity/schema/constructors/defineSection';
+import type { BaseSectionProps, SmartImageObject } from '@/types';
+
+export const HERO_SECTION_FRAGMENT = groq`
+	_type == "heroSection" => {
+		...,
+		${getImageFragment('image')}
+	}`;
+
+export type HeroSectionProps = BaseSectionProps & {
+	_type: 'heroSection';
+	heading: string;
+	paragraph: string;
+	image: SmartImageObject;
+};
 
 const heroSection = defineSection({
 	name: 'heroSection',

@@ -1,5 +1,5 @@
 import Container from '@/components/layout/Container';
-import type { HeroSectionProps } from '@/types/sections';
+import type { HeroSectionProps } from '@/sanity/schema/objects/sections/heroSection';
 import Section from '../utility/Section';
 import SmartImage from '../utility/SmartImage';
 

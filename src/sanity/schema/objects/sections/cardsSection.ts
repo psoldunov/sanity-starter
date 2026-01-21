@@ -1,7 +1,30 @@
 import { GridIcon } from 'lucide-react';
+import { groq } from 'next-sanity';
+import { getImageFragment } from '@/sanity/lib/queries/helpers';
 import { stripNonPrintables } from '@/sanity/lib/utils';
+import type { BaseSectionProps, SmartImageObject } from '@/types';
 import defineImage from '../../constructors/defineImage';
 import defineSection from '../../constructors/defineSection';
+
+export const CARDS_SECTION_FRAGMENT = groq`
+	_type == "cardsSection" => {
+		...,
+		cards[] {
+			...,
+			${getImageFragment('image')}
+		}
+	}`;
+
+export type CardsSectionProps = BaseSectionProps & {
+	_type: 'cardsSection';
+	heading: string;
+	cards: {
+		_key: string;
+		heading: string;
+		paragraph: string;
+		image: SmartImageObject;
+	}[];
+};
 
 const cardsSection = defineSection({
 	name: 'cardsSection',
