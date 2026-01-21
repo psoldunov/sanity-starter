@@ -15,12 +15,13 @@ export const PADDING_OPTIONS = Object.entries(PADDING_CONFIG).map(
  * Defines a Sanity section schema with common fields.
  * Automatically adds `sectionId` and `hidden` fields to all sections.
  *
- * @param name - The unique name/identifier for the section type
- * @param title - The display title for the section
- * @param icon - Optional React component or element to use as the section icon
- * @param fields - Array of field definitions specific to this section
- * @param preview - Preview configuration for how the section appears in the studio
- * @param disablePadding - Whether to disable the padding fields for the section
+ * @param options - Configuration options for the section
+ * @param options.name - The unique name/identifier for the section type
+ * @param options.title - The display title for the section
+ * @param options.icon - Optional React component or element to use as the section icon
+ * @param options.fields - Array of field definitions specific to this section
+ * @param options.preview - Preview configuration for how the section appears in the studio
+ * @param options.disablePadding - Whether to disable the padding fields for the section (default: false)
  * @returns A Sanity type definition for the section
  */
 export default function defineSection(options: DefineSectionOptions) {
