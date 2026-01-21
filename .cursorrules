@@ -173,6 +173,19 @@
 
 ## File Naming
 
+- Components in `src/components/`: `ComponentName.tsx` (PascalCase)
+- Utilities in `src/lib/`: `utilityName.ts` (camelCase)
+- Types in `src/types/`: `TypeName.ts` (PascalCase, matching exported type)
+- Hooks in `src/hooks/`: `useSomething.ts` (camelCase with `use` prefix)
+- Sanity schema in `src/sanity/schema/`: `objectOrDocumentName.ts` (camelCase `_type`, file matches exported default)
+- Keep file names aligned with their primary default export
+
+## Contribution Checklist
+
+1. Follow the patterns and rules in this file and in `README.md`
+2. Add or update TypeScript types where needed (no implicit `any`)
+3. Add JSDoc to all new exported functions and hooks
+4. Keep changes small and focused with clear intent
 5. Test the code works as expected
 6. Ensure it follows Biome formatting rules
 

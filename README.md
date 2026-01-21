@@ -132,7 +132,8 @@ src/
 │       ├── Section.tsx
 │       ├── SectionRenderer.tsx
 │       ├── SmartImage.tsx
-│       └── SmartLink.tsx
+│       ├── SmartLink.tsx
+│       └── Slot.tsx
 ├── sanity/
 │   ├── components/           # Custom Sanity input components
 │   │   ├── PaddingInput.tsx
@@ -186,15 +187,15 @@ Pages are composed of reusable sections. Each section can have:
 - Hero Section
 - Cards Section
 - Image Text Section
+- CTA Section
 
 **Adding New Sections:**
 
 1. Create a section schema in `src/sanity/schema/objects/sections/` using `defineSection()`
 2. Create a section component in `src/components/sections/`
-3. Register the section in `src/sanity/schema/objects/sections/index.ts`
+3. Register the section schema, GROQ fragment, and props type in `src/sanity/schema/objects/sections/index.ts` (add to `sectionTypes`, `SECTIONS_FRAGMENTS`, and `SectionProps`)
 4. Add the section to the registry in `src/lib/sections.ts`
-5. Add the section type to `src/types/sections.ts`
-6. Add a GROQ fragment in `src/sanity/lib/queries/fragments.ts` to `SECTIONS_FRAGMENTS` array
+5. If the section needs `searchParams`, add its `_type` to `dynamicSections` in `src/lib/sections.ts`
 
 ### Smart Links
 
@@ -252,6 +253,14 @@ All hooks are exported from `src/hooks/index.ts` and can be imported as:
 import { useIsMainWindow, useVerticalScroll, useViewportSize } from '@/hooks';
 ```
 
+### Slot Component
+
+The project includes a `Slot` utility component at `src/components/utility/Slot.tsx`:
+
+- **Purpose**: Merge props (including `className`) into a single child element, with props passed to `Slot` overriding the child's own props
+- **Usage**: Wrap a single React element in `Slot` to forward layout, styling, or behavior props without creating extra DOM wrappers
+- **Safety**: Logs an error and returns `null` if no valid single child element is provided
+
 ## Development
 
 ### Available Scripts
@@ -299,6 +308,19 @@ The project uses strict TypeScript. All types are defined in `src/types/`. When 
 1. Add the type definition to `src/types/index.ts` or a dedicated file
 2. Update Sanity queries to match the type structure
 3. Ensure schema definitions match the types
+
+## AI Coding Assistants
+
+This project includes guidelines for AI coding tools:
+
+- **Project rules**: See `.cursorrules` for detailed conventions (formatting, TypeScript, Sanity patterns, section workflow)
+- **AI-specific guidance**: See `.github/copilot-instructions.md` for instructions targeted at AI assistants
+
+When using AI to make changes:
+
+- Ensure generated code uses **tabs**, **single quotes**, **semicolons**, and **strict TypeScript**
+- Prefer **Server Components** by default and only add `'use client'` where needed
+- Follow the **Section Creation Workflow** and Sanity query patterns documented above
 
 ## Deployment
 
@@ -380,12 +402,25 @@ The **Settings** document (singleton) contains:
 
 ### Adding New Sections
 
-1. **Create Schema** (`src/sanity/schema/objects/sections/mySection.ts`):
+1. **Create Schema, Fragment, and Props** (`src/sanity/schema/objects/sections/mySection.ts`):
 ```typescript
+import { groq } from 'next-sanity';
 import defineSection from '@/sanity/schema/constructors/defineSection';
 import { MyIcon } from 'lucide-react';
+import type { BaseSectionProps } from '@/types';
 
-export default defineSection({
+export const MY_SECTION_FRAGMENT = groq`
+  _type == "mySection" => {
+    ...,
+    // Field projections (e.g. image fragments)
+  }`;
+
+export type MySectionProps = BaseSectionProps & {
+  _type: 'mySection';
+  // Your section fields
+};
+
+const mySection = defineSection({
   name: 'mySection',
   title: 'My Section',
   icon: MyIcon,
@@ -398,11 +433,38 @@ export default defineSection({
     },
   },
 });
+
+export default mySection;
 ```
 
-2. **Create Component** (`src/components/sections/MySection.tsx`):
+2. **Register Schema, Fragment, and Props in Index** (`src/sanity/schema/objects/sections/index.ts`):
 ```typescript
-export default function MySection({ ...props }: MySectionProps) {
+import mySection, {
+  MY_SECTION_FRAGMENT,
+  type MySectionProps,
+} from './mySection';
+
+export const SECTIONS_FRAGMENTS = [
+  // existing fragments...
+  MY_SECTION_FRAGMENT,
+];
+
+const sectionTypes = [
+  // existing section types...
+  mySection,
+];
+
+export type SectionProps =
+  // existing section props...
+  | MySectionProps;
+```
+
+3. **Create Component** (`src/components/sections/MySection.tsx`):
+```typescript
+import Section from '@/components/utility/Section';
+import type { MySectionProps } from '@/sanity/schema/objects/sections/mySection';
+
+export default function MySection(props: MySectionProps) {
   return (
     <Section {...props}>
       {/* Your section content */}
@@ -411,41 +473,18 @@ export default function MySection({ ...props }: MySectionProps) {
 }
 ```
 
-3. **Register Schema** in `src/sanity/schema/objects/sections/index.ts`:
-```typescript
-import mySection from './mySection';
-const sectionTypes = [..., mySection];
-```
-
 4. **Register Component** in `src/lib/sections.ts`:
 ```typescript
 import MySection from '@/components/sections/MySection';
+
 const sections = {
-  ...,
+  // existing sections...
   mySection: MySection,
 };
 ```
 
-5. **Add Type** to `src/types/sections.ts`:
-```typescript
-export type MySectionProps = BaseSectionProps & {
-  _type: 'mySection';
-  // Your section fields
-};
-export type SectionProps = ... | MySectionProps;
-```
-
-6. **Add Query Fragment** in `src/sanity/lib/queries/fragments.ts` to the `SECTIONS_FRAGMENTS` array:
-```groq
-export const SECTIONS_FRAGMENTS = [
-  ...,
-  `_type == "mySection" => {
-    _type,
-    _key,
-    // Your section fields
-  }`,
-];
-```
+5. **Optional: Dynamic Sections**  
+If your section needs `searchParams` on the frontend, add its `_type` to the `dynamicSections` array in `src/lib/sections.ts`.
 
 ### Styling
 

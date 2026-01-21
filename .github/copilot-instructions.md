@@ -97,6 +97,15 @@ export default function HeroSection({ heading, paragraph, image }: HeroSectionPr
 **Orderable lists**: Use `@sanity/orderable-document-list` for drag-drop ordering (see Studio desk structure)
 **Preview configs**: Always include helpful `preview` with `select` and `prepare` for Studio UX
 
+## Project Rules Reference
+
+AI assistants must respect the local project rules:
+
+- Read and follow `.cursorrules` for formatting, naming, and architectural patterns
+- Keep code compatible with **Bun** (do not introduce `npm`/`yarn` commands in scripts)
+- Prefer **Server Components** and only add `'use client'` when strictly necessary
+- Treat `.cursorrules` as the source of truth when in doubt
+
 ## Integration Points
 
 - **Sanity CDN**: Images served via `cdn.sanity.io` (configured in `next.config.ts`)
@@ -110,6 +119,36 @@ export default function HeroSection({ heading, paragraph, image }: HeroSectionPr
 - `src/sanity/schema/index.ts`: Schema entry point (export all types)
 - `src/config/index.ts`: Padding config and protected route patterns
 - `src/types/sections.ts`: TypeScript types for section props
+
+## Section Creation Workflow (for AI)
+
+When generating a new section type, always follow this workflow:
+
+1. **Create schema** in `src/sanity/schema/objects/sections/` using `defineSection()`
+2. **Create component** in `src/components/sections/` with a default export whose name matches the file (PascalCase)
+3. **Register schema** in `src/sanity/schema/objects/sections/index.ts`
+4. **Register component** in `src/lib/sections.ts` with key matching the section `_type`
+5. **Add types** to `src/types/sections.ts` and update the `SectionProps` union
+6. **Add GROQ fragment** to `SECTIONS_FRAGMENTS` in `src/sanity/lib/queries/fragments.ts`
+7. If the section needs `searchParams`, add its `_type` to `dynamicSections` in `src/lib/sections.ts`
+
+Always keep schema, types, queries, and components in sync.
+
+## Do / Don't for AI Changes
+
+**Do:**
+
+- Use strict TypeScript and explicit types (no implicit `any`)
+- Add JSDoc to all new exported functions and hooks
+- Use `sanityFetch()` for Sanity data access and keep queries small and focused
+- Use `SmartImage` and `SmartLink` rather than raw `<img>` / `<a>` where appropriate
+
+**Don't:**
+
+- Change the package manager (keep using **Bun**)
+- Introduce `console.log` or leave debugging code in committed changes
+- Create unnecessary wrapper components around existing sections/utilities
+- Mix client and server patterns in the same component without a clear reason
 
 ## When Adding Features
 
