@@ -198,5 +198,5 @@ When adding a new section type:
 3. Register schema in `src/sanity/schema/objects/sections/index.ts`
 4. Register component in `src/lib/sections.ts` with key matching `_type`
 5. Add type to `src/types/sections.ts` and update `SectionProps` union
-6. Add GROQ fragment to `SECTIONS_FRAGMENTS` in `src/sanity/lib/queries/fragments.ts`
+6. Add GROQ fragment to `SECTIONS_FRAGMENTS` in `src/sanity/schema/objects/sections/index.ts`
 7. If section needs `searchParams`, add `_type` to `dynamicSections` array in `src/lib/sections.ts`
