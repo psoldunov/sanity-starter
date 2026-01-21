@@ -53,14 +53,30 @@ This boilerplate is intended for use in both personal and professional projects,
 
 ## Getting Started
 
-### 1. Clone the Repository
+### 1. Create a New Project from This Starter (Recommended)
+
+To scaffold a new project using this starter as a template:
+
+```bash
+bun create psoldunov/sanity-starter YOUR_PROJECT_NAME
+```
+
+Then:
+
+```bash
+cd YOUR_PROJECT_NAME
+```
+
+### 2. Clone the Repository (Alternative for Contributors)
 
 ```bash
 git clone <repository-url>
 cd sanity-starter
 ```
 
-### 2. Install Dependencies
+If you are **not** contributing directly to this starter and just want to build your own project, it is recommended to use the `bun create` command above instead, or initialize a new repository from this codebase before making changes.
+
+### 3. Install Dependencies
 
 ```bash
 bun install
