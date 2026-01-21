@@ -184,7 +184,6 @@ src/
 │   └── utils.ts
 ├── types/                   # TypeScript type definitions
 │   ├── index.ts
-│   └── sections.ts
 └── styles/                  # Global styles
     └── globals.css
 ```
