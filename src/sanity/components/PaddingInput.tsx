@@ -1,3 +1,5 @@
+'use client';
+
 import { Button, Flex, Label, Stack, Text } from '@sanity/ui';
 import { useCallback, useMemo } from 'react';
 import { type StringInputProps, set } from 'sanity';

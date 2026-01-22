@@ -1,8 +1,10 @@
+'use client';
+
 import { Select, Stack, Text } from '@sanity/ui';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type StringInputProps, set, unset, useFormValue } from 'sanity';
 import { client } from '@/sanity/lib/client';
-import type { SectionProps } from '@/types/sections';
+import type { SectionProps } from '../schema/objects/sections';
 
 function extractSectionIds(sections: SectionProps[]): string[] {
 	return sections

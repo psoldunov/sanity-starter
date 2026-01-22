@@ -1,6 +1,6 @@
 import type { ElementType } from 'react';
 import sections from '@/lib/sections';
-import type { SectionProps } from '@/types/sections';
+import type { SectionProps } from '@/sanity/schema/objects/sections';
 
 function SectionComponent(_type: keyof typeof sections): ElementType {
 	return sections[_type];

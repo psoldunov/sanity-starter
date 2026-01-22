@@ -35,7 +35,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 		perspective: 'published',
 	});
 
-	for (const page of pages) {
+	for (const page of pages || []) {
 		if (page.route?.current) {
 			const url =
 				page.route.current === '/' ? baseUrl : baseUrl + page.route.current;
@@ -49,7 +49,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 		}
 	}
 
-	for (const post of posts) {
+	for (const post of posts || []) {
 		if (post.slug?.current) {
 			const url = `${baseUrl}/posts/${post.slug.current}`;
 

@@ -1,7 +1,26 @@
 import { notFound } from 'next/navigation';
 import Container from '@/components/layout/Container';
 import { sanityFetch } from '@/sanity/lib/live';
-import { POST_QUERY } from '@/sanity/lib/queries';
+import { POST_QUERY, POSTS_QUERY } from '@/sanity/lib/queries';
+import type { Post } from '@/types';
+
+export async function generateStaticParams() {
+	const { data: posts }: { data: Post[] } = await sanityFetch({
+		query: POSTS_QUERY,
+		stega: false,
+		perspective: 'published',
+	});
+
+	if (!posts || posts.length === 0) {
+		return [];
+	}
+
+	return posts
+		.filter((post) => post.slug?.current)
+		.map((post) => ({
+			slug: post.slug.current,
+		}));
+}
 
 export default async function PostPage({
 	params,
