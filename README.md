@@ -31,6 +31,7 @@ This boilerplate is intended for use in both personal and professional projects,
 ## Tech Stack
 
 - **Package Manager**: Bun (exclusively)
+- **Toolchain Manager**: mise (optional, via `mise.toml`)
 - **Framework**: Next.js 16.1.1
 - **React**: 19.2.3 (Server Components by default)
 - **TypeScript**: 5.9.3 (strict mode)
@@ -48,6 +49,7 @@ This boilerplate is intended for use in both personal and professional projects,
 
 - Node.js 18+ (recommended: latest LTS)
 - [Bun](https://bun.sh) (this project uses bun exclusively)
+- [mise](https://mise.jdx.dev/) (optional, for managing Node/Bun versions and tools via `mise.toml`)
 - A Sanity project (create one at [sanity.io](https://www.sanity.io))
 - **Vercel account** (this project is optimized for Vercel deployment and uses Vercel's global environment variables)
 
