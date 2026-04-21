@@ -89,3 +89,10 @@ export type SmartImageProps = {
 export type SmartLinkProps = NonNullable<
 	NonNullable<SITE_SETTINGS_QUERY_RESULT>['headerMenu']
 >[number];
+
+/**
+ * Footer navigation column as returned by SITE_SETTINGS_QUERY.
+ */
+export type FooterNavColumn = NonNullable<
+	NonNullable<SITE_SETTINGS_QUERY_RESULT>['footerNav']
+>[number];

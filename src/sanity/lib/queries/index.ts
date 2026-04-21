@@ -10,6 +10,13 @@ export const SITE_SETTINGS_QUERY = defineQuery(`*[_type == "settings"][0]{
   headerMenu[] {
     ...,
     page->
+  },
+  footerNav[] {
+    ...,
+    links[] {
+      ...,
+      page->
+    }
   }
 }`);
 

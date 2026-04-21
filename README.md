@@ -28,22 +28,24 @@ This boilerplate is intended for use in both personal and professional projects,
 - 🎯 **TypeScript** strict mode for type safety
 - 🧹 **Code quality** with Biome for linting and formatting
 
+<!-- AUTO-GENERATED:tech-stack — sourced from package.json -->
 ## Tech Stack
 
 - **Package Manager**: Bun (exclusively)
 - **Toolchain Manager**: mise (recommended, via `mise.toml`, especially on Windows)
-- **Framework**: Next.js 16.1.1
-- **React**: 19.2.3 (Server Components by default)
-- **TypeScript**: 5.9.3 (strict mode)
-- **CMS**: Sanity (next-sanity 12.0.5)
+- **Framework**: Next.js ^16.2.4
+- **React**: ^19.2.5 (Server Components by default)
+- **TypeScript**: ^6.0.3 (strict mode)
+- **CMS**: Sanity (next-sanity ^12.3.0)
 - **Deployment**: Vercel (assumed platform, uses Vercel global environment variables)
-- **Styling**: Tailwind CSS 4.1.18
-- **State Management**: Jotai 2.16.1
-- **Icons**: Lucide React 0.562.0, React Icons 5.5.0
-- **Linting/Formatting**: Biome 2.3.8
-- **Sanity Plugins**: 
-  - `@sanity/orderable-document-list` - Drag-and-drop reordering for documents
-  - `sanity-plugin-media` - Enhanced media management
+- **Styling**: Tailwind CSS ^4.2.4
+- **State Management**: Jotai ^2.19.1
+- **Icons**: Lucide React ^1.8.0, React Icons ^5.6.0
+- **Linting/Formatting**: Biome 2.4.12
+- **Sanity Plugins**:
+  - `@sanity/orderable-document-list` — drag-and-drop document reordering
+  - `sanity-plugin-media` — enhanced media management
+<!-- /AUTO-GENERATED:tech-stack -->
 
 ## Prerequisites
 
@@ -204,15 +206,18 @@ Pages are composed of reusable sections. Each section can have:
 - Hero Section
 - Cards Section
 - Image Text Section
-- CTA Section
 
-**Adding New Sections:**
+**Adding New Sections** (see `AGENTS.md` for the authoritative 7-step workflow):
 
-1. Create a section schema in `src/sanity/schema/objects/sections/` using `defineSection()`
-2. Create a section component in `src/components/sections/`
-3. Register the section schema, GROQ fragment, and props type in `src/sanity/schema/objects/sections/index.ts` (add to `sectionTypes`, `SECTIONS_FRAGMENTS`, and `SectionProps`)
-4. Add the section to the registry in `src/lib/sections.ts`
-5. If the section needs `searchParams`, add its `_type` to `dynamicSections` in `src/lib/sections.ts`
+1. Create section schema in `src/sanity/schema/objects/sections/` via `defineSection()`
+2. Export a GROQ fragment as a plain template-literal constant (e.g. `MY_SECTION_FRAGMENT`) from the same file
+3. Create the component in `src/components/sections/` (PascalCase, matches `_type`). Derive props from the TypeGen union: `Extract<NonNullable<PAGE_QUERY_RESULT>['sections'][number], { _type: 'mySection' }>`
+4. Register the schema in `src/sanity/schema/objects/sections/index.ts` — add to `sectionTypes` and re-export the fragment constant
+5. Interpolate the fragment directly into `PAGE_QUERY` in `src/sanity/lib/queries/index.ts` via `${MY_SECTION_FRAGMENT}`
+6. Register the component in `src/lib/sections.ts` keyed by `_type`
+7. Run `bun run typegen` (also runs automatically on `predev` / `prebuild`)
+
+If the section needs `searchParams`, add its `_type` to `dynamicSections` in `src/lib/sections.ts`.
 
 ### Smart Links
 
@@ -280,32 +285,28 @@ The project includes a `Slot` utility component at `src/components/utility/Slot.
 
 ## Development
 
+<!-- AUTO-GENERATED:scripts — sourced from package.json -->
 ### Available Scripts
 
-```bash
-# Start development server
-bun dev
-
-# Build for production
-bun run build
-
-# Start production server
-bun start
-
-# Lint code
-bun run lint
-
-# Format code
-bun run format
-```
+| Command | Description |
+|---------|-------------|
+| `bun dev` | Start development server (runs `typegen` first via `predev`) |
+| `bun run build` | Production build (runs `typegen` first via `prebuild`) |
+| `bun start` | Start production server |
+| `bun run lint` | Biome lint check |
+| `bun run format` | Biome auto-format |
+| `bun run typegen` | Extract Sanity schema + generate TypeScript types |
+| `bun run typegen:extract` | Extract schema to `schema.json` |
+| `bun run typegen:generate` | Generate `src/sanity/types/sanity.types.ts` from `schema.json` |
+<!-- /AUTO-GENERATED:scripts -->
 
 **Postinstall Script:**
 
-The project includes a `postinstall` script that automatically uploads the Sanity schema to your Sanity project during deployment. When deployed to Vercel in production (`VERCEL_ENV=production`), the script runs automatically after `bun install` to:
-- Deploy the latest schema to Sanity (`sanity schema deploy`)
-- Extract the manifest for the Studio (`sanity manifest extract`)
+`postinstall` (`./scripts/postinstall.sh`) always runs `bun run typegen` to keep generated Sanity types in sync. When `VERCEL_ENV=production`, it additionally:
+- Deploys the latest schema to Sanity (`sanity schema deploy`)
+- Extracts the manifest for the Studio (`sanity manifest extract`)
 
-This ensures your Sanity Studio always has the latest schema definitions in production. For local development, you can manually run `sanity schema deploy` if needed.
+Generated artifacts (`schema.json`, `src/sanity/types/sanity.types.ts`) are gitignored and excluded from Biome.
 
 ### Code Style
 
@@ -316,28 +317,27 @@ This project uses:
 - **Single quotes** for strings
 - **Path aliases** (`@/` for `src/`)
 
-See `.cursorrules` for detailed coding guidelines.
+See `AGENTS.md` for detailed coding guidelines.
 
 ### TypeScript
 
-The project uses strict TypeScript. All types are defined in `src/types/`. When adding new content types:
+The project uses strict TypeScript. Section and document shapes are **derived from Sanity TypeGen** — not hand-maintained:
 
-1. Add the type definition to `src/types/index.ts` or a dedicated file
-2. Update Sanity queries to match the type structure
-3. Ensure schema definitions match the types
+1. Edit the Sanity schema
+2. Run `bun run typegen` (or rely on `predev` / `prebuild`)
+3. Consume the generated `PAGE_QUERY_RESULT` / document types from `src/sanity/types/sanity.types.ts`
+
+Hand-authored shared types live in `src/types/index.ts`.
 
 ## AI Coding Assistants
 
-This project includes guidelines for AI coding tools:
-
-- **Project rules**: See `.cursorrules` for detailed conventions (formatting, TypeScript, Sanity patterns, section workflow)
-- **AI-specific guidance**: See `.github/copilot-instructions.md` for instructions targeted at AI assistants
+See `AGENTS.md` for the full agent rulebook (stack, architecture, section registry, schema patterns, code style, do/don't).
 
 When using AI to make changes:
 
-- Ensure generated code uses **tabs**, **single quotes**, **semicolons**, and **strict TypeScript**
-- Prefer **Server Components** by default and only add `'use client'` where needed
-- Follow the **Section Creation Workflow** and Sanity query patterns documented above
+- Use **tabs**, **single quotes**, **semicolons**, and **strict TypeScript**
+- Prefer **Server Components**; add `'use client'` only when necessary
+- Follow the **Section Creation Workflow** and Sanity query patterns documented in `AGENTS.md`
 
 ## Deployment
 
@@ -358,6 +358,7 @@ This project is optimized for Vercel deployment and assumes Vercel as the deploy
    - `NEXT_PUBLIC_SANITY_API_VERSION`
    - `NEXT_PUBLIC_SANITY_API_READ_TOKEN`
    - `SANITY_API_WRITE_TOKEN`
+   - `SANITY_AUTH_TOKEN` — **Production only**. Deploy Studio role token used by `sanity schema deploy` + `sanity manifest extract` in `postinstall.sh` so the Sanity Dashboard, Canvas, and Agent Actions can discover the studio. Do **not** set locally — it overrides your personal CLI session.
 4. Deploy!
 
 The project automatically uses Vercel's global environment variables (`VERCEL_PROJECT_PRODUCTION_URL` and `VERCEL_ENV`) for production URL detection and site metadata generation.
@@ -381,6 +382,7 @@ While this project is optimized for Vercel, it can be deployed to other platform
 | `NEXT_PUBLIC_SANITY_API_VERSION` | Sanity API version | Yes | Manual |
 | `NEXT_PUBLIC_SANITY_API_READ_TOKEN` | Sanity read token | Yes | Manual |
 | `SANITY_API_WRITE_TOKEN` | Sanity write token (for draft mode) | Yes | Manual |
+| `SANITY_AUTH_TOKEN` | Sanity deploy-studio token for schema + manifest deploy in CI. **Production only — do not set locally.** | Production only | Manual (Vercel Production env) |
 | `VERCEL_PROJECT_PRODUCTION_URL` | Production domain | Yes* | Vercel (automatic) |
 | `VERCEL_ENV` | Deployment environment | Yes* | Vercel (automatic) |
 
@@ -419,96 +421,96 @@ The **Settings** document (singleton) contains:
 
 ### Adding New Sections
 
-1. **Create Schema, Fragment, and Props** (`src/sanity/schema/objects/sections/mySection.ts`):
+1. **Create schema + GROQ fragment** (`src/sanity/schema/objects/sections/mySection.ts`):
 ```typescript
-import { groq } from 'next-sanity';
-import defineSection from '@/sanity/schema/constructors/defineSection';
 import { MyIcon } from 'lucide-react';
-import type { BaseSectionProps } from '@/types';
+import defineSection from '@/sanity/schema/constructors/defineSection';
 
-export const MY_SECTION_FRAGMENT = groq`
-  _type == "mySection" => {
-    ...,
-    // Field projections (e.g. image fragments)
-  }`;
-
-export type MySectionProps = BaseSectionProps & {
-  _type: 'mySection';
-  // Your section fields
-};
+export const MY_SECTION_FRAGMENT = `
+	_type == "mySection" => {
+		...,
+		// field projections (e.g. image { ..., asset-> })
+	}`;
 
 const mySection = defineSection({
-  name: 'mySection',
-  title: 'My Section',
-  icon: MyIcon,
-  fields: [
-    // Your custom fields
-  ],
-  preview: {
-    select: {
-      // Preview configuration
-    },
-  },
+	name: 'mySection',
+	title: 'My Section',
+	icon: MyIcon,
+	fields: [
+		// custom fields
+	],
+	preview: {
+		select: {
+			// preview configuration
+		},
+	},
 });
 
 export default mySection;
 ```
 
-2. **Register Schema, Fragment, and Props in Index** (`src/sanity/schema/objects/sections/index.ts`):
+> Keep `MY_SECTION_FRAGMENT` a **plain template-literal constant** (no `groq` tag, no function calls, no `.join()`). Sanity TypeGen only statically resolves constant string refs when interpolating into queries.
+
+2. **Register schema + re-export fragment** (`src/sanity/schema/objects/sections/index.ts`):
 ```typescript
-import mySection, {
-  MY_SECTION_FRAGMENT,
-  type MySectionProps,
-} from './mySection';
+import mySection, { MY_SECTION_FRAGMENT } from './mySection';
 
-export const SECTIONS_FRAGMENTS = [
-  // existing fragments...
-  MY_SECTION_FRAGMENT,
-];
+export { MY_SECTION_FRAGMENT /* ...other fragments */ };
 
-const sectionTypes = [
-  // existing section types...
-  mySection,
-];
-
-export type SectionProps =
-  // existing section props...
-  | MySectionProps;
+const sectionTypes = [/* existing */, mySection];
+export default sectionTypes;
 ```
 
-3. **Create Component** (`src/components/sections/MySection.tsx`):
+3. **Interpolate into `PAGE_QUERY`** (`src/sanity/lib/queries/index.ts`):
+```typescript
+export const PAGE_QUERY = defineQuery(`*[_type == "page" && route.current == $slug][0]{
+  ...,
+  sections[] {
+    ...,
+    ${HERO_SECTION_FRAGMENT},
+    ${MY_SECTION_FRAGMENT},
+  }
+}`);
+```
+
+4. **Create component** (`src/components/sections/MySection.tsx`). Derive props from the generated TypeGen union — do **not** hand-author the shape:
 ```typescript
 import Section from '@/components/utility/Section';
-import type { MySectionProps } from '@/sanity/schema/objects/sections/mySection';
+import type { PAGE_QUERY_RESULT } from '@/sanity/types/sanity.types';
+
+type MySectionProps = Extract<
+	NonNullable<PAGE_QUERY_RESULT>['sections'][number],
+	{ _type: 'mySection' }
+>;
 
 export default function MySection(props: MySectionProps) {
-  return (
-    <Section {...props}>
-      {/* Your section content */}
-    </Section>
-  );
+	return <Section {...props}>{/* content */}</Section>;
 }
 ```
 
-4. **Register Component** in `src/lib/sections.ts`:
+5. **Register component** (`src/lib/sections.ts`) — key must match `_type`:
 ```typescript
 import MySection from '@/components/sections/MySection';
 
 const sections = {
-  // existing sections...
-  mySection: MySection,
+	// existing sections...
+	mySection: MySection,
 };
 ```
 
-5. **Optional: Dynamic Sections**  
-If your section needs `searchParams` on the frontend, add its `_type` to the `dynamicSections` array in `src/lib/sections.ts`.
+6. **Regenerate types**:
+```bash
+bun run typegen
+```
+
+7. **Optional: dynamic sections** — if the section reads `searchParams`, add its `_type` to `dynamicSections` in `src/lib/sections.ts`.
 
 ### Styling
 
-The project uses Tailwind CSS. Customize:
-- Colors and theme in `tailwind.config.ts`
+The project uses Tailwind CSS v4 (CSS-first config — no `tailwind.config.ts`). Customize:
+- Theme tokens via `@theme` in `src/styles/globals.css`
 - Global styles in `src/styles/globals.css`
-- Component styles using Tailwind classes
+- Component styles using Tailwind utility classes
 
 ## Troubleshooting
 
@@ -532,11 +534,12 @@ The project uses Tailwind CSS. Customize:
 
 ## Contributing
 
-1. Follow the code style guidelines in `.cursorrules`
-2. Add JSDoc comments to exported functions (no examples)
+1. Follow the code style guidelines in `AGENTS.md`
+2. Add JSDoc comments to exported functions (no `@example` blocks)
 3. Use TypeScript strictly (no `any` without good reason)
-4. Test your changes thoroughly
-5. Update documentation as needed
+4. Run `bun run lint` and `bun run format` before committing
+5. Keep schema, fragment, and query in sync — regenerate types with `bun run typegen`
+6. Update documentation as needed
 
 ## License
 

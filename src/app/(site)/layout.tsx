@@ -58,7 +58,7 @@ export default async function RootLayout({
 				>
 					<Header menu={settings?.headerMenu} />
 					{children}
-					<Footer />
+					<Footer nav={settings?.footerNav} siteName={settings?.siteName} />
 					<SanityLive />
 					{(await draftMode()).isEnabled && (
 						<>
