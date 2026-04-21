@@ -14,27 +14,25 @@ export default function SmartLink(
 		target?: string;
 	},
 ) {
-	const { link, children, onClick, disabled, className, target, ...linkProps } =
-		props;
+	const { link, children, disabled, className, target, ...linkProps } = props;
 
+	const fileUrl = link.file ? getSanityFileUrl(link.file).url : undefined;
 	const routeSlug = link.page?.route?.current;
-	const sectionId = link.sectionId;
+	const pageUrl = routeSlug
+		? `${routeSlug}${link.sectionId ? `#${link.sectionId}` : ''}`
+		: undefined;
 
-	const url =
-		link.href ??
-		(routeSlug ? `${routeSlug}${sectionId ? `#${sectionId}` : ''}` : '#');
-
-	const fileUrl = link?.file && getSanityFileUrl(link.file).url;
+	const href = fileUrl ?? link.href ?? pageUrl ?? '#';
+	const computedTarget = getTarget(href);
 
 	return (
 		<Link
-			href={fileUrl ?? url}
+			href={href}
 			aria-disabled={disabled}
-			target={target ?? getTarget(fileUrl ?? url)}
+			target={target ?? computedTarget}
 			className={cn(className, { 'pointer-events-none opacity-33': disabled })}
+			rel={computedTarget === '_blank' ? link.rel : undefined}
 			{...linkProps}
-			onClick={onClick}
-			rel={getTarget(fileUrl ?? url) === '_blank' ? link.rel : undefined}
 		>
 			{children || link.label || 'Link'}
 		</Link>

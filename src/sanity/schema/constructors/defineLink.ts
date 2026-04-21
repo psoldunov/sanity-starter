@@ -90,8 +90,7 @@ export default function defineLink(options: DefineLinkOptions = {}) {
 						},
 					],
 				},
-				hidden: ({ parent }) =>
-					!parent?.href || !parent.href.startsWith('http'),
+				hidden: ({ parent }) => !parent?.href?.startsWith('http'),
 			},
 			{
 				name: 'file',
@@ -113,22 +112,20 @@ export default function defineLink(options: DefineLinkOptions = {}) {
 				href: 'href',
 			},
 			prepare({ label, pageRoute, sectionId, href, fileName }) {
+				const variant = pageRoute
+					? {
+							media: FileIcon,
+							subtitle: `${pageRoute}${sectionId ? `#${sectionId}` : ''}`,
+						}
+					: href
+						? { media: LinkIcon, subtitle: href }
+						: fileName
+							? { media: PaperclipIcon, subtitle: fileName }
+							: { media: HashIcon, subtitle: 'No URL selected' };
+
 				return {
 					title: label || 'Link',
-					media: pageRoute
-						? FileIcon
-						: href
-							? LinkIcon
-							: fileName
-								? PaperclipIcon
-								: HashIcon,
-					subtitle: pageRoute
-						? `${pageRoute}${sectionId ? `#${sectionId}` : ''}`
-						: href
-							? href
-							: fileName
-								? fileName
-								: 'No URL selected',
+					...variant,
 				};
 			},
 		},

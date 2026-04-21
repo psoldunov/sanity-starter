@@ -1,6 +1,6 @@
 # Sanity Starter — Agent Instructions
 
-Source of truth for AI coding agents working in this repo. Supersedes `.cursorrules` and `.github/copilot-instructions.md`.
+Source of truth for AI coding agents working in this repo.
 
 ## Tech Stack
 
