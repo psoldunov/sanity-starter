@@ -1,6 +1,6 @@
 [tools]
 biome = "latest"
-bun = "1.3.6"
+bun = "1.3.13"
 
 [tasks.dev]
 run = "bun dev"
