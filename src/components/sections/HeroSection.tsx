@@ -1,7 +1,16 @@
 import Container from '@/components/layout/Container';
-import type { HeroSectionProps } from '@/sanity/schema/objects/sections/heroSection';
+import type { PAGE_QUERY_RESULT } from '@/sanity/types/sanity.types';
+import type { BaseSectionProps } from '@/types';
 import Section from '../utility/Section';
 import SmartImage from '../utility/SmartImage';
+
+type HeroSectionData = Extract<
+	NonNullable<PAGE_QUERY_RESULT>['sections'][number],
+	{ _type: 'heroSection' }
+>;
+
+export type HeroSectionProps = HeroSectionData &
+	Pick<BaseSectionProps, 'searchParams'>;
 
 export default function HeroSection(props: HeroSectionProps) {
 	const { heading, paragraph, image } = props;

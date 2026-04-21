@@ -7,8 +7,40 @@ import { createImageUrlBuilder } from '@sanity/image-url';
 import type { PortableTextBlock, Slug } from 'sanity';
 import { PROTECTED_ROUTE_PATTERNS } from '@/config';
 import { client as sanityClient } from '@/sanity/lib/client';
+import type {
+	SanityFileAssetReference,
+	SanityImageAssetReference,
+	SanityImageCrop,
+	SanityImageHotspot,
+} from '@/sanity/types/sanity.types';
 
 const builder = createImageUrlBuilder(sanityClient);
+
+/**
+ * Union of project-level image shapes accepted by `urlFor` and
+ * `getCachedOGImageUrl`. Covers both the strict library source type and
+ * the looser shape produced by Sanity TypeGen (optional `asset`).
+ */
+export type ImageInput =
+	| SanityImageSource
+	| {
+			asset?: SanityImageAssetReference | null;
+			crop?: SanityImageCrop | null;
+			hotspot?: SanityImageHotspot | null;
+			_type?: 'image';
+	  };
+
+/**
+ * Union of project-level file shapes accepted by `getSanityFileUrl`.
+ * Covers both the strict library source type and the looser shape
+ * produced by Sanity TypeGen.
+ */
+export type FileInput =
+	| SanityFileSource
+	| {
+			asset?: SanityFileAssetReference | null;
+			_type?: 'file';
+	  };
 
 /**
  * Gets the file asset information for a Sanity file source.
@@ -16,8 +48,8 @@ const builder = createImageUrlBuilder(sanityClient);
  * @param sanityFile - The Sanity file source object to get the asset for
  * @returns The file asset object containing URL and metadata
  */
-export function getSanityFileUrl(sanityFile: SanityFileSource) {
-	return getFileAsset(sanityFile, {
+export function getSanityFileUrl(sanityFile: FileInput) {
+	return getFileAsset(sanityFile as SanityFileSource, {
 		projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
 		dataset: process.env.NEXT_PUBLIC_SANITY_DATASET,
 	});
@@ -28,15 +60,18 @@ export function getSanityFileUrl(sanityFile: SanityFileSource) {
  * @param source - The Sanity image source (asset reference, image object, or image URL)
  * @returns Image URL builder instance that can be chained with transformation methods
  */
-export default function urlFor(source: SanityImageSource) {
-	return builder.image(source);
+export default function urlFor(source: ImageInput) {
+	return builder.image(source as SanityImageSource);
 }
 
 /**
- * Generates a cached OG image URL using Next.js image optimization
- * Takes a SanityImage, optimizes it for OG dimensions, and returns a cached URL
+ * Generates a cached OG image URL using Next.js image optimization.
+ * Routes the Sanity CDN URL through `/_next/image` so Next caches/optimizes it.
+ *
+ * @param image - The Sanity image source to optimize for OG dimensions
+ * @returns A `/_next/image` URL pointing at the optimized OG image
  */
-export function getCachedOGImageUrl(image: SanityImageSource): string {
+export function getCachedOGImageUrl(image: ImageInput): string {
 	const sanityImageUrl = urlFor(image)
 		.width(1200)
 		.height(630)
@@ -44,7 +79,6 @@ export function getCachedOGImageUrl(image: SanityImageSource): string {
 		.quality(85)
 		.url();
 
-	// Use Next.js image optimization API to cache the image
 	const encodedImageUrl = encodeURIComponent(sanityImageUrl);
 	return `/_next/image?url=${encodedImageUrl}&w=1200&q=85`;
 }

@@ -11,10 +11,9 @@ import { cn, getSiteUrl } from '@/lib/utils';
 import { SanityLive, sanityFetch } from '@/sanity/lib/live';
 import { SITE_SETTINGS_QUERY } from '@/sanity/lib/queries';
 import { getCachedOGImageUrl } from '@/sanity/lib/utils';
-import type { Settings } from '@/types';
 
 export async function generateMetadata(): Promise<Metadata> {
-	const { data: settings }: { data: Settings } = await sanityFetch({
+	const { data: settings } = await sanityFetch({
 		query: SITE_SETTINGS_QUERY,
 	});
 
@@ -47,7 +46,7 @@ export default async function RootLayout({
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
-	const { data: settings }: { data: Settings } = await sanityFetch({
+	const { data: settings } = await sanityFetch({
 		query: SITE_SETTINGS_QUERY,
 	});
 

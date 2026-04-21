@@ -2,7 +2,6 @@ import type { MetadataRoute } from 'next';
 import { getSiteUrl } from '@/lib/utils';
 import { sanityFetch } from '@/sanity/lib/live';
 import { PAGES_QUERY, POSTS_QUERY } from '@/sanity/lib/queries';
-import type { Page, Post } from '@/types';
 
 interface SitemapEntry {
 	url: string;
@@ -23,13 +22,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
 	const sitemapEntries: SitemapEntry[] = [];
 
-	const { data: pages }: { data: Page[] } = await sanityFetch({
+	const { data: pages } = await sanityFetch({
 		query: PAGES_QUERY,
 		stega: false,
 		perspective: 'published',
 	});
 
-	const { data: posts }: { data: Post[] } = await sanityFetch({
+	const { data: posts } = await sanityFetch({
 		query: POSTS_QUERY,
 		stega: false,
 		perspective: 'published',

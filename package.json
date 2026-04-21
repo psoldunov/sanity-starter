@@ -3,11 +3,16 @@
 	"version": "0.1.5",
 	"private": true,
 	"scripts": {
+		"predev": "bun run typegen",
 		"dev": "next dev",
+		"prebuild": "bun run typegen",
 		"build": "next build",
 		"start": "next start",
 		"lint": "biome check",
 		"format": "biome format --write",
+		"typegen:extract": "sanity schema extract --path=./schema.json --enforce-required-fields",
+		"typegen:generate": "sanity typegen generate",
+		"typegen": "bun run typegen:extract && bun run typegen:generate",
 		"postinstall": "./scripts/postinstall.sh"
 	},
 	"dependencies": {
@@ -26,6 +31,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.4.12",
+		"@sanity/cli": "^6.3.2",
 		"@tailwindcss/postcss": "^4.2.4",
 		"@types/bun": "^1.3.12",
 		"@types/node": "^25.6.0",

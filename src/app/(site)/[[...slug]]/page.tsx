@@ -14,22 +14,21 @@ import {
 	SITE_SETTINGS_QUERY,
 } from '@/sanity/lib/queries';
 import { getCachedOGImageUrl } from '@/sanity/lib/utils';
-import type { Page, Redirect, Settings } from '@/types';
 
 export const dynamicParams = true;
 
 export async function generateStaticParams() {
-	console.log('Generating static params for pages...');
-
-	const { data }: { data: Page[] } = await sanityFetch({
+	const { data } = await sanityFetch({
 		query: PAGES_QUERY,
 		stega: false,
 		perspective: 'published',
 	});
 
-	return data.map((page) => ({
-		slug: splitSlug(page.route.current),
-	}));
+	return data.flatMap((page) => {
+		const current = page.route?.current;
+		if (!current) return [];
+		return [{ slug: splitSlug(current) }];
+	});
 }
 
 export async function generateMetadata({
@@ -39,12 +38,12 @@ export async function generateMetadata({
 }) {
 	const { slug } = await params;
 
-	const { data: page }: { data: Page } = await sanityFetch({
+	const { data: page } = await sanityFetch({
 		query: PAGE_QUERY,
 		params: { slug: normalizeSlug(slug) },
 	});
 
-	const { data: settings }: { data: Settings } = await sanityFetch({
+	const { data: settings } = await sanityFetch({
 		query: SITE_SETTINGS_QUERY,
 	});
 
@@ -88,19 +87,20 @@ export default async function PageComponent({
 }) {
 	const { slug } = await params;
 
-	const { data: page }: { data: Page } = await sanityFetch({
+	const { data: page } = await sanityFetch({
 		query: PAGE_QUERY,
 		params: { slug: normalizeSlug(slug) },
 	});
 
 	if (!page) {
-		const { data: redirectData }: { data: Redirect } = await sanityFetch({
+		const { data: redirectData } = await sanityFetch({
 			query: REDIRECT_QUERY,
 			params: { slug: normalizeSlug(slug) },
 		});
 
-		if (redirectData) {
-			redirect(redirectData.destination.route.current);
+		const destinationSlug = redirectData?.destination?.route?.current;
+		if (destinationSlug) {
+			redirect(destinationSlug);
 		}
 
 		return notFound();

@@ -1,6 +1,5 @@
 import clsx, { type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import type { Page } from '@/types';
 import { dynamicSections } from './sections';
 
 /**
@@ -79,12 +78,14 @@ export function splitSlug(slug: string): string[] {
 }
 
 /**
- * Checks if a route contains sections that require dynamic parameters.
+ * Checks if a page has sections whose `_type` is registered as dynamic.
  *
- * @param page - The page to check for dynamic sections
- * @returns `true` if the page has dynamic sections, `false` otherwise
+ * @param page - The page whose sections are inspected
+ * @returns `true` if any section's `_type` is in `dynamicSections`
  */
-export function hasDynamicParams(page: Page): boolean {
+export function hasDynamicParams(page: {
+	sections?: Array<{ _type: string }> | null;
+}): boolean {
 	if (!page.sections?.length) {
 		return false;
 	}

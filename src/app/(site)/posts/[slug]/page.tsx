@@ -2,10 +2,9 @@ import { notFound } from 'next/navigation';
 import Container from '@/components/layout/Container';
 import { sanityFetch } from '@/sanity/lib/live';
 import { POST_QUERY, POSTS_QUERY } from '@/sanity/lib/queries';
-import type { Post } from '@/types';
 
 export async function generateStaticParams() {
-	const { data: posts }: { data: Post[] } = await sanityFetch({
+	const { data: posts } = await sanityFetch({
 		query: POSTS_QUERY,
 		stega: false,
 		perspective: 'published',
@@ -15,11 +14,10 @@ export async function generateStaticParams() {
 		return [];
 	}
 
-	return posts
-		.filter((post) => post.slug?.current)
-		.map((post) => ({
-			slug: post.slug.current,
-		}));
+	return posts.flatMap((post) => {
+		const current = post.slug?.current;
+		return current ? [{ slug: current }] : [];
+	});
 }
 
 export default async function PostPage({

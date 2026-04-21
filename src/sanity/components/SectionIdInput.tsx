@@ -4,20 +4,25 @@ import { Select, Stack, Text } from '@sanity/ui';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type StringInputProps, set, unset, useFormValue } from 'sanity';
 import { client } from '@/sanity/lib/client';
-import type { SectionProps } from '../schema/objects/sections';
 
-function extractSectionIds(sections: SectionProps[]): string[] {
+type SectionIdCandidate = {
+	id?: unknown;
+	_type?: unknown;
+	_key?: unknown;
+};
+
+function extractSectionIds(sections: SectionIdCandidate[]): string[] {
 	return sections
-		.filter((section): section is SectionProps => {
+		.filter((section): section is { id: string } => {
 			return (
 				typeof section === 'object' &&
 				section !== null &&
 				'id' in section &&
-				typeof (section as SectionProps).id === 'string' &&
-				(section as SectionProps).id?.trim() !== ''
+				typeof section.id === 'string' &&
+				section.id.trim() !== ''
 			);
 		})
-		.map((section) => section.id as string);
+		.map((section) => section.id);
 }
 
 export default function SectionIdInput(props: StringInputProps) {

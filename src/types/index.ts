@@ -1,17 +1,19 @@
-import type { SanityFileSource, SanityImageSource } from '@sanity/asset-utils';
-import type { SanityReference } from 'next-sanity';
 import type { ComponentType, ReactElement } from 'react';
+import type { FieldDefinition, ImageRule, PreviewConfig } from 'sanity';
 import type {
-	FieldDefinition,
-	ImageAsset,
-	ImageCrop,
-	ImageHotspot,
-	ImageRule,
-	PortableTextBlock,
-	PreviewConfig,
-	Slug,
-} from 'sanity';
-import type { SectionProps } from '@/sanity/schema/objects/sections';
+	SanityImageAsset,
+	SanityImageAssetReference,
+	SanityImageCrop,
+	SanityImageHotspot,
+	SITE_SETTINGS_QUERY_RESULT,
+} from '@/sanity/types/sanity.types';
+
+export type {
+	Page,
+	Post,
+	Redirect,
+	Settings,
+} from '@/sanity/types/sanity.types';
 
 export type PaddingSize = 'small' | 'medium' | 'large' | 'xlarge' | 'none';
 
@@ -54,17 +56,18 @@ export type BaseSectionProps = {
 	};
 };
 
+/**
+ * Sanity image shape accepted by SmartImage. Covers both referenced
+ * (`asset->` not applied) and dereferenced forms. `altText` on the
+ * dereferenced asset is populated by `sanity-plugin-media`.
+ */
 export type SmartImageObject = {
-	asset:
-		| SanityReference
-		| (ImageAsset & {
-				altText?: string;
-				title?: string;
-				description?: string;
-		  });
+	asset?: SanityImageAssetReference | SanityImageAsset | null;
 	caption?: string;
-	crop?: ImageCrop;
-	hotspot?: ImageHotspot;
+	crop?: SanityImageCrop | null;
+	hotspot?: SanityImageHotspot | null;
+	_type?: 'image';
+	media?: unknown;
 };
 
 export type SmartImageProps = {
@@ -79,57 +82,10 @@ export type SmartImageProps = {
 	alt?: string;
 };
 
-export type Settings = {
-	_type: 'settings';
-	_id: string;
-	_createdAt: string;
-	_updatedAt: string;
-	siteName?: string;
-	siteDescription?: string;
-	headerMenu?: SmartLinkProps[];
-	siteOgImage?: SanityImageSource;
-};
-
-export type Page = {
-	_type: 'page';
-	_id: string;
-	_createdAt: string;
-	_updatedAt: string;
-	title: string;
-	route: Slug;
-	sections: SectionProps[];
-	metaTitle?: string;
-	metaDescription?: string;
-	ogImage?: SanityImageSource;
-	noIndex: boolean;
-};
-
-export type Redirect = {
-	_type: 'redirect';
-	_id: string;
-	_createdAt: string;
-	_updatedAt: string;
-	route: Slug;
-	destination: Page;
-};
-
-export type Post = {
-	_type: 'post';
-	_id: string;
-	_createdAt: string;
-	_updatedAt: string;
-	title: string;
-	slug: Slug;
-	content: PortableTextBlock[];
-};
-
-export type SmartLinkProps = {
-	_type: string;
-	_key?: string;
-	label?: string;
-	page?: Page;
-	sectionId?: string;
-	href?: string;
-	rel?: 'noopener' | 'noopener noreferrer';
-	file?: SanityFileSource;
-};
+/**
+ * Header menu link item as returned by SITE_SETTINGS_QUERY with the page
+ * reference dereferenced.
+ */
+export type SmartLinkProps = NonNullable<
+	NonNullable<SITE_SETTINGS_QUERY_RESULT>['headerMenu']
+>[number];

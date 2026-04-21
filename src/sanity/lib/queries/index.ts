@@ -1,5 +1,9 @@
 import { defineQuery } from 'next-sanity';
-import { SECTIONS_FRAGMENTS } from '@/sanity/schema/objects/sections';
+import {
+	CARDS_SECTION_FRAGMENT,
+	HERO_SECTION_FRAGMENT,
+	IMAGE_TEXT_SECTION_FRAGMENT,
+} from '@/sanity/schema/objects/sections';
 
 export const SITE_SETTINGS_QUERY = defineQuery(`*[_type == "settings"][0]{
   ...,
@@ -29,6 +33,8 @@ export const PAGE_QUERY =
   ...,
   sections[] {
     ...,
-    ${SECTIONS_FRAGMENTS.join(',\n')},
+    ${HERO_SECTION_FRAGMENT},
+    ${CARDS_SECTION_FRAGMENT},
+    ${IMAGE_TEXT_SECTION_FRAGMENT},
   }
 }`);

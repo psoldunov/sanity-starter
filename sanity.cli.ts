@@ -7,4 +7,10 @@ export default defineCliConfig({
 		dataset: dataset,
 	},
 	autoUpdates: true,
+	typegen: {
+		path: './src/**/*.{ts,tsx}',
+		schema: './schema.json',
+		generates: './src/sanity/types/sanity.types.ts',
+		overloadClientMethods: true,
+	},
 });

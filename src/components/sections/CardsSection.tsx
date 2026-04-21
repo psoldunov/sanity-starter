@@ -1,7 +1,16 @@
 import Container from '@/components/layout/Container';
-import type { CardsSectionProps } from '@/sanity/schema/objects/sections/cardsSection';
+import type { PAGE_QUERY_RESULT } from '@/sanity/types/sanity.types';
+import type { BaseSectionProps } from '@/types';
 import Section from '../utility/Section';
 import SmartImage from '../utility/SmartImage';
+
+type CardsSectionData = Extract<
+	NonNullable<PAGE_QUERY_RESULT>['sections'][number],
+	{ _type: 'cardsSection' }
+>;
+
+export type CardsSectionProps = CardsSectionData &
+	Pick<BaseSectionProps, 'searchParams'>;
 
 export default function CardsSection(props: CardsSectionProps) {
 	const { heading, cards } = props;
@@ -15,7 +24,7 @@ export default function CardsSection(props: CardsSectionProps) {
 					</h2>
 				)}
 				<div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
-					{cards.map((card) => (
+					{cards?.map((card) => (
 						<div
 							key={card._key}
 							className='rounded-lg border border-foreground/10 bg-background p-4 py-6'

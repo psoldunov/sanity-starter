@@ -39,14 +39,14 @@ Next.js 16 + Sanity CMS starter with a **section-based page builder**.
 Core pattern is a **section registry system**. To add a new section:
 
 1. **Schema** in `src/sanity/schema/objects/sections/` using `defineSection()`
-2. **Component** in `src/components/sections/` with default export, PascalCase file matching `_type`
-3. **Register schema** in `src/sanity/schema/objects/sections/index.ts`
+2. **Component** in `src/components/sections/` with default export, PascalCase file matching `_type`. Derive props from the generated union: `Extract<NonNullable<PAGE_QUERY_RESULT>['sections'][number], { _type: '<name>Section' }>`
+3. **Register schema** in `src/sanity/schema/objects/sections/index.ts` (add to `sectionTypes` + re-export the GROQ fragment constant)
 4. **Register component** in `src/lib/sections.ts` with key matching `_type`
-5. **Types**: add section type and update `SectionProps` union in `src/sanity/schema/objects/sections/index.ts`
-6. **GROQ fragment** added to `SECTIONS_FRAGMENTS` in `src/sanity/schema/objects/sections/index.ts`
+5. **GROQ fragment**: export a plain template literal `const <NAME>_SECTION_FRAGMENT = \`_type == "<name>Section" => { ..., image { ..., asset-> } }\`` and reference it directly via `${<NAME>_SECTION_FRAGMENT}` inside `PAGE_QUERY` in `src/sanity/lib/queries/index.ts`. Do NOT use function-call interpolation inside fragments — TypeGen statically resolves constant refs only.
+6. **Regenerate types**: `bun run typegen` (also runs via `predev` / `prebuild`). Types land in `src/sanity/types/sanity.types.ts` (gitignored). The generated `PAGE_QUERY_RESULT.sections` tagged union picks the new section up automatically.
 7. If section needs `searchParams`, add `_type` to `dynamicSections` in `src/lib/sections.ts`
 
-Keep schema, types, queries, and components in sync. `SectionRenderer` maps sections to components automatically.
+Keep schema and queries in sync; types are derived, not hand-maintained. `SectionRenderer` maps sections to components automatically.
 
 Example: `heroSection` schema → `HeroSection.tsx` component → registered as `heroSection: HeroSection`.
 
@@ -74,8 +74,8 @@ Schema rules:
 **Queries**:
 
 - Location: `src/sanity/lib/queries/index.ts` using `defineQuery()`
-- Helpers: `src/sanity/lib/queries/helpers.ts` — `getImageFragment('fieldName')` for image fields with blurhash
-- Section fragments: `SECTIONS_FRAGMENTS` array exported from `src/sanity/schema/objects/sections/index.ts`
+- Section fragments: plain template literal constants exported from each section file, interpolated directly into `PAGE_QUERY`
+- TypeGen reads `defineQuery()` calls and resolves `${CONST}` interpolation only when the referent is a plain string literal (no function calls, no `.join()`)
 
 **Sanity config** (`sanity.config.ts` — repo root):
 
@@ -104,12 +104,16 @@ Schema rules:
 
 **Commands** (Bun only):
 
-- `bun dev` — dev server (site `:3000`, Studio `:3000/admin`)
-- `bun run build` — production build
+- `bun dev` — dev server (site `:3000`, Studio `:3000/admin`). `predev` regenerates Sanity types first.
+- `bun run build` — production build. `prebuild` regenerates Sanity types first.
+- `bun run typegen` — extract schema (`schema.json`) + generate `src/sanity/types/sanity.types.ts`
+- `bun run typegen:extract` / `bun run typegen:generate` — individual steps
 - `bun run lint` — Biome check
 - `bun run format` — Biome auto-format
 
-Postinstall script auto-deploys Sanity schema on Vercel production.
+Generated artifacts (`schema.json`, `src/sanity/types/sanity.types.ts`) are gitignored and excluded from Biome.
+
+Postinstall script auto-deploys Sanity schema on Vercel production and always runs `bun run typegen`.
 
 **Environment**: see README. Requires `NEXT_PUBLIC_SANITY_*` vars and `SANITY_API_WRITE_TOKEN`.
 
