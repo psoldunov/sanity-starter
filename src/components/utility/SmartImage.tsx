@@ -17,56 +17,55 @@ function isDereferencedAsset(asset: unknown): asset is ImageAsset {
 	);
 }
 
+/**
+ * Renders a Sanity image with next/image, supporting both dereferenced and
+ * referenced assets. Dereferenced assets carry blurhash metadata for
+ * placeholder blur. Alt text is sourced from the `altText` field populated
+ * by the Sanity media plugin; falls back to the `alt` prop, then empty.
+ *
+ * @param props - Image props matching Sanity image schema plus next/image options
+ * @returns A next/image element pointing at the Sanity CDN
+ */
 export default function SmartImage({
 	image,
 	width,
 	height,
-	className,
-	quality,
-	priority,
-	alt,
 	fill,
-	sizes,
-}: SmartImageProps & { alt?: string }) {
+	alt,
+	...rest
+}: SmartImageProps) {
 	const { asset } = image;
 	const isDereferenced = isDereferencedAsset(asset);
 
-	!isDereferenced &&
+	if (!isDereferenced && process.env.NODE_ENV !== 'production') {
 		console.warn(
-			'SanityImage is not dereferenced, please dereference the asset in your GROQ query.',
+			'SmartImage: asset is not dereferenced, dereference it in your GROQ query for blurhash support.',
 			{ reference: asset._ref },
 		);
+	}
 
 	const imageAsset = isDereferenced
 		? asset
 		: getImage(image, { projectId, dataset }).asset;
 
-	const isCroppedAndHotspot = image.crop && image.hotspot;
-
+	const hasCropOrHotspot = Boolean(image.crop || image.hotspot);
 	const blurHash = isDereferenced ? imageAsset.metadata.blurHash : undefined;
 	const dimensions = imageAsset.metadata.dimensions;
-	const altText =
-		isDereferenced && 'altText' in asset ? asset.altText : undefined;
+	const altText = isDereferenced ? asset.altText : undefined;
 
 	return (
 		<Image
 			src={buildOptimizedImageUrl(
-				isCroppedAndHotspot ? urlFor(image).url() : imageAsset.url,
-				{
-					width,
-					height,
-				},
+				hasCropOrHotspot ? urlFor(image).url() : imageAsset.url,
+				{ width, height },
 			)}
 			alt={altText || alt || ''}
-			width={!fill ? width || dimensions?.width : undefined}
-			height={!fill ? height || dimensions?.height : undefined}
+			width={fill ? undefined : (width ?? dimensions?.width)}
+			height={fill ? undefined : (height ?? dimensions?.height)}
 			placeholder={blurHash ? 'blur' : undefined}
 			blurDataURL={blurHash ? blurhashToBase64(blurHash) : undefined}
-			className={className}
-			quality={quality}
-			priority={priority}
-			sizes={sizes}
 			fill={fill}
+			{...rest}
 		/>
 	);
 }

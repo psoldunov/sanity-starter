@@ -76,6 +76,7 @@ export type SmartImageProps = {
 	priority?: boolean;
 	fill?: boolean;
 	sizes?: string;
+	alt?: string;
 };
 
 export type Settings = {

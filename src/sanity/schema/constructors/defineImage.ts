@@ -3,8 +3,9 @@ import type { DefineImageOptions } from '@/types';
 
 /**
  * Defines a Sanity image field with common configuration.
- * Automatically configures image formats, hotspot, and blurhash metadata.
- * Optionally includes an alt text field for accessibility.
+ * Configures accepted formats, blurhash metadata, and optional hotspot.
+ * Alt text is provided by the Sanity media plugin on the asset document,
+ * not added as a field here.
  *
  * @param options - Configuration for the image field
  * @param options.title - Display title (default: 'Image')
@@ -39,6 +40,6 @@ export default function defineImage(options: DefineImageOptions = {}) {
 			metadata: ['blurhash'],
 			hotspot,
 		},
-		fields: [...(fields || [])],
+		fields,
 	});
 }
