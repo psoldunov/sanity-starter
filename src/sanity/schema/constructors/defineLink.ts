@@ -1,133 +1,19 @@
-import { LinkIcon as SanityLinkIcon } from '@sanity/icons';
-import { FileIcon, HashIcon, LinkIcon, PaperclipIcon } from 'lucide-react';
-import { defineField } from 'sanity';
-import SectionIdInput from '@/sanity/components/SectionIdInput';
-import type { DefineLinkOptions } from './types';
+import type { DefineLinkOptions } from '@/types';
 
 /**
- * Defines a Sanity link field with support for page references, section IDs, and external URLs.
- * The field automatically shows/hides relevant inputs based on the selected link type.
- * When a page is selected, users can optionally link to a specific section within that page.
+ * Returns an array member / field `type` reference for the shared `link`
+ * (or `linkWithLabel`) registered schema type. TypeGen emits `Link` and
+ * `LinkWithLabel` for these, so consumers can derive types without coupling
+ * to any specific query.
  *
- * @param options - Configuration options for the link field
- * @param options.withLabel - Whether to include a label field for the link text (default: false)
- * @param options.name - The field name/identifier (default: 'link')
- * @param options.description - Optional description for the link field
- * @param options.title - The display title for the field (default: 'Link')
- * @param options.group - Optional field group to assign the link to
- * @returns A Sanity field definition for a link object type
+ * @param options - Configuration options
+ * @param options.withLabel - Use the `linkWithLabel` variant with a label field (default: false)
+ * @returns An object `{ type }` suitable for `array.of[]` or `defineField` spreads
  */
 export default function defineLink(options: DefineLinkOptions = {}) {
-	const {
-		withLabel = false,
-		name = 'link',
-		title = 'Link',
-		group,
-		description,
-	} = options;
+	const { withLabel = false } = options;
 
-	return defineField({
-		name,
-		title,
-		icon: SanityLinkIcon,
-		description,
-		type: 'object',
-		group,
-		fields: [
-			...(withLabel
-				? [
-						{
-							name: 'label',
-							title: 'Label',
-							type: 'string',
-						},
-					]
-				: []),
-			{
-				name: 'page',
-				title: 'Page',
-				type: 'reference',
-				to: [{ type: 'page' }],
-				options: {
-					disableNew: true,
-				},
-				hidden: ({ parent }) => !!parent?.href || !!parent?.file,
-			},
-			{
-				name: 'sectionId',
-				type: 'string',
-				title: 'Section ID',
-				components: {
-					input: SectionIdInput,
-				},
-				hidden: ({ parent }) => !parent?.page,
-			},
-			{
-				name: 'href',
-				type: 'url',
-				title: 'URL',
-				validation: (rule) =>
-					rule.uri({
-						scheme: ['http', 'https', 'mailto', 'tel'],
-						allowRelative: true,
-					}),
-				hidden: ({ parent }) => !!parent?.page || !!parent?.file,
-			},
-			{
-				name: 'rel',
-				type: 'string',
-				title: 'rel',
-				description: 'The rel attribute for the link',
-				options: {
-					list: [
-						{
-							title: 'noopener',
-							value: 'noopener',
-						},
-						{
-							title: 'noopener noreferrer',
-							value: 'noopener noreferrer',
-						},
-					],
-				},
-				hidden: ({ parent }) => !parent?.href?.startsWith('http'),
-			},
-			{
-				name: 'file',
-				type: 'file',
-				title: 'File',
-				options: {
-					accept:
-						'application/pdf, application/zip, application/msword, text/plain',
-				},
-				hidden: ({ parent }) => !!parent?.page || !!parent?.href,
-			},
-		],
-		preview: {
-			select: {
-				label: 'label',
-				pageRoute: 'page.route.current',
-				sectionId: 'sectionId',
-				fileName: 'file.asset.originalFilename',
-				href: 'href',
-			},
-			prepare({ label, pageRoute, sectionId, href, fileName }) {
-				const variant = pageRoute
-					? {
-							media: FileIcon,
-							subtitle: `${pageRoute}${sectionId ? `#${sectionId}` : ''}`,
-						}
-					: href
-						? { media: LinkIcon, subtitle: href }
-						: fileName
-							? { media: PaperclipIcon, subtitle: fileName }
-							: { media: HashIcon, subtitle: 'No URL selected' };
-
-				return {
-					title: label || 'Link',
-					...variant,
-				};
-			},
-		},
-	});
+	return {
+		type: withLabel ? 'linkWithLabel' : 'link',
+	} as const;
 }

@@ -3,11 +3,11 @@ import Link from 'next/link';
 import { getTarget } from '@/lib/url';
 import { cn } from '@/lib/utils';
 import { getSanityFileUrl } from '@/sanity/lib/utils';
-import type { NavLinkItem } from '@/types';
+import type { SmartLinkProps } from '@/types';
 
 export default function SmartLink(
 	props: Omit<LinkProps, 'href'> & {
-		link: NavLinkItem;
+		link: SmartLinkProps;
 		children?: React.ReactNode;
 		className?: string;
 		style?: React.CSSProperties;

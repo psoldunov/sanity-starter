@@ -1,4 +1,6 @@
 import type {
+	LinkWithLabel,
+	Page,
 	PAGE_QUERY_RESULT,
 	SanityImageAsset,
 	SanityImageAssetReference,
@@ -18,6 +20,10 @@ export type SectionProps<T extends SectionUnion['_type']> = Extract<
 	SectionUnion,
 	{ _type: T }
 >;
+
+export type DefineLinkOptions = {
+	withLabel?: boolean;
+};
 
 /**
  * Base fields shared by every section (injected by `defineSection()`).
@@ -70,6 +76,15 @@ export type SmartImageProps = {
 export type NavLinkItem = NonNullable<
 	NonNullable<SITE_SETTINGS_QUERY_RESULT>['headerMenu']
 >[number];
+
+/**
+ * Link with label (labelled variant of the registered `link` schema type)
+ * with the `page` reference dereferenced to the full Page document.
+ */
+export type SmartLinkProps = Omit<LinkWithLabel, 'page'> & {
+	_key?: string;
+	page?: Page | null;
+};
 
 /**
  * Footer navigation column as returned by SITE_SETTINGS_QUERY.
