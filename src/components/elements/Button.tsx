@@ -1,6 +1,6 @@
 import type React from 'react';
+import { Slot } from '@/components/utility/Slot';
 import { cn } from '@/lib/utils';
-import { Slot } from '../utility/Slot';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 	asChild?: boolean;

@@ -1,12 +1,13 @@
 import type { LinkProps } from 'next/link';
 import Link from 'next/link';
-import { cn, getTarget } from '@/lib/utils';
+import { getTarget } from '@/lib/url';
+import { cn } from '@/lib/utils';
 import { getSanityFileUrl } from '@/sanity/lib/utils';
-import type { SmartLinkProps } from '@/types';
+import type { NavLinkItem } from '@/types';
 
 export default function SmartLink(
 	props: Omit<LinkProps, 'href'> & {
-		link: SmartLinkProps;
+		link: NavLinkItem;
 		children?: React.ReactNode;
 		className?: string;
 		style?: React.CSSProperties;
@@ -31,7 +32,11 @@ export default function SmartLink(
 			aria-disabled={disabled}
 			target={target ?? computedTarget}
 			className={cn(className, { 'pointer-events-none opacity-33': disabled })}
-			rel={computedTarget === '_blank' ? link.rel : undefined}
+			rel={
+				computedTarget === '_blank'
+					? link.rel || 'noopener noreferrer'
+					: undefined
+			}
 			{...linkProps}
 		>
 			{children || link.label || 'Link'}

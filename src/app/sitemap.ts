@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { getSiteUrl } from '@/lib/utils';
+import { getSiteUrl } from '@/lib/url';
 import { sanityFetch } from '@/sanity/lib/live';
 import { PAGES_QUERY, POSTS_QUERY } from '@/sanity/lib/queries';
 

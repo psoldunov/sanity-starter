@@ -2,7 +2,8 @@ import { defineType, type FieldDefinition, type Rule } from 'sanity';
 import { PADDING_CONFIG } from '@/config';
 import PaddingInput from '@/sanity/components/PaddingInput';
 import SectionPreview from '@/sanity/components/SectionPreview';
-import type { DefineSectionOptions, PaddingSize } from '@/types';
+import type { PaddingSize } from '@/types';
+import type { DefineSectionOptions } from './types';
 
 export const PADDING_OPTIONS = Object.entries(PADDING_CONFIG).map(
 	([value, config]) => ({

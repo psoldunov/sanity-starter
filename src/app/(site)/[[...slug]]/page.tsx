@@ -1,11 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { SectionRenderer } from '@/components/utility/SectionRenderer';
-import {
-	getSiteUrl,
-	hasDynamicParams,
-	normalizeSlug,
-	splitSlug,
-} from '@/lib/utils';
+import { hasDynamicParams, normalizeSlug, splitSlug } from '@/lib/slug';
+import { getSiteUrl } from '@/lib/url';
 import { sanityFetch } from '@/sanity/lib/live';
 import {
 	PAGE_QUERY,

@@ -1,7 +1,7 @@
 import { GridIcon } from 'lucide-react';
-import { stripNonPrintables } from '@/sanity/lib/utils';
-import defineImage from '../../constructors/defineImage';
-import defineSection from '../../constructors/defineSection';
+import { normalizeLineBreaks } from '@/sanity/lib/utils';
+import defineImage from '@/sanity/schema/constructors/defineImage';
+import defineSection from '@/sanity/schema/constructors/defineSection';
 
 export const CARDS_SECTION_FRAGMENT = `
 	_type == "cardsSection" => {
@@ -65,7 +65,7 @@ const cardsSection = defineSection({
 		},
 		prepare({ heading, cards }) {
 			return {
-				title: heading ? stripNonPrintables(heading) : undefined,
+				title: heading ? normalizeLineBreaks(heading) : undefined,
 				subtitle: cards ? `${cards.length} cards` : undefined,
 			};
 		},

@@ -1,7 +1,7 @@
 import { ImageIcon } from 'lucide-react';
-import { stripNonPrintables } from '@/sanity/lib/utils';
-import defineImage from '../../constructors/defineImage';
-import defineSection from '../../constructors/defineSection';
+import { normalizeLineBreaks } from '@/sanity/lib/utils';
+import defineImage from '@/sanity/schema/constructors/defineImage';
+import defineSection from '@/sanity/schema/constructors/defineSection';
 
 export const IMAGE_TEXT_SECTION_FRAGMENT = `
 	_type == "imageTextSection" => {
@@ -43,7 +43,7 @@ const imageTextSection = defineSection({
 		},
 		prepare({ heading, paragraph, image }) {
 			return {
-				title: heading ? stripNonPrintables(heading) : undefined,
+				title: heading ? normalizeLineBreaks(heading) : undefined,
 				subtitle: paragraph || undefined,
 				media: image,
 			};

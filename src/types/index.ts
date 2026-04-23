@@ -1,5 +1,3 @@
-import type { ComponentType, ReactElement } from 'react';
-import type { FieldDefinition, ImageRule, PreviewConfig } from 'sanity';
 import type {
 	PAGE_QUERY_RESULT,
 	SanityImageAsset,
@@ -39,33 +37,6 @@ export type {
 
 export type PaddingSize = 'small' | 'medium' | 'large' | 'xlarge' | 'none';
 
-export type DefineImageOptions = {
-	title?: string;
-	name?: string;
-	group?: string;
-	description?: string;
-	validation?: (rule: ImageRule) => ImageRule;
-	fields?: FieldDefinition[];
-	hotspot?: boolean;
-};
-
-export type DefineLinkOptions = {
-	withLabel?: boolean;
-	name?: string;
-	title?: string;
-	description?: string;
-	group?: string;
-};
-
-export type DefineSectionOptions = {
-	name: string;
-	title: string;
-	icon?: ComponentType | ReactElement;
-	fields: Array<FieldDefinition>;
-	preview?: PreviewConfig;
-	disablePadding?: boolean;
-};
-
 /**
  * Sanity image shape accepted by SmartImage. Covers both referenced
  * (`asset->` not applied) and dereferenced forms. `altText` on the
@@ -96,7 +67,7 @@ export type SmartImageProps = {
  * Header menu link item as returned by SITE_SETTINGS_QUERY with the page
  * reference dereferenced.
  */
-export type SmartLinkProps = NonNullable<
+export type NavLinkItem = NonNullable<
 	NonNullable<SITE_SETTINGS_QUERY_RESULT>['headerMenu']
 >[number];
 

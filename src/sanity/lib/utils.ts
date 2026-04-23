@@ -84,16 +84,12 @@ export function getCachedOGImageUrl(image: ImageInput): string {
 }
 
 /**
- * Strips non-printable characters and normalizes line breaks in a string
+ * Normalizes line breaks in a string — converts HTML `&zwnj;` entities and escaped `\n` to real newlines.
  * @param input - The input string to process
- * @returns The formatted string with normalized line breaks
+ * @returns The string with normalized line breaks
  */
-export function stripNonPrintables(input: string): string {
-	const formatted = input
-		.replace(/&zwnj;/g, '\n')
-		.replace(/\\n/g, '\n')
-		.replace(/\\n/g, ' ');
-	return formatted;
+export function normalizeLineBreaks(input: string): string {
+	return input.replace(/&zwnj;/g, '\n').replace(/\\n/g, '\n');
 }
 
 /**

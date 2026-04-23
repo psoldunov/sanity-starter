@@ -1,5 +1,5 @@
 import { defineField } from 'sanity';
-import type { DefineImageOptions } from '@/types';
+import type { DefineImageOptions } from './types';
 
 /**
  * Defines a Sanity image field with common configuration.

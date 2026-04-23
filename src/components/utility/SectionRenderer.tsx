@@ -4,10 +4,6 @@ import type { PAGE_QUERY_RESULT } from '@/sanity/types/sanity.types';
 
 export type SectionData = NonNullable<PAGE_QUERY_RESULT>['sections'][number];
 
-function SectionComponent(_type: keyof typeof sections): ElementType {
-	return sections[_type];
-}
-
 export function SectionRenderer({
 	section,
 	searchParams,
@@ -24,11 +20,10 @@ export function SectionRenderer({
 	}
 
 	if (!(_type in sections)) {
-		console.warn(`Section type "${_type}" is not registered.`);
 		return null;
 	}
 
-	const Renderer = SectionComponent(_type as keyof typeof sections);
+	const Renderer = sections[_type as keyof typeof sections] as ElementType;
 
 	return <Renderer {...section} searchParams={searchParams} />;
 }

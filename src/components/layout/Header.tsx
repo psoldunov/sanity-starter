@@ -1,8 +1,8 @@
-import type { SmartLinkProps } from '@/types';
-import SmartLink from '../utility/SmartLink';
+import SmartLink from '@/components/utility/SmartLink';
+import type { NavLinkItem } from '@/types';
 import Container from './Container';
 
-export default function Header({ menu }: { menu?: SmartLinkProps[] }) {
+export default function Header({ menu }: { menu?: NavLinkItem[] }) {
 	return (
 		<header className='border-foreground/10 border-b'>
 			<Container>

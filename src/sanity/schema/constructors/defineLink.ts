@@ -2,7 +2,7 @@ import { LinkIcon as SanityLinkIcon } from '@sanity/icons';
 import { FileIcon, HashIcon, LinkIcon, PaperclipIcon } from 'lucide-react';
 import { defineField } from 'sanity';
 import SectionIdInput from '@/sanity/components/SectionIdInput';
-import type { DefineLinkOptions } from '@/types';
+import type { DefineLinkOptions } from './types';
 
 /**
  * Defines a Sanity link field with support for page references, section IDs, and external URLs.

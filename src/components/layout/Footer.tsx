@@ -1,5 +1,5 @@
-import type { FooterNavColumn, SmartLinkProps } from '@/types';
-import SmartLink from '../utility/SmartLink';
+import SmartLink from '@/components/utility/SmartLink';
+import type { FooterNavColumn, NavLinkItem } from '@/types';
 import Container from './Container';
 
 type FooterProps = {
@@ -16,10 +16,7 @@ export default function Footer({ nav, siteName }: FooterProps) {
 				<div className='py-12'>
 					{columns.length > 0 && (
 						<div
-							className='grid grid-cols-1 gap-8 md:grid-cols-3'
-							style={{
-								gridTemplateColumns: `repeat(${Math.min(columns.length, 4)}, minmax(0, 1fr))`,
-							}}
+							className={`grid grid-cols-1 gap-8 sm:grid-cols-2 ${columns.length >= 4 ? 'md:grid-cols-4' : `md:grid-cols-${Math.min(columns.length, 3)}`}`}
 						>
 							{columns.map((column) => (
 								<div key={column._key}>
@@ -30,7 +27,7 @@ export default function Footer({ nav, siteName }: FooterProps) {
 										{column.links?.map((link) => (
 											<li key={link._key}>
 												<SmartLink
-													link={link as SmartLinkProps}
+													link={link as NavLinkItem}
 													className='transition-colors hover:text-foreground'
 												/>
 											</li>

@@ -1,7 +1,7 @@
 import Container from '@/components/layout/Container';
+import Section from '@/components/utility/Section';
+import SmartImage from '@/components/utility/SmartImage';
 import type { SectionProps } from '@/types';
-import Section from '../utility/Section';
-import SmartImage from '../utility/SmartImage';
 
 export default function CardsSection(props: SectionProps<'cardsSection'>) {
 	const { heading, cards } = props;

@@ -3,9 +3,8 @@
 import { draftMode } from 'next/headers';
 
 /**
- * Enables draft mode for the current request.
- * This function sets the draft mode cookie and returns a promise that resolves when the cookie is set.
- * @returns {Promise<void>} A promise that resolves when draft mode is enabled.
+ * Disables draft mode and waits briefly for the cookie change to propagate.
+ * @returns A promise that resolves when draft mode is disabled.
  */
 export async function disableDraftMode() {
 	const disable = (await draftMode()).disable();

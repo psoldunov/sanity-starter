@@ -44,3 +44,6 @@ next-env.d.ts
 # sanity typegen
 /schema.json
 /src/sanity/types/sanity.types.ts
+
+# scratchpad
+/scratchpad

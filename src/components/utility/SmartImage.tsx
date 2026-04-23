@@ -1,7 +1,7 @@
 import { getImage, type SanityImageSource } from '@sanity/asset-utils';
 import { blurhashToBase64 } from 'blurhash-base64';
 import Image from 'next/image';
-import { buildOptimizedImageUrl } from '@/lib/utils';
+import { buildOptimizedImageUrl } from '@/lib/image';
 import { dataset, projectId } from '@/sanity/env';
 import urlFor from '@/sanity/lib/utils';
 import type { SanityImageAsset } from '@/sanity/types/sanity.types';

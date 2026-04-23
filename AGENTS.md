@@ -138,10 +138,12 @@ Postinstall script auto-deploys Sanity schema on Vercel production and always ru
 
 ## File Layout
 
-- Components: `src/components/` organized by purpose — `layout/`, `sections/`, `utility/`
-- Utilities: `src/lib/` (pure, testable)
-- Types: `src/types/` (centralized, exported from `index.ts` or dedicated files)
-- Hooks: `src/hooks/` — all re-exported from `src/hooks/index.ts`; must be SSR-safe (guard `typeof window !== 'undefined'`); clean up listeners/subscriptions in `useEffect` cleanup
+- Components: `src/components/` organized by purpose — `layout/`, `sections/`, `utility/`, `elements/`
+- Utilities: `src/lib/` — split by concern: `utils.ts` (cn), `image.ts`, `slug.ts`, `url.ts`, `sections.ts`, `actions.ts`
+- Types: `src/types/` — app-level types (component props, shared types). Constructor-specific types live in `src/sanity/schema/constructors/types.ts`
+- Config: `src/config/` — `index.ts` (padding, routes), `fonts.ts`
+- Hooks: `src/hooks/` — all re-exported from `src/hooks/index.ts`; must be SSR-safe; clean up listeners/subscriptions in `useEffect` cleanup
+- State: `src/lib/state.ts` — Jotai/Zustand atoms go here
 - Sanity schema: `src/sanity/schema/` — `documents/`, `objects/`, `constructors/`
 
 ## JSDoc
@@ -164,8 +166,8 @@ Postinstall script auto-deploys Sanity schema on Vercel production and always ru
 - Sections: accept the full props object typed via `SectionProps<'<name>Section'>` and spread it into `<Section>` so base fields (`padding`, `id`, `hidden`) flow through. Destructure section-specific fields after.
 
 ```tsx
-import type { SectionProps } from '@/types';
 import Section from '@/components/utility/Section';
+import type { SectionProps } from '@/types';
 
 export default function HeroSection(props: SectionProps<'heroSection'>) {
   const { heading, paragraph, image } = props;
@@ -207,9 +209,14 @@ export default function HeroSection(props: SectionProps<'heroSection'>) {
 ## Critical Files
 
 - `src/lib/sections.ts` — section registry (keys must match schema `_type`)
+- `src/lib/slug.ts` — slug normalization and dynamic section detection
+- `src/lib/url.ts` — site URL resolution and link target detection
+- `src/lib/image.ts` — Sanity CDN image URL builder
 - `src/sanity/schema/index.ts` — schema entry point
+- `src/sanity/schema/constructors/types.ts` — constructor option types (`DefineImageOptions`, `DefineLinkOptions`, `DefineSectionOptions`)
 - `src/config/index.ts` — padding config + protected route patterns
-- `src/types/index.ts` — shared types including the `SectionProps<T>` helper that resolves a section component's props from the generated `PAGE_QUERY_RESULT` union
+- `src/config/fonts.ts` — font definitions (Geist Sans / Mono)
+- `src/types/index.ts` — shared types including the `SectionProps<T>` helper and `NavLinkItem`
 
 ## Do
 

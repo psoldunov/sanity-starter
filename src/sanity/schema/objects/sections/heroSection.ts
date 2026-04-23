@@ -1,5 +1,5 @@
 import { MonitorIcon } from 'lucide-react';
-import { stripNonPrintables } from '@/sanity/lib/utils';
+import { normalizeLineBreaks } from '@/sanity/lib/utils';
 import defineImage from '@/sanity/schema/constructors/defineImage';
 import defineSection from '@/sanity/schema/constructors/defineSection';
 
@@ -43,7 +43,7 @@ const heroSection = defineSection({
 		},
 		prepare({ heading, paragraph, media }) {
 			return {
-				title: heading ? stripNonPrintables(heading) : undefined,
+				title: heading ? normalizeLineBreaks(heading) : undefined,
 				subtitle: paragraph ? paragraph : undefined,
 				media: media,
 			};

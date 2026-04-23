@@ -37,7 +37,7 @@ export default function Section({
 
 	return (
 		<section
-			section-type={_type}
+			data-section-type={_type}
 			id={id}
 			className={cn(
 				PADDING_CLASSES.top[topPadding],
