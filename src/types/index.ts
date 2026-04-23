@@ -21,6 +21,15 @@ export type SectionProps<T extends SectionUnion['_type']> = Extract<
 	{ _type: T }
 >;
 
+/**
+ * Base fields shared by every section (injected by `defineSection()`).
+ * Derived from the generated `PAGE_QUERY_RESULT` union so it stays in sync.
+ */
+export type SectionBaseProps = Pick<
+	SectionUnion,
+	'_type' | 'id' | 'hidden' | 'padding'
+>;
+
 export type {
 	Page,
 	Post,

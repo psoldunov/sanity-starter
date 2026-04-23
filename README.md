@@ -211,7 +211,7 @@ Pages are composed of reusable sections. Each section can have:
 
 1. Create section schema in `src/sanity/schema/objects/sections/` via `defineSection()`
 2. Export a GROQ fragment as a plain template-literal constant (e.g. `MY_SECTION_FRAGMENT`) from the same file
-3. Create the component in `src/components/sections/` (PascalCase, matches `_type`). Derive props from the TypeGen union: `Extract<NonNullable<PAGE_QUERY_RESULT>['sections'][number], { _type: 'mySection' }>`
+3. Create the component in `src/components/sections/` (PascalCase, matches `_type`). Type props with the `SectionProps<T>` helper from `@/types`, e.g. `props: SectionProps<'mySection'>`
 4. Register the schema in `src/sanity/schema/objects/sections/index.ts` — add to `sectionTypes` and re-export the fragment constant
 5. Interpolate the fragment directly into `PAGE_QUERY` in `src/sanity/lib/queries/index.ts` via `${MY_SECTION_FRAGMENT}`
 6. Register the component in `src/lib/sections.ts` keyed by `_type`
@@ -473,20 +473,18 @@ export const PAGE_QUERY = defineQuery(`*[_type == "page" && route.current == $sl
 }`);
 ```
 
-4. **Create component** (`src/components/sections/MySection.tsx`). Derive props from the generated TypeGen union — do **not** hand-author the shape:
+4. **Create component** (`src/components/sections/MySection.tsx`). Type props via the `SectionProps<T>` helper from `@/types` — do **not** hand-author the shape. The helper resolves to the matching variant of the generated `PAGE_QUERY_RESULT.sections` tagged union, so base fields (`padding`, `id`, `hidden`) and your schema fields stay in sync automatically:
 ```typescript
 import Section from '@/components/utility/Section';
-import type { PAGE_QUERY_RESULT } from '@/sanity/types/sanity.types';
+import type { SectionProps } from '@/types';
 
-type MySectionProps = Extract<
-	NonNullable<PAGE_QUERY_RESULT>['sections'][number],
-	{ _type: 'mySection' }
->;
-
-export default function MySection(props: MySectionProps) {
+export default function MySection(props: SectionProps<'mySection'>) {
+	const { /* destructure your section-specific fields */ } = props;
 	return <Section {...props}>{/* content */}</Section>;
 }
 ```
+
+Spreading `props` into `<Section>` forwards `padding`, `id`, and `hidden` so the wrapper applies them. Destructure schema fields after for use in the body.
 
 5. **Register component** (`src/lib/sections.ts`) — key must match `_type`:
 ```typescript

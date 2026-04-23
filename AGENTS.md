@@ -39,7 +39,7 @@ Next.js 16 + Sanity CMS starter with a **section-based page builder**.
 Core pattern is a **section registry system**. To add a new section:
 
 1. **Schema** in `src/sanity/schema/objects/sections/` using `defineSection()`
-2. **Component** in `src/components/sections/` with default export, PascalCase file matching `_type`. Derive props from the generated union: `Extract<NonNullable<PAGE_QUERY_RESULT>['sections'][number], { _type: '<name>Section' }>`
+2. **Component** in `src/components/sections/` with default export, PascalCase file matching `_type`. Type props via the `SectionProps<T>` helper from `@/types`, e.g. `props: SectionProps<'<name>Section'>`. The helper resolves to the matching variant of the `PAGE_QUERY_RESULT.sections` tagged union.
 3. **Register schema** in `src/sanity/schema/objects/sections/index.ts` (add to `sectionTypes` + re-export the GROQ fragment constant)
 4. **Register component** in `src/lib/sections.ts` with key matching `_type`
 5. **GROQ fragment**: export a plain template literal `const <NAME>_SECTION_FRAGMENT = \`_type == "<name>Section" => { ..., image { ..., asset-> } }\`` and reference it directly via `${<NAME>_SECTION_FRAGMENT}` inside `PAGE_QUERY` in `src/sanity/lib/queries/index.ts`. Do NOT use function-call interpolation inside fragments — TypeGen statically resolves constant refs only.
@@ -161,11 +161,15 @@ Postinstall script auto-deploys Sanity schema on Vercel production and always ru
 
 - Server Components by default; `'use client'` only when needed
 - Function components, default export, destructure props at top
-- Sections: accept props matching schema + optional `searchParams`
+- Sections: accept the full props object typed via `SectionProps<'<name>Section'>` and spread it into `<Section>` so base fields (`padding`, `id`, `hidden`) flow through. Destructure section-specific fields after.
 
 ```tsx
-export default function HeroSection({ heading, paragraph, image }: HeroSectionProps) {
-  return <Section>{/* content */}</Section>;
+import type { SectionProps } from '@/types';
+import Section from '@/components/utility/Section';
+
+export default function HeroSection(props: SectionProps<'heroSection'>) {
+  const { heading, paragraph, image } = props;
+  return <Section {...props}>{/* content */}</Section>;
 }
 ```
 
@@ -205,7 +209,7 @@ export default function HeroSection({ heading, paragraph, image }: HeroSectionPr
 - `src/lib/sections.ts` — section registry (keys must match schema `_type`)
 - `src/sanity/schema/index.ts` — schema entry point
 - `src/config/index.ts` — padding config + protected route patterns
-- `src/types/index.ts` — shared types (section types live beside schema in `src/sanity/schema/objects/sections/index.ts`)
+- `src/types/index.ts` — shared types including the `SectionProps<T>` helper that resolves a section component's props from the generated `PAGE_QUERY_RESULT` union
 
 ## Do
 

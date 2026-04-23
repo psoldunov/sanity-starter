@@ -1,17 +1,7 @@
 import { stegaClean } from 'next-sanity';
 import { PADDING_CONFIG } from '@/config';
 import { cn } from '@/lib/utils';
-import type { PaddingSize } from '@/types';
-
-type SectionBaseProps = {
-	_type?: string;
-	id?: string;
-	hidden?: boolean;
-	padding?: {
-		top?: PaddingSize;
-		bottom?: PaddingSize;
-	};
-};
+import type { PaddingSize, SectionBaseProps } from '@/types';
 
 export const PADDING_CLASSES: Record<
 	'top' | 'bottom',
