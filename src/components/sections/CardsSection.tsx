@@ -1,16 +1,9 @@
 import Container from '@/components/layout/Container';
-import type { PAGE_QUERY_RESULT } from '@/sanity/types/sanity.types';
-import type { BaseSectionProps } from '@/types';
+import type { SectionProps } from '@/types';
 import Section from '../utility/Section';
 import SmartImage from '../utility/SmartImage';
 
-type CardsSectionData = Extract<
-	NonNullable<PAGE_QUERY_RESULT>['sections'][number],
-	{ _type: 'cardsSection' }
->;
-
-export type CardsSectionProps = CardsSectionData &
-	Pick<BaseSectionProps, 'searchParams'>;
+export type CardsSectionProps = SectionProps<'cardsSection'>;
 
 export default function CardsSection(props: CardsSectionProps) {
 	const { heading, cards } = props;

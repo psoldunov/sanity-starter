@@ -1,12 +1,25 @@
 import type { ComponentType, ReactElement } from 'react';
 import type { FieldDefinition, ImageRule, PreviewConfig } from 'sanity';
 import type {
+	PAGE_QUERY_RESULT,
 	SanityImageAsset,
 	SanityImageAssetReference,
 	SanityImageCrop,
 	SanityImageHotspot,
 	SITE_SETTINGS_QUERY_RESULT,
 } from '@/sanity/types/sanity.types';
+
+type SectionUnion = NonNullable<PAGE_QUERY_RESULT>['sections'][number];
+
+/**
+ * Resolves the props for a section component by its `_type` literal.
+ *
+ * @template T Section `_type` from the `PAGE_QUERY_RESULT` union.
+ */
+export type SectionProps<T extends SectionUnion['_type']> = Extract<
+	SectionUnion,
+	{ _type: T }
+>;
 
 export type {
 	Page,
@@ -42,18 +55,6 @@ export type DefineSectionOptions = {
 	fields: Array<FieldDefinition>;
 	preview?: PreviewConfig;
 	disablePadding?: boolean;
-};
-
-export type BaseSectionProps = {
-	_type: string;
-	_key: string;
-	searchParams?: { [key: string]: string | string[] | undefined };
-	id?: string;
-	hidden?: boolean;
-	padding?: {
-		top?: PaddingSize;
-		bottom?: PaddingSize;
-	};
 };
 
 /**

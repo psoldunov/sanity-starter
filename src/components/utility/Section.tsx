@@ -1,7 +1,17 @@
 import { stegaClean } from 'next-sanity';
 import { PADDING_CONFIG } from '@/config';
 import { cn } from '@/lib/utils';
-import type { BaseSectionProps, PaddingSize } from '@/types';
+import type { PaddingSize } from '@/types';
+
+type SectionBaseProps = {
+	_type?: string;
+	id?: string;
+	hidden?: boolean;
+	padding?: {
+		top?: PaddingSize;
+		bottom?: PaddingSize;
+	};
+};
 
 export const PADDING_CLASSES: Record<
 	'top' | 'bottom',
@@ -25,7 +35,7 @@ export default function Section({
 	children,
 	className,
 	...props
-}: BaseSectionProps & { children: React.ReactNode; className?: string }) {
+}: SectionBaseProps & { children: React.ReactNode; className?: string }) {
 	if (props.hidden) {
 		return null;
 	}

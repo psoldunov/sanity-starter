@@ -1,16 +1,9 @@
 import Container from '@/components/layout/Container';
-import type { PAGE_QUERY_RESULT } from '@/sanity/types/sanity.types';
-import type { BaseSectionProps } from '@/types';
+import type { SectionProps } from '@/types';
 import Section from '../utility/Section';
 import SmartImage from '../utility/SmartImage';
 
-type ImageTextSectionData = Extract<
-	NonNullable<PAGE_QUERY_RESULT>['sections'][number],
-	{ _type: 'imageTextSection' }
->;
-
-export type ImageTextSectionProps = ImageTextSectionData &
-	Pick<BaseSectionProps, 'searchParams'>;
+export type ImageTextSectionProps = SectionProps<'imageTextSection'>;
 
 export default function ImageTextSection(props: ImageTextSectionProps) {
 	const { heading, paragraph, image } = props;
