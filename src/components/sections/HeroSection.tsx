@@ -3,9 +3,7 @@ import type { SectionProps } from '@/types';
 import Section from '../utility/Section';
 import SmartImage from '../utility/SmartImage';
 
-export type HeroSectionProps = SectionProps<'heroSection'>;
-
-export default function HeroSection(props: HeroSectionProps) {
+export default function HeroSection(props: SectionProps<'heroSection'>) {
 	const { heading, paragraph, image } = props;
 
 	return (

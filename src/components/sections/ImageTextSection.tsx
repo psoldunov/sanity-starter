@@ -3,9 +3,9 @@ import type { SectionProps } from '@/types';
 import Section from '../utility/Section';
 import SmartImage from '../utility/SmartImage';
 
-export type ImageTextSectionProps = SectionProps<'imageTextSection'>;
-
-export default function ImageTextSection(props: ImageTextSectionProps) {
+export default function ImageTextSection(
+	props: SectionProps<'imageTextSection'>,
+) {
 	const { heading, paragraph, image } = props;
 
 	return (

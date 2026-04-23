@@ -3,9 +3,7 @@ import type { SectionProps } from '@/types';
 import Section from '../utility/Section';
 import SmartImage from '../utility/SmartImage';
 
-export type CardsSectionProps = SectionProps<'cardsSection'>;
-
-export default function CardsSection(props: CardsSectionProps) {
+export default function CardsSection(props: SectionProps<'cardsSection'>) {
 	const { heading, cards } = props;
 
 	return (
