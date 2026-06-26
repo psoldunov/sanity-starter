@@ -55,7 +55,7 @@ Example: `heroSection` schema → `HeroSection.tsx` component → registered as 
 Use constructors for consistency (located in `src/sanity/schema/constructors/`):
 
 - **`defineSection()`**: base for all sections — auto-adds `id`, `hidden`, `padding` fields in configuration group
-- **`defineLink()`**: smart link supporting page references, section anchors (`#id`), external URLs, file downloads. Optional `withLabel` param
+- **`defineLink()`**: returns a reference to the shared `link` / `linkWithLabel` registered type (no inline fields). A link resolves to one of: an **internal destination** (`internalDestination` object — a page/post/linkable-doc reference or a static route), an **external URL** (`http`/`https`/`mailto`/`tel`), or a **file download**. Page references support a section anchor (`sectionId` → `#id`). Optional `withLabel` param
 - **`defineImage()`**: image field with Sanity CDN, hotspot, dimensions, blurhash
 
 Custom Studio inputs live in `src/sanity/components/` (e.g. `PaddingInput`, `SectionIdInput`).
@@ -75,6 +75,7 @@ Schema rules:
 
 - Location: `src/sanity/lib/queries/index.ts` using `defineQuery()`
 - Section fragments: plain template literal constants exported from each section file, interpolated directly into `PAGE_QUERY`
+- Link destinations: project the `page` / `destination` field with `${INTERNAL_DESTINATION_PROJECTION}` (from `src/sanity/lib/fragments.ts`) — **not** a bare `page->`. It dereferences the inner `reference->` to `_type`, page `route`, and document `slug`. Reuse it everywhere a link is queried (header menu, footer nav, redirects)
 - TypeGen reads `defineQuery()` calls and resolves `${CONST}` interpolation only when the referent is a plain string literal (no function calls, no `.join()`)
 
 **Sanity config** (`sanity.config.ts` — repo root):
@@ -93,12 +94,21 @@ Schema rules:
 
 ## Smart Linking System
 
+A link is one of three mutually exclusive things (the Studio hides the others once one is set):
+
+- **Internal destination** — the `page` field holds an `internalDestination` object (`src/sanity/schema/objects/internalDestination.ts`): EITHER a document `reference` (page, post, or any `LINKABLE_DOCUMENTS` type) OR a `staticPath` to a Next route with no document. Page references also support `sectionId` (→ `#anchor`).
+- **External URL** — `href` (`http`/`https`/`mailto`/`tel`, relative allowed), with optional `rel` for `http(s)`.
+- **File download** — `file` (PDF/ZIP/DOC/TXT), served from the Sanity CDN.
+
+Registry: `src/config/linkables.ts` — `LINKABLE_DOCUMENTS` (doc types besides `page` that can be linked, each with `basePath`/`titleField`/`slugField`) and `STATIC_ROUTES` (Next routes with no document). It drives the Studio picker, the `internalDestination` reference targets, and URL resolution.
+
 `SmartLink` component (`src/components/utility/SmartLink.tsx`):
 
-- Accepts `link` prop matching `defineLink()` schema
-- Resolves: page reference → route slug, optional section ID → hash anchor, or external URL
-- Sets `target` automatically based on URL type
-- Usage: `<SmartLink link={link}>Label</SmartLink>` where `link` has optional `{ page, sectionId, url, label }`
+- Accepts a `link` prop of type `SmartLinkProps` (from `@/types`) — the queried `link` with its `page` dereferenced via `INTERNAL_DESTINATION_PROJECTION`.
+- Resolves URL in order: `file` → `href` → internal destination (`resolveDestinationUrl(link.page, link.sectionId)` from `src/lib/links.ts`) → `#` fallback.
+- Sets `target` automatically (`getTarget` → `_blank` for `http(s)` URLs, including file downloads; `mailto:`/`tel:` and internal routes open in place). When `_blank`, `rel` defaults to `noopener noreferrer`.
+- Usage: `<SmartLink link={link}>Label</SmartLink>` where `link` may carry `{ page, sectionId, href, file, rel, label }`.
+- Query link fields with `${INTERNAL_DESTINATION_PROJECTION}` (see Sanity Patterns → Queries), not `page->`.
 
 ## Development Workflow
 
@@ -210,11 +220,16 @@ export default function HeroSection(props: SectionProps<'heroSection'>) {
 
 - `src/lib/sections.ts` — section registry (keys must match schema `_type`)
 - `src/lib/slug.ts` — slug normalization and dynamic section detection
-- `src/lib/url.ts` — site URL resolution and link target detection
+- `src/lib/url.ts` — site URL resolution and link target detection (`getTarget`)
+- `src/lib/links.ts` — internal destination URL resolution (`resolveDestinationUrl`, `hasDestination`)
 - `src/lib/image.ts` — Sanity CDN image URL builder
+- `src/sanity/lib/fragments.ts` — shared GROQ projections (`INTERNAL_DESTINATION_PROJECTION`)
+- `src/sanity/schema/objects/link.ts` — `link` / `linkWithLabel` registered types
+- `src/sanity/schema/objects/internalDestination.ts` — polymorphic link destination (document reference or static path)
 - `src/sanity/schema/index.ts` — schema entry point
 - `src/sanity/schema/constructors/types.ts` — constructor option types (`DefineImageOptions`, `DefineLinkOptions`, `DefineSectionOptions`)
 - `src/config/index.ts` — padding config + protected route patterns
+- `src/config/linkables.ts` — `LINKABLE_DOCUMENTS` + `STATIC_ROUTES` registry (drives link picker, URL resolution, redirect targets)
 - `src/config/fonts.ts` — font definitions (Geist Sans / Mono)
 - `src/types/index.ts` — shared types including the `SectionProps<T>` helper and `NavLinkItem`
 
@@ -243,7 +258,7 @@ export default function HeroSection(props: SectionProps<'heroSection'>) {
 
 1. **New section**: follow 7-step registry pattern above
 2. **New document type**: add schema, update queries, add to Studio desk structure if needed
-3. **New link type**: extend `defineLink()` and update `SmartLink` resolver
+3. **New link destination**: add a document type to `LINKABLE_DOCUMENTS` or a Next route to `STATIC_ROUTES` in `src/config/linkables.ts` — the Studio picker, `internalDestination` reference targets, and `resolveDestinationUrl` pick it up automatically. For a wholly new link *shape* (beyond destination/URL/file), extend `src/sanity/schema/objects/link.ts` and the `SmartLink` resolver.
 4. **Environment changes**: update README and `.env.local` template
 
 ## Contribution Checklist
