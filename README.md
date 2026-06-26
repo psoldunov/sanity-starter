@@ -7,7 +7,7 @@ A modern, full-featured starter template for building content-driven websites wi
 This project is a ready-to-go boilerplate designed to provide a complete foundation for building page builder functionality within Sanity CMS. The goal is to eliminate the initial setup overhead and provide a production-ready starting point that includes:
 
 - **Pre-configured page builder** with a flexible section-based architecture
-- **Smart link system** supporting page references, section anchors, and external URLs
+- **Smart link system** supporting internal destinations (pages, posts, static routes), section anchors, external URLs, and file downloads
 - **Live preview integration** through Sanity's Presentation Tool
 - **Optimized development workflow** with TypeScript, modern tooling, and best practices
 
@@ -20,7 +20,7 @@ This boilerplate is intended for use in both personal and professional projects,
 - 🚀 **Next.js 16** with App Router and React Server Components
 - 📝 **Sanity CMS** integration with live preview and draft mode
 - 🎨 **Section-based page builder** for flexible content composition
-- 🔗 **Smart link system** supporting page references, section anchors, and external URLs
+- 🔗 **Smart link system** supporting internal destinations (pages, posts, static routes), section anchors, external URLs, and file downloads
 - 🖼️ **Image optimization** with Sanity CDN, Next.js Image, and blurhash support
 - 📱 **Responsive design** with Tailwind CSS
 - ♿ **Accessibility** built-in with semantic HTML and ARIA attributes
@@ -156,11 +156,15 @@ src/
 │       └── Slot.tsx
 ├── sanity/
 │   ├── components/           # Custom Sanity input components
+│   │   ├── DestinationField.tsx        # Destination picker field wrapper
+│   │   ├── DestinationReferenceInput.tsx # Polymorphic destination picker
 │   │   ├── PaddingInput.tsx
+│   │   ├── SectionIdField.tsx
 │   │   ├── SectionIdInput.tsx
 │   │   └── SectionPreview.tsx
 │   ├── lib/                 # Sanity utilities
 │   │   ├── client.ts        # Sanity client configuration
+│   │   ├── fragments.ts     # Shared GROQ projections (INTERNAL_DESTINATION_PROJECTION)
 │   │   ├── live.ts          # Live preview setup
 │   │   ├── queries/         # GROQ queries
 │   │   ├── resolve.ts       # Presentation tool resolution
@@ -178,11 +182,18 @@ src/
 │       │   │   └── settings.ts
 │       │   └── post.ts
 │       └── objects/         # Object types
+│           ├── internalDestination.ts  # Polymorphic link destination
+│           ├── link.ts                  # link / linkWithLabel types
 │           └── sections/    # Section schemas
+├── config/                  # App configuration
+│   ├── fonts.ts
+│   ├── index.ts             # Padding config + protected routes
+│   └── linkables.ts         # Linkable document types + static routes
 ├── hooks/                   # Custom React hooks
 │   └── index.ts
 ├── lib/                     # Utility functions
 │   ├── actions.ts
+│   ├── links.ts             # Internal destination URL resolution
 │   ├── sections.ts
 │   ├── state.ts
 │   └── utils.ts
@@ -221,33 +232,45 @@ If the section needs `searchParams`, add its `_type` to `dynamicSections` in `sr
 
 ### Smart Links
 
-The smart link system supports four link types:
-- **Page Reference**: Link to an internal page
-- **Section Anchor**: Link to a specific section within a page (requires page reference)
-- **External URL**: Link to external websites, email, or phone numbers
-- **File Download**: Link to uploaded files (PDF, ZIP, DOC, TXT)
+Every link is one of three mutually exclusive things (picking one hides the others in the Studio):
 
-Links automatically determine the target attribute (`_blank` for external links and file downloads). The `rel` attribute can be configured for external links.
+- **Internal destination** — a polymorphic `internalDestination` object holding *either* a document reference (a page, a post, or any type registered in `LINKABLE_DOCUMENTS`) *or* a `staticPath` to a Next route that has no backing document (e.g. `/contact`).
+  - **Section anchor**: for page references only, an optional `sectionId` appends a `#anchor` to the resolved route.
+- **External URL** — `http`/`https`/`mailto`/`tel` (relative paths allowed). A `rel` attribute (`noopener` / `noopener noreferrer`) can be set for `http(s)` URLs.
+- **File download** — an uploaded file (PDF, ZIP, DOC, TXT) served from the Sanity CDN.
 
-**Important:** When querying links that use `defineLink`, you must dereference the `page` field in your GROQ query to access `page.route`. Example:
+`SmartLink` (`src/components/utility/SmartLink.tsx`) resolves these in order — file → external URL → internal destination → `#` fallback — via `resolveDestinationUrl()` in `src/lib/links.ts`. The target is computed automatically: `_blank` for `http(s)` URLs (external links and CDN file downloads); `mailto:`/`tel:` and internal routes open in place. When the target is `_blank`, `rel` defaults to `noopener noreferrer`.
+
+#### Configuring linkable destinations
+
+The destination picker, URL resolution, and redirect targets all read one registry, `src/config/linkables.ts`:
+
+- **`LINKABLE_DOCUMENTS`** — document types (besides `page`, always linkable) that can be picked as a destination. Each entry maps a `type` to its URL `basePath` (public URL is `basePath + '/' + slug`) plus the `titleField` / `slugField` the picker reads. Add an entry to make a new document type linkable.
+- **`STATIC_ROUTES`** — Next routes under `src/app` with no Sanity document. Add them here so editors can pick them.
+
+#### Querying links
+
+Project the destination with the shared `INTERNAL_DESTINATION_PROJECTION` from `src/sanity/lib/fragments.ts` — **not** a bare `page->`. It dereferences the inner `reference` to the minimal URL-building fields (`_type`, page `route`, document `slug`):
 
 ```groq
 *[_type == "settings"][0] {
   headerMenu[] {
     ...,
-    page->
+    page ${INTERNAL_DESTINATION_PROJECTION}
   }
 }
 ```
 
-Without dereferencing (`page->`), you'll only get the reference object (`_ref`, `_type`) and won't have access to `page.route.current`. The dereferenced page object includes the full page document with `route.current` available.
+The `internalDestination` object stores its document reference under `reference` (alongside `staticPath`), so it must be dereferenced one level in (`reference->`) — which is exactly what `INTERNAL_DESTINATION_PROJECTION` does. Reuse the same projection wherever a link's `page` / `destination` is queried (header menu, footer nav, redirects). `resolveDestinationUrl()` then turns the projected value into a URL.
+
+> **Note:** the link field is named `page` for content back-compat, but it now holds an `internalDestination` (page, post, or static route) — not just a page reference.
 
 ### Sanity Schema Constructors
 
 Reusable schema constructors make it easy to create consistent field definitions:
 
 - `defineSection()`: Creates section schemas with common fields (padding, ID, hidden, groups)
-- `defineLink()`: Creates link fields with page/section/URL/file support and optional label
+- `defineLink()`: References the shared `link` / `linkWithLabel` type — an internal destination (page, post, or static route), section anchor, external URL, or file download. Pass `withLabel` for the labelled variant
 - `defineImage()`: Creates image fields with optimization settings, blurhash, and optional hotspot
 
 ### Draft Mode & Live Preview
