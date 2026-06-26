@@ -1,5 +1,5 @@
 import SmartLink from '@/components/utility/SmartLink';
-import type { FooterNavColumn, NavLinkItem } from '@/types';
+import type { FooterNavColumn } from '@/types';
 import Container from './Container';
 
 type FooterProps = {
@@ -27,7 +27,7 @@ export default function Footer({ nav, siteName }: FooterProps) {
 										{column.links?.map((link) => (
 											<li key={link._key}>
 												<SmartLink
-													link={link as NavLinkItem}
+													link={link}
 													className='transition-colors hover:text-foreground'
 												/>
 											</li>

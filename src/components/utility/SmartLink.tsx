@@ -1,5 +1,6 @@
 import type { LinkProps } from 'next/link';
 import Link from 'next/link';
+import { resolveDestinationUrl } from '@/lib/links';
 import { getTarget } from '@/lib/url';
 import { cn } from '@/lib/utils';
 import { getSanityFileUrl } from '@/sanity/lib/utils';
@@ -18,10 +19,7 @@ export default function SmartLink(
 	const { link, children, disabled, className, target, ...linkProps } = props;
 
 	const fileUrl = link.file ? getSanityFileUrl(link.file).url : undefined;
-	const routeSlug = link.page?.route?.current;
-	const pageUrl = routeSlug
-		? `${routeSlug}${link.sectionId ? `#${link.sectionId}` : ''}`
-		: undefined;
+	const pageUrl = resolveDestinationUrl(link.page, link.sectionId);
 
 	const href = fileUrl ?? link.href ?? pageUrl ?? '#';
 	const computedTarget = getTarget(href);

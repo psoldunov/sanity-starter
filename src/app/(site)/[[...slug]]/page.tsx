@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { SectionRenderer } from '@/components/utility/SectionRenderer';
+import { resolveDestinationUrl } from '@/lib/links';
 import { hasDynamicParams, normalizeSlug, splitSlug } from '@/lib/slug';
 import { getSiteUrl } from '@/lib/url';
 import { sanityFetch } from '@/sanity/lib/live';
@@ -94,9 +95,9 @@ export default async function PageComponent({
 			params: { slug: normalizeSlug(slug) },
 		});
 
-		const destinationSlug = redirectData?.destination?.route?.current;
-		if (destinationSlug) {
-			redirect(destinationSlug);
+		const destinationUrl = resolveDestinationUrl(redirectData?.destination);
+		if (destinationUrl) {
+			redirect(destinationUrl);
 		}
 
 		return notFound();
