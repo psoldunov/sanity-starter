@@ -1,0 +1,31 @@
+#:schema https://www.ensemblr.dev/schemas/settings.schema.json
+
+[scripts]
+# mise pins the toolchain (bun 1.3.13, biome) but is optional — skip it when absent.
+# `bun install` triggers scripts/postinstall.sh, which runs `bun run typegen`.
+setup = "command -v mise >/dev/null 2>&1 && mise install; bun install"
+
+[scripts.run.dev]
+command = "PORT=$ENSEMBLR_PORT bun run dev"
+icon = "play"
+default = true
+
+[scripts.run.lint]
+command = "bun run lint"
+icon = "list-checks"
+
+[scripts.run.typecheck]
+command = "bun run typegen && bunx tsc --noEmit"
+icon = "badge-check"
+
+[scripts.run.typegen]
+command = "bun run typegen"
+icon = "database"
+
+[scripts.run.build]
+command = "bun run build"
+icon = "hammer"
+
+[scripts.run.start]
+command = "PORT=$ENSEMBLR_PORT bun run start"
+icon = "server"
