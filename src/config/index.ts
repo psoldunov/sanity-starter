@@ -1,3 +1,4 @@
+import { LINKABLE_DOCUMENTS, STATIC_ROUTES } from '@/config/linkables';
 import type { PaddingSize } from '@/types';
 
 export const PADDING_CONFIG: Record<
@@ -47,4 +48,31 @@ export const PADDING_CONFIG: Record<
 	},
 };
 
-export const PROTECTED_ROUTE_PATTERNS = ['/api/*', '/admin/*', '/posts/*'];
+/**
+ * Paths owned by the application rather than by the CMS, and therefore not
+ * available for a `page` document to claim as its route.
+ *
+ * Derived from both registries in `@/config/linkables` rather than hand-listed:
+ *
+ * - `LINKABLE_DOCUMENTS` base paths, so `/posts/*` is reserved and a page cannot
+ *   silently shadow `/posts/hello`.
+ * - `STATIC_ROUTES` paths, so a page cannot shadow a route that Next implements
+ *   directly — `/posts` itself, and whatever an adopter adds next.
+ *
+ * Registering a route in either list therefore reserves it, instead of leaving
+ * the lists to drift apart until a collision surfaces in production.
+ */
+export const PROTECTED_ROUTE_PATTERNS: readonly string[] = [
+	'/api/*',
+	'/admin/*',
+	...LINKABLE_DOCUMENTS.map((document) => `${document.basePath}/*`),
+	...STATIC_ROUTES.map((route) => route.path),
+];
+
+/**
+ * Paths excluded from crawling in `robots.txt`.
+ *
+ * Deliberately narrower than `PROTECTED_ROUTE_PATTERNS`: `/posts/*` is reserved
+ * against CMS pages but is public content that should absolutely be indexed.
+ */
+export const CRAWLER_DISALLOWED_PATHS: readonly string[] = ['/api/', '/admin/'];

@@ -19,6 +19,7 @@ export default function DestinationField(props: ObjectFieldProps) {
 			validation={props.validation}
 			__unstable_presence={props.presence}
 			inputId={props.inputId}
+			path={props.path}
 			level={props.level}
 		>
 			{props.children}

@@ -1,16 +1,8 @@
 'use client';
 
-import { CloseIcon } from '@sanity/icons';
-import {
-	Autocomplete,
-	Badge,
-	Box,
-	Button,
-	Card,
-	Flex,
-	Stack,
-	Text,
-} from '@sanity/ui';
+import { CloseIcon } from '@sanity/icons/Close';
+import { Badge, Box, Button, Card, Flex, Stack, Text } from '@sanity/ui';
+import { Autocomplete } from '@sanity/ui/autocomplete';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type ObjectInputProps, set, unset, useDocumentStore } from 'sanity';
 import { LINKABLE_DOCUMENTS, STATIC_ROUTES } from '@/config/linkables';
@@ -98,7 +90,7 @@ function renderDestinationOption(option: DestinationOption) {
 	return (
 		<Card as='button' padding={3} radius={2}>
 			<Flex align='center' gap={3}>
-				<Stack flex={1} space={2}>
+				<Stack flex={1} gap={2}>
 					<Text size={1} weight='medium' textOverflow='ellipsis'>
 						{option.title}
 					</Text>
@@ -233,7 +225,7 @@ export default function DestinationReferenceInput(
 				<Flex align='center' gap={2}>
 					<Box flex={1} paddingLeft={1}>
 						{selected ? (
-							<Stack space={2}>
+							<Stack gap={2}>
 								<Flex align='center' gap={2}>
 									<Text size={1} weight='medium' textOverflow='ellipsis'>
 										{selected.title}

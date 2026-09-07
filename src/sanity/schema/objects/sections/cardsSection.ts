@@ -3,18 +3,6 @@ import { normalizeLineBreaks } from '@/sanity/lib/utils';
 import defineImage from '@/sanity/schema/constructors/defineImage';
 import defineSection from '@/sanity/schema/constructors/defineSection';
 
-export const CARDS_SECTION_FRAGMENT = `
-	_type == "cardsSection" => {
-		...,
-		cards[] {
-			...,
-			image {
-				...,
-				asset->,
-			},
-		},
-	}`;
-
 const cardsSection = defineSection({
 	name: 'cardsSection',
 	title: 'Cards Section',

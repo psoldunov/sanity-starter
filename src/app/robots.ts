@@ -1,30 +1,30 @@
 import type { MetadataRoute } from 'next';
+import { CRAWLER_DISALLOWED_PATHS } from '@/config';
 import { getSiteUrl } from '@/lib/url';
-import { sanityFetch } from '@/sanity/lib/live';
-import { PAGES_QUERY } from '@/sanity/lib/queries';
 
-export default async function robots(): Promise<MetadataRoute.Robots> {
+/**
+ * robots.txt.
+ *
+ * Only disallows the reserved application paths. It does not enumerate every
+ * allowed route — an earlier version did, which published the site's full page
+ * list to anyone who asked and grew without bound. Discovery is the sitemap's
+ * job.
+ *
+ * Pages an editor flagged `noIndex` are deliberately NOT listed here. A
+ * `Disallow` stops a crawler fetching the page, so it never reads the
+ * `robots: { index: false }` meta tag that actually de-indexes — the URL can
+ * still be indexed on inbound links alone. Listing them would also publish
+ * exactly the set of pages the editor wanted kept quiet. The meta tag emitted
+ * per page is the enforcement.
+ */
+export default function robots(): MetadataRoute.Robots {
 	const baseUrl = getSiteUrl();
-
-	const { data: pages } = await sanityFetch({
-		query: PAGES_QUERY,
-		stega: false,
-		perspective: 'published',
-	});
-
-	const withSlug = pages.flatMap((page) => {
-		const current = page.route?.current;
-		return current ? [{ current, noIndex: page.noIndex }] : [];
-	});
 
 	return {
 		rules: {
 			userAgent: '*',
-			disallow: withSlug.filter((p) => p.noIndex).map((p) => p.current),
-			allow: [
-				...withSlug.filter((p) => !p.noIndex).map((p) => p.current),
-				'/posts/*',
-			],
+			allow: '/',
+			disallow: [...CRAWLER_DISALLOWED_PATHS],
 		},
 		sitemap: `${baseUrl}/sitemap.xml`,
 	};

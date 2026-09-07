@@ -10,29 +10,35 @@ export default function CardsSection(props: SectionProps<'cardsSection'>) {
 		<Section {...props}>
 			<Container>
 				{!!heading && (
-					<h2 className='mb-12 text-center font-bold text-4xl text-foreground'>
+					<h2 className='mb-12 text-balance text-center font-semibold text-3xl text-foreground tracking-tight sm:text-4xl'>
 						{heading}
 					</h2>
 				)}
-				<div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
+				<div className='grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3'>
 					{cards?.map((card) => (
 						<div
 							key={card._key}
-							className='rounded-lg border border-foreground/10 bg-background p-4 py-6'
+							className='flex flex-col rounded-theme border border-border bg-surface p-6'
 						>
 							{!!card.image && (
 								<SmartImage
 									image={card.image}
-									className='mb-4 h-16 w-16 rounded-lg'
+									// Explicit dimensions: without them SmartImage requests the
+									// asset's intrinsic size, so a 2000px upload was downloaded
+									// in full to fill a 64px box.
+									width={64}
+									height={64}
+									sizes='64px'
+									className='mb-4 h-16 w-16 rounded-theme object-cover'
 								/>
 							)}
 							{!!card.heading && (
-								<h3 className='mb-3 font-semibold text-2xl text-foreground'>
+								<h3 className='mb-2 font-semibold text-foreground text-lg'>
 									{card.heading}
 								</h3>
 							)}
 							{!!card.paragraph && (
-								<p className='text-foreground/70'>{card.paragraph}</p>
+								<p className='text-muted text-sm/6'>{card.paragraph}</p>
 							)}
 						</div>
 					))}

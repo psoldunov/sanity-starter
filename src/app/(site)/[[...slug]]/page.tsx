@@ -1,72 +1,66 @@
+import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { SectionRenderer } from '@/components/utility/SectionRenderer';
 import { resolveDestinationUrl } from '@/lib/links';
 import { hasDynamicParams, normalizeSlug, splitSlug } from '@/lib/slug';
 import { getSiteUrl } from '@/lib/url';
-import { sanityFetch } from '@/sanity/lib/live';
 import {
-	PAGE_QUERY,
-	PAGES_QUERY,
-	REDIRECT_QUERY,
-	SITE_SETTINGS_QUERY,
-} from '@/sanity/lib/queries';
+	getPage,
+	getPageForMetadata,
+	getSettingsForMetadata,
+} from '@/sanity/lib/fetchers';
+import { sanityFetch } from '@/sanity/lib/live';
+import { PAGE_ROUTES_QUERY, REDIRECT_QUERY } from '@/sanity/lib/queries';
 import { getCachedOGImageUrl } from '@/sanity/lib/utils';
 
 export const dynamicParams = true;
 
 export async function generateStaticParams() {
 	const { data } = await sanityFetch({
-		query: PAGES_QUERY,
+		query: PAGE_ROUTES_QUERY,
 		stega: false,
 		perspective: 'published',
 	});
 
-	return data.flatMap((page) => {
-		const current = page.route?.current;
-		if (!current) return [];
-		return [{ slug: splitSlug(current) }];
-	});
+	return data.flatMap(({ route }) =>
+		route ? [{ slug: splitSlug(route) }] : [],
+	);
 }
 
 export async function generateMetadata({
 	params,
 }: {
 	params: Promise<{ slug?: string[] }>;
-}) {
+}): Promise<Metadata> {
 	const { slug } = await params;
+	const currentPath = normalizeSlug(slug);
 
-	const { data: page } = await sanityFetch({
-		query: PAGE_QUERY,
-		params: { slug: normalizeSlug(slug) },
-	});
-
-	const { data: settings } = await sanityFetch({
-		query: SITE_SETTINGS_QUERY,
-	});
+	// Independent reads — issued together rather than one after the other.
+	const [page, settings] = await Promise.all([
+		getPageForMetadata(currentPath),
+		getSettingsForMetadata(),
+	]);
 
 	if (!page) {
-		return;
+		return { title: 'Not found' };
 	}
 
 	const siteUrl = getSiteUrl();
-	const currentPath = normalizeSlug(slug);
 	const canonicalUrl =
 		currentPath === '/' ? siteUrl : `${siteUrl}${currentPath}`;
+	const ogImage = page.ogImage ?? settings?.siteOgImage;
 
 	return {
 		title: page.metaTitle || page.title || undefined,
 		description: page.metaDescription || settings?.siteDescription || undefined,
+		// Without this, a page flagged `noIndex` in the Studio is still indexable —
+		// robots.txt asks crawlers not to fetch it, it does not stop indexing.
+		robots: page.noIndex ? { index: false, follow: false } : undefined,
 		alternates: {
 			canonical: canonicalUrl,
 		},
 		openGraph: {
-			images: [
-				page.ogImage
-					? getCachedOGImageUrl(page.ogImage)
-					: settings?.siteOgImage
-						? getCachedOGImageUrl(settings.siteOgImage)
-						: '',
-			].filter(Boolean),
+			images: ogImage ? [getCachedOGImageUrl(ogImage)] : [],
 			siteName: settings?.siteName || undefined,
 			type: 'website',
 			url: canonicalUrl,
@@ -83,28 +77,31 @@ export default async function PageComponent({
 	searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
 	const { slug } = await params;
+	const normalizedSlug = normalizeSlug(slug);
 
-	const { data: page } = await sanityFetch({
-		query: PAGE_QUERY,
-		params: { slug: normalizeSlug(slug) },
-	});
+	const page = await getPage(normalizedSlug);
 
 	if (!page) {
 		const { data: redirectData } = await sanityFetch({
 			query: REDIRECT_QUERY,
-			params: { slug: normalizeSlug(slug) },
+			params: { slug: normalizedSlug },
+			stega: false,
 		});
 
 		const destinationUrl = resolveDestinationUrl(redirectData?.destination);
 		if (destinationUrl) {
-			redirect(destinationUrl);
+			// Editor-authored destination, so `typedRoutes` cannot check it at build
+			// time. `resolveDestinationUrl` is the guarantee: a static path only
+			// survives `isSafeInternalPath`, which rejects the `//host` and `/\host`
+			// forms that would turn this into an open redirect.
+			redirect(destinationUrl as Parameters<typeof redirect>[0]);
 		}
 
-		return notFound();
+		notFound();
 	}
 
 	if (!page.sections?.length) {
-		return notFound();
+		notFound();
 	}
 
 	const searchParamsObj = hasDynamicParams(page)
@@ -112,10 +109,10 @@ export default async function PageComponent({
 		: undefined;
 
 	return (
-		<main>
-			{page.sections.map((section, index) => (
+		<main id='main'>
+			{page.sections.map((section) => (
 				<SectionRenderer
-					key={section._key || index}
+					key={section._key}
 					section={section}
 					searchParams={searchParamsObj}
 				/>

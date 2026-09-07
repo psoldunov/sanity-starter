@@ -1,0 +1,156 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Type generation reads the schema from sanity.config.ts, which imports
+  # src/sanity/env.ts — and that throws on a missing project id by design.
+  # These are public values, not secrets.
+  NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ vars.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+  NEXT_PUBLIC_SANITY_DATASET: ${{ vars.NEXT_PUBLIC_SANITY_DATASET || 'production' }}
+
+jobs:
+  check:
+    name: Lint, typecheck, test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # `fallow audit` diffs against the base ref, so the shallow clone
+          # actions/checkout takes by default is not enough history.
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+
+      - name: Install dependencies
+        # Type generation needs Sanity credentials that a fork's PR will not
+        # have. Skip it here and run it explicitly in the step below, which is
+        # allowed to be skipped.
+        env:
+          SKIP_SANITY_TYPEGEN: '1'
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Test
+        run: bun test
+
+      # Both tools below are static analysers: they read source and need no
+      # Sanity credentials, so they gate every pull request including a fork's.
+      # They run via npx rather than as dependencies — neither is a build input.
+      #
+      # Both versions are pinned. react-doctor in particular is pre-1.0, where a
+      # minor release may change rules, output shape, or the score itself; on
+      # `@latest` an upstream release would silently move this gate.
+
+      - name: React Doctor
+        # TWO INVOCATIONS, DELIBERATELY. Do not collapse them into one.
+        #
+        # `--score` suppresses react-doctor's own exit code. Verified against
+        # 0.9.13 on a scratch project with `blocking: warning`: the bare run
+        # exits 1, the identical run with `--score` exits 0 while printing the
+        # same score. Gating only on `--score` would therefore never fail on a
+        # finding, whatever its severity.
+        #
+        # So: the bare run is the real gate, and the score floor is a second one
+        # catching accumulated warnings, which are advisory and never move the
+        # exit code at the default `blocking: error`.
+        run: |
+          set -euo pipefail
+          npx -y react-doctor@0.9.13 .
+          SCORE="$(npx -y react-doctor@0.9.13 . --score | tr -d '[:space:]')"
+          # Fail closed: if --score ever stops printing a bare integer, a
+          # string comparison would error inside `if`, which `set -e` exempts,
+          # and the gate would silently pass.
+          case "$SCORE" in
+            ''|*[!0-9]*)
+              echo "::error::Could not parse a React Doctor score (got: '$SCORE')"
+              exit 1
+              ;;
+          esac
+          echo "React Doctor score: $SCORE / 100 (floor: $MIN_SCORE)" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$SCORE" -lt "$MIN_SCORE" ]; then
+            echo "::error::React Doctor score $SCORE is below the floor of $MIN_SCORE"
+            exit 1
+          fi
+        env:
+          # The repository scores 100. The floor sits below that on purpose, so
+          # a single new advisory warning does not block an unrelated PR — but
+          # raise it as the score rises, and never lower it to go green.
+          MIN_SCORE: '90'
+
+      - name: Fallow
+        # `audit` is fallow's changed-files gate. `.fallowrc.jsonc` sets
+        # `gate: new-only`, so only findings this changeset introduces fail —
+        # a fork's first PR does not inherit the repository's backlog.
+        run: npx -y fallow@3.22.0 audit --base "origin/${{ github.event.pull_request.base.ref || 'main' }}"
+
+      # Typecheck and build depend on generated Sanity types, so both skip when
+      # the project id is not configured. A skipped step renders as a grey tick
+      # next to the green ones, which reads as coverage this run did not have —
+      # so say it out loud in the summary.
+      - name: Report coverage of this run
+        run: |
+          if [ -z "${NEXT_PUBLIC_SANITY_PROJECT_ID:-}" ]; then
+            {
+              echo '### ⚠️ Typecheck and build did not run'
+              echo
+              echo 'No `NEXT_PUBLIC_SANITY_PROJECT_ID` repository variable, so'
+              echo '`bun run typegen` cannot produce `src/sanity/types/sanity.types.ts`'
+              echo 'and everything downstream of it is skipped.'
+              echo
+              echo 'Set the `NEXT_PUBLIC_SANITY_PROJECT_ID` variable and the'
+              echo '`SANITY_API_READ_TOKEN` secret to get full coverage. Forks'
+              echo 'never receive secrets, so their PRs stop at lint, tests and'
+              echo 'the static analysers by design.'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Generate Sanity types
+        id: typegen
+        if: env.NEXT_PUBLIC_SANITY_PROJECT_ID != ''
+        run: bun run typegen
+
+      - name: Typecheck
+        # Typechecking needs the generated types, so it only runs when the
+        # previous step did. Lint and tests above cover the rest.
+        if: steps.typegen.outcome == 'success'
+        run: bun run typecheck
+
+      # A fork's pull request gets `vars` but never `secrets`, so the read token
+      # can be absent while typegen above still succeeds. Record whether it is
+      # there without putting the value in workflow-level env, where every step
+      # would see it.
+      - name: Check for Sanity read token
+        id: token
+        env:
+          SANITY_API_READ_TOKEN: ${{ secrets.SANITY_API_READ_TOKEN }}
+        run: |
+          if [ -n "$SANITY_API_READ_TOKEN" ]; then
+            echo 'present=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'present=false' >> "$GITHUB_OUTPUT"
+            echo 'No SANITY_API_READ_TOKEN — skipping build.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Build
+        # Needs the generated types from typegen and a read token for the
+        # draft-mode route. Skipping beats failing a contributor's fork PR for
+        # a secret they were never going to have.
+        if: steps.typegen.outcome == 'success' && steps.token.outputs.present == 'true'
+        env:
+          SANITY_API_READ_TOKEN: ${{ secrets.SANITY_API_READ_TOKEN }}
+        run: bun run build

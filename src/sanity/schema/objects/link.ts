@@ -1,9 +1,15 @@
-import { LinkIcon as SanityLinkIcon } from '@sanity/icons';
+import { LinkIcon as SanityLinkIcon } from '@sanity/icons/Link';
 import { FileIcon, HashIcon, LinkIcon, PaperclipIcon } from 'lucide-react';
 import { defineField, defineType } from 'sanity';
 import { hasDestination } from '@/lib/links';
 import SectionIdField from '@/sanity/components/SectionIdField';
 import SectionIdInput from '@/sanity/components/SectionIdInput';
+
+/** The icon and subtitle a link preview shows for one kind of destination. */
+type PreviewVariant = {
+	media: typeof FileIcon;
+	subtitle: string;
+};
 
 const sharedFields = [
 	defineField({
@@ -93,20 +99,27 @@ const sharedPreview = {
 		fileName?: string;
 		label?: string;
 	}) {
-		const variant = pageRoute
-			? {
+		// Ordered candidates rather than a nested ternary chain: the precedence
+		// is the point, and a flat list makes adding a link kind one entry
+		// instead of another level of nesting.
+		const candidates: Array<[unknown, PreviewVariant]> = [
+			[
+				pageRoute,
+				{
 					media: FileIcon,
 					subtitle: `${pageRoute}${sectionId ? `#${sectionId}` : ''}`,
-				}
-			: staticPath
-				? { media: LinkIcon, subtitle: staticPath }
-				: referenceSlug
-					? { media: FileIcon, subtitle: referenceSlug }
-					: href
-						? { media: LinkIcon, subtitle: href }
-						: fileName
-							? { media: PaperclipIcon, subtitle: fileName }
-							: { media: HashIcon, subtitle: 'No URL selected' };
+				},
+			],
+			[staticPath, { media: LinkIcon, subtitle: staticPath ?? '' }],
+			[referenceSlug, { media: FileIcon, subtitle: referenceSlug ?? '' }],
+			[href, { media: LinkIcon, subtitle: href ?? '' }],
+			[fileName, { media: PaperclipIcon, subtitle: fileName ?? '' }],
+		];
+
+		const variant = candidates.find(([value]) => Boolean(value))?.[1] ?? {
+			media: HashIcon,
+			subtitle: 'No URL selected',
+		};
 
 		return {
 			title: label || 'Link',

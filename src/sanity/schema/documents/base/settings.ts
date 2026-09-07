@@ -1,5 +1,6 @@
 import { SettingsIcon } from 'lucide-react';
 import { defineArrayMember, defineField, defineType } from 'sanity';
+import defineImage from '../../constructors/defineImage';
 import defineLink from '../../constructors/defineLink';
 
 const settings = defineType({
@@ -38,6 +39,13 @@ const settings = defineType({
 			validation: (rule) =>
 				rule.required().error('Site Description is required'),
 		},
+		defineImage({
+			name: 'logo',
+			title: 'Logo',
+			group: 'general',
+			description:
+				'Shown in the header. Falls back to the site name when not set.',
+		}),
 		{
 			name: 'headerMenu',
 			title: 'Header Menu',

@@ -9,17 +9,37 @@ import { apiVersion, dataset, projectId } from '@/sanity/env';
 import { locations, mainDocuments } from '@/sanity/lib/resolve';
 import schemaTypes from '@/sanity/schema';
 
+/**
+ * Document types editors may view but not mutate. Add a `_type` here to make it
+ * read-only in the Studio.
+ */
 const readOnlyTypes = new Set<string>([]);
 
+/** Types that exist exactly once and must not be created, deleted or duplicated. */
 const singletonTypes = new Set<string>(['settings']);
 
+/** The only actions a singleton keeps. */
 const singletonActions = new Set<string>([
 	'publish',
 	'discardChanges',
 	'restore',
 ]);
 
-const readOnlyActions = new Set<string>(['delete']);
+/**
+ * Actions stripped from a read-only type.
+ *
+ * These are removed, not retained — the previous implementation filtered the
+ * action list *down to* this set, which left a "read-only" type with delete as
+ * its only available action. `readOnlyTypes` was empty, so the bug was latent,
+ * but it would have fired the moment anyone used the feature.
+ */
+const readOnlyBlockedActions = new Set<string>([
+	'delete',
+	'duplicate',
+	'publish',
+	'unpublish',
+	'restore',
+]);
 
 const singletonListItem = ({
 	S,
@@ -139,7 +159,7 @@ export default defineConfig({
 			}
 			if (readOnlyTypes.has(context.schemaType)) {
 				return input.filter(
-					({ action }) => action && readOnlyActions.has(action),
+					({ action }) => !action || !readOnlyBlockedActions.has(action),
 				);
 			}
 			return input;

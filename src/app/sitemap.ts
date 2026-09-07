@@ -1,72 +1,68 @@
 import type { MetadataRoute } from 'next';
 import { getSiteUrl } from '@/lib/url';
 import { sanityFetch } from '@/sanity/lib/live';
-import { PAGES_QUERY, POSTS_QUERY } from '@/sanity/lib/queries';
+import { PAGES_SITEMAP_QUERY, POSTS_SITEMAP_QUERY } from '@/sanity/lib/queries';
 
-interface SitemapEntry {
-	url: string;
-	lastModified?: string | Date;
-	changeFrequency?:
-		| 'always'
-		| 'hourly'
-		| 'daily'
-		| 'weekly'
-		| 'monthly'
-		| 'yearly'
-		| 'never';
-	priority?: number;
-}
-
+/**
+ * sitemap.xml.
+ *
+ * Both queries project two fields each and already exclude `noIndex` documents,
+ * and they are issued together — they do not depend on each other.
+ */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	const baseUrl = getSiteUrl();
 
-	const sitemapEntries: SitemapEntry[] = [];
+	const [{ data: pages }, { data: posts }] = await Promise.all([
+		sanityFetch({
+			query: PAGES_SITEMAP_QUERY,
+			stega: false,
+			perspective: 'published',
+		}),
+		sanityFetch({
+			query: POSTS_SITEMAP_QUERY,
+			stega: false,
+			perspective: 'published',
+		}),
+	]);
 
-	const { data: pages } = await sanityFetch({
-		query: PAGES_QUERY,
-		stega: false,
-		perspective: 'published',
-	});
+	const pageEntries: MetadataRoute.Sitemap = pages.flatMap(
+		({ route, _updatedAt }) => {
+			if (!route) return [];
+			const isHome = route === '/';
 
-	const { data: posts } = await sanityFetch({
-		query: POSTS_QUERY,
-		stega: false,
-		perspective: 'published',
-	});
+			return [
+				{
+					url: isHome ? baseUrl : `${baseUrl}${route}`,
+					lastModified: _updatedAt || new Date(),
+					changeFrequency: isHome ? ('daily' as const) : ('weekly' as const),
+					priority: isHome ? 1 : 0.9,
+				},
+			];
+		},
+	);
 
-	for (const page of pages || []) {
-		if (page.route?.current) {
-			const url =
-				page.route.current === '/' ? baseUrl : baseUrl + page.route.current;
+	const postEntries: MetadataRoute.Sitemap = posts.flatMap(
+		({ slug, _updatedAt }) =>
+			slug
+				? [
+						{
+							url: `${baseUrl}/posts/${slug}`,
+							lastModified: _updatedAt || new Date(),
+							changeFrequency: 'weekly' as const,
+							priority: 0.8,
+						},
+					]
+				: [],
+	);
 
-			sitemapEntries.push({
-				url,
-				lastModified: page._updatedAt || new Date(),
-				changeFrequency: page.route.current === '/' ? 'daily' : 'weekly',
-				priority: page.route.current === '/' ? 1.0 : 0.9,
-			});
-		}
-	}
-
-	for (const post of posts || []) {
-		if (post.slug?.current) {
-			const url = `${baseUrl}/posts/${post.slug.current}`;
-
-			sitemapEntries.push({
-				url,
-				lastModified: post._updatedAt || new Date(),
-				changeFrequency: 'weekly',
-				priority: 0.8,
-			});
-		}
-	}
-
-	sitemapEntries.sort((a, b) => {
-		if (a.priority !== b.priority) {
-			return (b.priority || 0) - (a.priority || 0);
-		}
-		return a.url.localeCompare(b.url);
-	});
-
-	return sitemapEntries;
+	return [
+		{
+			url: `${baseUrl}/posts`,
+			lastModified: new Date(),
+			changeFrequency: 'daily',
+			priority: 0.9,
+		},
+		...pageEntries,
+		...postEntries,
+	];
 }

@@ -1,4 +1,4 @@
-import { LinkIcon } from '@sanity/icons';
+import { LinkIcon } from '@sanity/icons/Link';
 import { defineField, defineType } from 'sanity';
 import { LINKABLE_DOCUMENTS } from '@/config/linkables';
 import DestinationField from '@/sanity/components/DestinationField';

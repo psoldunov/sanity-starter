@@ -1,19 +1,21 @@
-import { useEffect, useState } from 'react';
+'use client';
+
+import { useEffect, useState, useSyncExternalStore } from 'react';
 
 /**
- * Hook to check if the component is running in the main window
- * (not in an iframe and not opened by another window)
- * @returns false during SSR and until client-side hydration
+ * Whether the page is the top-level window — not in an iframe and not opened by
+ * another window.
+ *
+ * Returns `false` during SSR and until hydration, so anything gated on it is
+ * absent from the server-rendered HTML rather than mismatched against it.
+ *
+ * @returns `true` once the client confirms this is the main window.
  */
 export function useIsMainWindow(): boolean {
 	const [isMainWindow, setIsMainWindow] = useState(false);
 
 	useEffect(() => {
-		if (
-			typeof window !== 'undefined' &&
-			window === window.parent &&
-			!window.opener
-		) {
+		if (window === window.parent && !window.opener) {
 			setIsMainWindow(true);
 		}
 	}, []);
@@ -22,22 +24,33 @@ export function useIsMainWindow(): boolean {
 }
 
 /**
- * Tracks the current vertical scroll position of the window.
- * @returns The current vertical scroll position in pixels.
+ * Current vertical scroll position, sampled once per animation frame.
+ *
+ * The listener is passive so it never blocks scrolling, and updates are
+ * coalesced into a frame — a `setState` per scroll event re-renders every
+ * consumer at scroll frequency.
+ *
+ * @returns The vertical scroll position in pixels.
  */
 export function useVerticalScroll(): number {
-	const [scrollY, setScrollY] = useState<number>(0);
+	const [scrollY, setScrollY] = useState(0);
 
 	useEffect(() => {
+		let frame = 0;
+
 		const handleScroll = () => {
-			setScrollY(window.scrollY);
+			if (frame) return;
+			frame = requestAnimationFrame(() => {
+				frame = 0;
+				setScrollY(window.scrollY);
+			});
 		};
 
-		window.addEventListener('scroll', handleScroll);
-
 		handleScroll();
+		window.addEventListener('scroll', handleScroll, { passive: true });
 
 		return () => {
+			if (frame) cancelAnimationFrame(frame);
 			window.removeEventListener('scroll', handleScroll);
 		};
 	}, []);
@@ -45,30 +58,48 @@ export function useVerticalScroll(): number {
 	return scrollY;
 }
 
+type ViewportSize = { width: number; height: number };
+
+const SERVER_VIEWPORT: ViewportSize = { width: 0, height: 0 };
+
+let viewportSnapshot: ViewportSize = SERVER_VIEWPORT;
+
 /**
- * Tracks the current viewport size.
- * @returns The current viewport width and height in pixels.
+ * Subscribes to viewport resizes, caching the snapshot outside React.
+ *
+ * The cached object is required: returning a fresh object from `getSnapshot`
+ * makes React see a new value every render and loop forever.
+ *
+ * @param onStoreChange - Callback React supplies to request a re-render.
+ * @returns The unsubscribe function.
  */
-export function useViewportSize(): { width: number; height: number } {
-	const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
-
-	useEffect(() => {
-		if (typeof window === 'undefined') {
-			return;
-		}
-
-		const handleResize = () => {
-			setViewportSize({ width: window.innerWidth, height: window.innerHeight });
+function subscribeViewport(onStoreChange: () => void): () => void {
+	const handleResize = () => {
+		viewportSnapshot = {
+			width: window.innerWidth,
+			height: window.innerHeight,
 		};
+		onStoreChange();
+	};
 
-		handleResize();
+	handleResize();
+	window.addEventListener('resize', handleResize, { passive: true });
 
-		window.addEventListener('resize', handleResize);
+	return () => window.removeEventListener('resize', handleResize);
+}
 
-		return () => {
-			window.removeEventListener('resize', handleResize);
-		};
-	}, []);
-
-	return viewportSize;
+/**
+ * Current viewport size.
+ *
+ * Built on `useSyncExternalStore` so React is given an explicit server snapshot
+ * rather than reading `window` during render.
+ *
+ * @returns The viewport width and height in pixels; zeroes during SSR.
+ */
+export function useViewportSize(): ViewportSize {
+	return useSyncExternalStore(
+		subscribeViewport,
+		() => viewportSnapshot,
+		() => SERVER_VIEWPORT,
+	);
 }
