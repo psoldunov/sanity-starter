@@ -107,6 +107,13 @@ export function resolveDestinationUrl(
  * one is set, so the order only matters for data written outside the Studio:
  * file download, then external URL, then internal destination.
  *
+ * **The result is NOT guaranteed to be same-origin.** Unlike
+ * `resolveDestinationUrl` and `isSafeInternalPath` in this module, which do
+ * promise that, the `href` branch returns an author-supplied external URL
+ * verbatim — that is the whole point of the field. A caller that treats this
+ * as an internal route has an open redirect; classify with `isExternalUrl`
+ * first, as `SmartLink` does before it chooses between `<a>` and `<Link>`.
+ *
  * @param link - The queried link, with `page` dereferenced.
  * @param fileUrl - The resolved file asset URL, when the link carries a file.
  * @returns The URL to link to, or `undefined` when nothing resolves.

@@ -23,7 +23,7 @@
 		"typegen:generate": "sanity typegen generate",
 		"typegen": "bun run typegen:extract && bun run typegen:generate",
 		"postinstall": "./scripts/postinstall.sh",
-		"analyze": "npx -y react-doctor@latest . && npx -y fallow@3 dead-code"
+		"analyze": "bunx react-doctor@0.9.13 . && bunx fallow@3.22.0 audit"
 	},
 	"dependencies": {
 		"@portabletext/react": "^6.0.3",

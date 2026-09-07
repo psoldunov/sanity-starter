@@ -57,9 +57,17 @@ jobs:
       # `@latest` an upstream release would silently move this gate.
 
       - name: React Doctor
-        # Two gates, deliberately. The tool's own exit code fails on any
-        # error-severity finding. The score floor then catches accumulated
-        # warnings, which are advisory and never move the exit code.
+        # TWO INVOCATIONS, DELIBERATELY. Do not collapse them into one.
+        #
+        # `--score` suppresses react-doctor's own exit code. Verified against
+        # 0.9.13 on a scratch project with `blocking: warning`: the bare run
+        # exits 1, the identical run with `--score` exits 0 while printing the
+        # same score. Gating only on `--score` would therefore never fail on a
+        # finding, whatever its severity.
+        #
+        # So: the bare run is the real gate, and the score floor is a second one
+        # catching accumulated warnings, which are advisory and never move the
+        # exit code at the default `blocking: error`.
         run: |
           set -euo pipefail
           npx -y react-doctor@0.9.13 .
