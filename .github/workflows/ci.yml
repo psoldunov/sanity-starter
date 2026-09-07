@@ -98,6 +98,27 @@ jobs:
         # a fork's first PR does not inherit the repository's backlog.
         run: npx -y fallow@3.22.0 audit --base "origin/${{ github.event.pull_request.base.ref || 'main' }}"
 
+      # Typecheck and build depend on generated Sanity types, so both skip when
+      # the project id is not configured. A skipped step renders as a grey tick
+      # next to the green ones, which reads as coverage this run did not have —
+      # so say it out loud in the summary.
+      - name: Report coverage of this run
+        run: |
+          if [ -z "${NEXT_PUBLIC_SANITY_PROJECT_ID:-}" ]; then
+            {
+              echo '### ⚠️ Typecheck and build did not run'
+              echo
+              echo 'No `NEXT_PUBLIC_SANITY_PROJECT_ID` repository variable, so'
+              echo '`bun run typegen` cannot produce `src/sanity/types/sanity.types.ts`'
+              echo 'and everything downstream of it is skipped.'
+              echo
+              echo 'Set the `NEXT_PUBLIC_SANITY_PROJECT_ID` variable and the'
+              echo '`SANITY_API_READ_TOKEN` secret to get full coverage. Forks'
+              echo 'never receive secrets, so their PRs stop at lint, tests and'
+              echo 'the static analysers by design.'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Generate Sanity types
         id: typegen
         if: env.NEXT_PUBLIC_SANITY_PROJECT_ID != ''

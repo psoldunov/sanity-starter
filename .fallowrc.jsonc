@@ -19,6 +19,18 @@
 		".context/**"
 	],
 
+	"ignoreUnresolvedImports": [
+		// `src/sanity/types/sanity.types.ts` is emitted by `bun run typegen` and
+		// gitignored, so it is simply absent in any checkout that has not run it —
+		// including CI on a fork's pull request, where typegen is skipped because
+		// the Sanity project id is not available. Every import of it is
+		// `import type`, so nothing resolves at runtime either way.
+		//
+		// Without this, `fallow audit` fails on three unresolved imports in CI
+		// while passing locally, where the file happens to exist.
+		"@/sanity/types/sanity.types"
+	],
+
 	"ignoreDependencies": [
 		// Peer of `@sanity/ui` and `sanity`, imported directly only by
 		// `SectionPreview.tsx`. Declared so the Studio resolves one copy; a
