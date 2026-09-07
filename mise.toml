@@ -1,6 +1,6 @@
 [tools]
 biome = "latest"
-bun = "1.3.13"
+bun = "1.4.2"
 
 [tasks.dev]
 run = "bun dev"
@@ -13,6 +13,12 @@ run = "bun start"
 
 [tasks.lint]
 run = "biome check"
+
+[tasks.test]
+run = "bun test"
+
+[tasks.check]
+run = "bun run check"
 
 [tasks.format]
 run = "biome format --write"

@@ -11,6 +11,10 @@ import type { LinkableDocument, StaticRoute } from '@/types';
  * - `STATIC_ROUTES`: routes implemented directly in Next (no backing Sanity
  *   document). Add the routes you create under `src/app` here so they show up in
  *   the picker.
+ *
+ * `PROTECTED_ROUTE_PATTERNS` in `src/config/index.ts` derives from
+ * `LINKABLE_DOCUMENTS`, so adding an entry here also stops a CMS page from
+ * claiming that prefix.
  */
 
 /**
@@ -37,6 +41,5 @@ export const LINKABLE_DOCUMENTS: readonly LinkableDocument[] = [
  * Add new static pages here so editors can pick them as link destinations.
  */
 export const STATIC_ROUTES: readonly StaticRoute[] = [
-	// Example:
-	// { label: 'Contact', path: '/contact' },
+	{ label: 'Blog', path: '/posts' },
 ];

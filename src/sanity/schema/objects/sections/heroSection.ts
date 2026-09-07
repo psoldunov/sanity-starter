@@ -3,15 +3,6 @@ import { normalizeLineBreaks } from '@/sanity/lib/utils';
 import defineImage from '@/sanity/schema/constructors/defineImage';
 import defineSection from '@/sanity/schema/constructors/defineSection';
 
-export const HERO_SECTION_FRAGMENT = `
-	_type == "heroSection" => {
-		...,
-		image {
-			...,
-			asset->,
-		},
-	}`;
-
 const heroSection = defineSection({
 	name: 'heroSection',
 	title: 'Hero Section',

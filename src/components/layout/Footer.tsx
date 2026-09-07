@@ -1,43 +1,66 @@
+import Container from '@/components/layout/Container';
 import SmartLink from '@/components/utility/SmartLink';
 import type { FooterNavColumn } from '@/types';
-import Container from './Container';
 
 type FooterProps = {
 	nav?: FooterNavColumn[] | null;
-	siteName?: string;
+	siteName?: string | null;
 };
 
+/**
+ * Column-count classes, written out in full.
+ *
+ * Tailwind scans source text for complete class names, so an interpolated
+ * `md:grid-cols-${n}` is never emitted and the footer silently stays
+ * single-column on desktop. A lookup keeps the literals visible to the scanner.
+ */
+const COLUMN_GRID: Record<number, string> = {
+	1: 'md:grid-cols-1',
+	2: 'md:grid-cols-2',
+	3: 'md:grid-cols-3',
+	4: 'md:grid-cols-4',
+};
+
+/**
+ * Site footer: navigation columns from site settings plus a copyright line.
+ *
+ * @param props.nav - Footer navigation columns.
+ * @param props.siteName - Site name shown in the copyright line.
+ * @returns The site footer element.
+ */
 export default function Footer({ nav, siteName }: FooterProps) {
 	const columns = nav ?? [];
+	const columnClass = COLUMN_GRID[Math.min(Math.max(columns.length, 1), 4)];
 
 	return (
-		<footer className='border-foreground/10 border-t'>
+		<footer className='mt-24 border-border border-t'>
 			<Container>
 				<div className='py-12'>
 					{columns.length > 0 && (
-						<div
-							className={`grid grid-cols-1 gap-8 sm:grid-cols-2 ${columns.length >= 4 ? 'md:grid-cols-4' : `md:grid-cols-${Math.min(columns.length, 3)}`}`}
+						<nav
+							aria-label='Footer'
+							className={`grid grid-cols-1 gap-8 sm:grid-cols-2 ${columnClass}`}
 						>
 							{columns.map((column) => (
 								<div key={column._key}>
-									<h3 className='mb-4 font-semibold text-foreground'>
+									<h2 className='mb-4 font-semibold text-base text-foreground'>
 										{column.heading}
-									</h3>
-									<ul className='flex flex-col gap-2 text-foreground/70'>
+									</h2>
+									<ul className='flex flex-col gap-2'>
 										{column.links?.map((link) => (
 											<li key={link._key}>
 												<SmartLink
 													link={link}
-													className='transition-colors hover:text-foreground'
+													className='text-muted text-sm transition-colors hover:text-foreground'
 												/>
 											</li>
 										))}
 									</ul>
 								</div>
 							))}
-						</div>
+						</nav>
 					)}
-					<div className='mt-8 border-foreground/10 border-t pt-8 text-center text-foreground/70'>
+					<div className='mt-8 border-border border-t pt-8 text-center text-muted text-sm'>
 						<p>
 							&copy; {new Date().getFullYear()} {siteName || 'Company Name'}.
 							All rights reserved.

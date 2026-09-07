@@ -1,0 +1,15 @@
+{
+	"ignore": {
+		"files": ["src/sanity/types/**", "schema.json", ".context/**"],
+		"overrides": [
+			{
+				"files": ["src/sanity/schema/**"],
+				"rules": ["react-doctor/nextjs-missing-metadata"]
+			},
+			{
+				"files": ["src/hooks/index.ts"],
+				"rules": ["react-doctor/no-initialize-state"]
+			}
+		]
+	}
+}

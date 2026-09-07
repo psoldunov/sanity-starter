@@ -1,4 +1,4 @@
-import type { DefineLinkOptions } from '@/types';
+import type { DefineLinkOptions } from './types';
 
 /**
  * Returns an array member / field `type` reference for the shared `link`

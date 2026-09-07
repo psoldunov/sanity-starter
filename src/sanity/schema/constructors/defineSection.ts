@@ -2,10 +2,11 @@ import { defineType, type FieldDefinition, type Rule } from 'sanity';
 import { PADDING_CONFIG } from '@/config';
 import PaddingInput from '@/sanity/components/PaddingInput';
 import SectionPreview from '@/sanity/components/SectionPreview';
+import { HIDDEN_SECTION_DESCRIPTION } from '@/sanity/constants';
 import type { PaddingSize } from '@/types';
 import type { DefineSectionOptions } from './types';
 
-export const PADDING_OPTIONS = Object.entries(PADDING_CONFIG).map(
+const PADDING_OPTIONS = Object.entries(PADDING_CONFIG).map(
 	([value, config]) => ({
 		value: value as PaddingSize,
 		label: config.label,
@@ -134,9 +135,9 @@ export default function defineSection(options: DefineSectionOptions) {
 				const prepared = preview?.prepare?.(...args) || {};
 				return {
 					...prepared,
-					title: args[0].hidden
-						? JSON.stringify({ title: prepared.title, hidden: true })
-						: prepared.title,
+					description: args[0].hidden
+						? HIDDEN_SECTION_DESCRIPTION
+						: prepared.description,
 				};
 			},
 		},

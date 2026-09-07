@@ -1,30 +1,28 @@
 import { getImage, type SanityImageSource } from '@sanity/asset-utils';
 import { blurhashToBase64 } from 'blurhash-base64';
 import Image from 'next/image';
-import { buildOptimizedImageUrl } from '@/lib/image';
+import {
+	buildOptimizedImageUrl,
+	isDereferencedAsset,
+	resolveAltText,
+	resolveImageDimensions,
+	resolveImageSizes,
+} from '@/lib/image';
 import { dataset, projectId } from '@/sanity/env';
 import urlFor from '@/sanity/lib/utils';
-import type { SanityImageAsset } from '@/sanity/types/sanity.types';
 import type { SmartImageProps } from '@/types';
 
-function isDereferencedAsset(asset: unknown): asset is SanityImageAsset {
-	return (
-		typeof asset === 'object' &&
-		asset !== null &&
-		'url' in asset &&
-		'_type' in asset &&
-		(asset as { _type: string })._type === 'sanity.imageAsset'
-	);
-}
-
 /**
- * Renders a Sanity image with next/image, supporting both dereferenced and
- * referenced assets. Dereferenced assets carry blurhash metadata for
- * placeholder blur. Alt text is sourced from the `altText` field populated
- * by the Sanity media plugin; falls back to the `alt` prop, then empty.
+ * Renders a Sanity image with `next/image`, supporting both dereferenced and
+ * referenced assets. Dereferenced assets carry blurhash metadata, which becomes
+ * the blur placeholder.
  *
- * @param props - Image props matching Sanity image schema plus next/image options
- * @returns A next/image element pointing at the Sanity CDN
+ * The resolution rules — alt text, dimensions, `sizes` — live in
+ * `src/lib/image.ts` so they are unit-testable without rendering, and so this
+ * component stays a thin mapping onto `next/image`.
+ *
+ * @param props - Sanity image object plus `next/image` options.
+ * @returns A `next/image` element pointing at the Sanity CDN.
  */
 export default function SmartImage({
 	image,
@@ -32,6 +30,9 @@ export default function SmartImage({
 	height,
 	fill,
 	alt,
+	decorative,
+	sizes,
+	quality,
 	...rest
 }: SmartImageProps) {
 	const { asset } = image;
@@ -46,6 +47,8 @@ export default function SmartImage({
 		? asset
 		: getImage(source, { projectId, dataset }).asset;
 
+	// Crop and hotspot can only be applied by the URL builder; without either,
+	// the asset's own URL is already correct and cheaper.
 	const hasCropOrHotspot = Boolean(image.crop || image.hotspot);
 	const resolvedUrl = hasCropOrHotspot ? urlFor(source).url() : imageAsset.url;
 
@@ -54,18 +57,37 @@ export default function SmartImage({
 	}
 
 	const blurHash = isDereferenced ? imageAsset.metadata?.blurHash : undefined;
-	const dimensions = imageAsset.metadata?.dimensions;
-	const altText = isDereferenced ? asset.altText : undefined;
+	const resolvedAlt = resolveAltText({
+		alt,
+		altText: isDereferenced ? asset.altText : undefined,
+		caption: image.caption,
+		decorative,
+	});
+
+	if (!decorative && !resolvedAlt && process.env.NODE_ENV !== 'production') {
+		console.error(
+			`SmartImage: no alt text for ${resolvedUrl}. Set altText in the media library, pass alt, or pass decorative if the image is purely presentational.`,
+		);
+	}
+
+	const dimensions = resolveImageDimensions({
+		width,
+		height,
+		fill,
+		dimensions: imageAsset.metadata?.dimensions,
+	});
 
 	return (
 		<Image
-			src={buildOptimizedImageUrl(resolvedUrl, { width, height })}
-			alt={altText || alt || ''}
-			width={fill ? undefined : (width ?? dimensions?.width)}
-			height={fill ? undefined : (height ?? dimensions?.height)}
+			src={buildOptimizedImageUrl(resolvedUrl, { width, height, quality })}
+			alt={resolvedAlt}
+			width={dimensions.width}
+			height={dimensions.height}
 			placeholder={blurHash ? 'blur' : undefined}
 			blurDataURL={blurHash ? blurhashToBase64(blurHash) : undefined}
 			fill={fill}
+			sizes={resolveImageSizes(sizes, fill)}
+			quality={quality}
 			{...rest}
 		/>
 	);

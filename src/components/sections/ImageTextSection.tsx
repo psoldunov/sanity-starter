@@ -13,16 +13,20 @@ export default function ImageTextSection(
 			<Container>
 				<div className='grid grid-cols-1 items-center gap-12 md:grid-cols-2'>
 					{!!image && (
-						<SmartImage image={image} className='w-full rounded-lg' />
+						<SmartImage
+							image={image}
+							sizes='(min-width: 768px) 50vw, 100vw'
+							className='h-auto w-full rounded-theme'
+						/>
 					)}
 					<div>
 						{!!heading && (
-							<h2 className='mb-6 font-bold text-4xl text-foreground'>
+							<h2 className='text-balance font-semibold text-3xl text-foreground tracking-tight sm:text-4xl'>
 								{heading}
 							</h2>
 						)}
 						{!!paragraph && (
-							<p className='text-foreground/70 text-lg leading-relaxed'>
+							<p className='mt-6 whitespace-pre-line text-lg text-muted leading-relaxed'>
 								{paragraph}
 							</p>
 						)}

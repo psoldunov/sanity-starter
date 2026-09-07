@@ -1,6 +1,5 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import '@/styles/globals.css';
-import { Provider } from 'jotai';
 import { draftMode } from 'next/headers';
 import { VisualEditing } from 'next-sanity/visual-editing';
 import Footer from '@/components/layout/Footer';
@@ -9,27 +8,30 @@ import DisableDraftMode from '@/components/utility/DisableDraftMode';
 import { geistMono, geistSans } from '@/fonts';
 import { getSiteUrl } from '@/lib/url';
 import { cn } from '@/lib/utils';
-import { SanityLive, sanityFetch } from '@/sanity/lib/live';
-import { SITE_SETTINGS_QUERY } from '@/sanity/lib/queries';
+import { getSettings, getSettingsForMetadata } from '@/sanity/lib/fetchers';
+import { SanityLive } from '@/sanity/lib/live';
 import { getCachedOGImageUrl } from '@/sanity/lib/utils';
 
-export async function generateMetadata(): Promise<Metadata> {
-	const { data: settings } = await sanityFetch({
-		query: SITE_SETTINGS_QUERY,
-	});
+export const viewport: Viewport = {
+	width: 'device-width',
+	initialScale: 1,
+	colorScheme: 'light dark',
+};
 
+export async function generateMetadata(): Promise<Metadata> {
+	const settings = await getSettingsForMetadata();
 	const baseUrl = getSiteUrl();
 
 	return {
 		metadataBase: new URL(baseUrl),
 		title: {
-			default: settings?.siteName || '',
-			template: `%s | ${settings?.siteName || ''}`,
-		},
-		alternates: {
-			canonical: baseUrl,
+			default: settings?.siteName || 'Sanity Starter',
+			template: `%s | ${settings?.siteName || 'Sanity Starter'}`,
 		},
 		description: settings?.siteDescription || '',
+		alternates: {
+			canonical: '/',
+		},
 		openGraph: {
 			type: 'website',
 			url: baseUrl,
@@ -47,26 +49,35 @@ export default async function RootLayout({
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
-	const { data: settings } = await sanityFetch({
-		query: SITE_SETTINGS_QUERY,
-	});
+	const [settings, { isEnabled: isDraft }] = await Promise.all([
+		getSettings(),
+		draftMode(),
+	]);
 
 	return (
-		<Provider>
-			<html lang='en'>
-				<body className={cn(geistSans.variable, geistMono.variable)}>
-					<Header menu={settings?.headerMenu} />
-					{children}
-					<Footer nav={settings?.footerNav} siteName={settings?.siteName} />
-					<SanityLive />
-					{(await draftMode()).isEnabled && (
-						<>
-							<DisableDraftMode />
-							<VisualEditing />
-						</>
-					)}
-				</body>
-			</html>
-		</Provider>
+		<html lang='en' suppressHydrationWarning>
+			<body
+				className={cn(
+					geistSans.variable,
+					geistMono.variable,
+					'flex min-h-dvh flex-col',
+				)}
+			>
+				<Header
+					menu={settings?.headerMenu}
+					logo={settings?.logo}
+					siteName={settings?.siteName}
+				/>
+				<div className='flex-1'>{children}</div>
+				<Footer nav={settings?.footerNav} siteName={settings?.siteName} />
+				<SanityLive />
+				{isDraft && (
+					<>
+						<DisableDraftMode />
+						<VisualEditing />
+					</>
+				)}
+			</body>
+		</html>
 	);
 }

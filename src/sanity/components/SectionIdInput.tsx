@@ -53,8 +53,14 @@ export default function SectionIdInput(props: StringInputProps) {
 	// Track the latest value in a ref so the subscription effect below can read
 	// it without listing `value` as a dependency — otherwise the live query
 	// listener would be torn down and rebuilt on every selection.
+	//
+	// Written in an effect rather than during render: React 19 may render
+	// concurrently and discard the result, and a render-phase ref write from a
+	// discarded render would still be observable here.
 	const valueRef = useRef(value);
-	valueRef.current = value;
+	useEffect(() => {
+		valueRef.current = value;
+	}, [value]);
 
 	const clearSectionId = useCallback(() => {
 		if (valueRef.current) {
@@ -130,7 +136,7 @@ export default function SectionIdInput(props: StringInputProps) {
 
 	const options = useMemo(
 		() => [
-			{ value: '', title: '-' },
+			{ value: '', title: 'No anchor' },
 			...sectionIds.map((id) => ({ value: id, title: id })),
 		],
 		[sectionIds],
@@ -145,8 +151,9 @@ export default function SectionIdInput(props: StringInputProps) {
 			title='Section ID'
 			description='Anchor to a section on the linked page'
 			inputId={id}
+			path={path}
 		>
-			<Stack space={2}>
+			<Stack gap={2}>
 				<Select
 					id={id}
 					value={value || ''}
@@ -154,7 +161,7 @@ export default function SectionIdInput(props: StringInputProps) {
 						const nextValue = event.currentTarget.value;
 						onChange(nextValue ? set(nextValue) : unset());
 					}}
-					disabled={loading}
+					aria-busy={loading}
 				>
 					{options.map((option) => (
 						<option key={option.value} value={option.value}>

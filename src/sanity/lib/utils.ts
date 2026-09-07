@@ -4,11 +4,10 @@ import {
 	type SanityImageSource,
 } from '@sanity/asset-utils';
 import { createImageUrlBuilder } from '@sanity/image-url';
-import type { PortableTextBlock, Slug } from 'sanity';
-import { PROTECTED_ROUTE_PATTERNS } from '@/config';
 import { client as sanityClient } from '@/sanity/lib/client';
 import type {
 	SanityFileAssetReference,
+	SanityImageAsset,
 	SanityImageAssetReference,
 	SanityImageCrop,
 	SanityImageHotspot,
@@ -24,10 +23,14 @@ const builder = createImageUrlBuilder(sanityClient);
 export type ImageInput =
 	| SanityImageSource
 	| {
-			asset?: SanityImageAssetReference | null;
+			/**
+			 * Either an unresolved reference, or a full asset when the query
+			 * dereferenced it with `asset->` — post cover images do the latter.
+			 */
+			asset?: SanityImageAssetReference | SanityImageAsset | null;
 			crop?: SanityImageCrop | null;
 			hotspot?: SanityImageHotspot | null;
-			_type?: 'image';
+			_type?: string;
 	  };
 
 /**
@@ -39,7 +42,7 @@ export type FileInput =
 	| SanityFileSource
 	| {
 			asset?: SanityFileAssetReference | null;
-			_type?: 'file';
+			_type?: string;
 	  };
 
 /**
@@ -90,62 +93,4 @@ export function getCachedOGImageUrl(image: ImageInput): string {
  */
 export function normalizeLineBreaks(input: string): string {
 	return input.replace(/&zwnj;/g, '\n').replace(/\\n/g, '\n');
-}
-
-/**
- * Extracts plain text from an array of PortableText blocks.
- *
- * @param portableText - Array of PortableText blocks to extract text from
- * @returns A single string containing all extracted text, with blocks joined by spaces
- */
-export function extractPortableText(portableText: PortableTextBlock[]): string {
-	return portableText
-		.map((block) => {
-			if (
-				'children' in block &&
-				Array.isArray(block.children) &&
-				block.children.length > 0
-			) {
-				return (block.children as Array<{ text?: string }>)
-					.map((child) => child.text || '')
-					.join(' ');
-			}
-			return '';
-		})
-		.join(' ');
-}
-
-/**
- * Checks if a given slug matches any protected route pattern.
- * Protected routes are paths that are reserved for system use (e.g., /api/*, /admin/*).
- *
- * @param slug - The Sanity Slug object to check against protected route patterns
- * @returns `true` if the slug's current value starts with any protected route prefix, `false` otherwise
- */
-export function isProtectedRoute(slug: Slug): boolean {
-	return PROTECTED_ROUTE_PATTERNS.some((pattern) => {
-		const patternPrefix = pattern.replace('/*', '');
-		return slug?.current?.startsWith(patternPrefix);
-	});
-}
-
-/**
- * Generates an error message for a slug that conflicts with a protected route pattern.
- * If the slug matches a specific protected route, returns a message identifying the conflicting pattern.
- * Otherwise, returns a generic error message.
- *
- * @param slug - The Sanity Slug object that conflicts with a protected route
- * @returns An error message string describing the route conflict
- */
-export function getProtectedRouteError(slug: Slug): string {
-	const conflictingPattern = PROTECTED_ROUTE_PATTERNS.find((pattern) => {
-		const patternPrefix = pattern.replace('/*', '');
-		return slug?.current?.startsWith(patternPrefix);
-	});
-
-	if (conflictingPattern) {
-		return `Route cannot start with "${conflictingPattern.replace('/*', '')}" as this path is protected`;
-	}
-
-	return 'This route conflicts with a protected path';
 }

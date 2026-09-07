@@ -1,12 +1,11 @@
+import { draftMode } from 'next/headers';
 import { stegaClean } from 'next-sanity';
+import type { ReactNode } from 'react';
 import { PADDING_CONFIG } from '@/config';
 import { cn } from '@/lib/utils';
 import type { PaddingSize, SectionBaseProps } from '@/types';
 
-export const PADDING_CLASSES: Record<
-	'top' | 'bottom',
-	Record<PaddingSize, string>
-> = {
+const PADDING_CLASSES: Record<'top' | 'bottom', Record<PaddingSize, string>> = {
 	top: Object.fromEntries(
 		Object.entries(PADDING_CONFIG).map(([size, config]) => [
 			size,
@@ -21,12 +20,25 @@ export const PADDING_CLASSES: Record<
 	) as Record<PaddingSize, string>,
 };
 
-export default function Section({
+/**
+ * Wrapper every section renders through. Applies the configured padding, exposes
+ * the section anchor id, and honours the `hidden` flag.
+ *
+ * A hidden section is omitted from the live site but rendered dimmed in draft
+ * mode: an editor who hides a block still has to be able to see it in
+ * Presentation to click it and unhide it again.
+ *
+ * @param props - Section base fields plus children and an optional className.
+ * @returns The section element, or `null` when hidden outside draft mode.
+ */
+export default async function Section({
 	children,
 	className,
 	...props
-}: SectionBaseProps & { children: React.ReactNode; className?: string }) {
-	if (props.hidden) {
+}: SectionBaseProps & { children: ReactNode; className?: string }) {
+	const isDraft = (await draftMode()).isEnabled;
+
+	if (props.hidden && !isDraft) {
 		return null;
 	}
 
@@ -38,10 +50,12 @@ export default function Section({
 	return (
 		<section
 			data-section-type={_type}
-			id={id}
+			data-hidden={props.hidden || undefined}
+			id={id ?? undefined}
 			className={cn(
 				PADDING_CLASSES.top[topPadding],
 				PADDING_CLASSES.bottom[bottomPadding],
+				props.hidden && 'opacity-40 outline-dashed outline-2 outline-amber-500',
 				className,
 			)}
 		>

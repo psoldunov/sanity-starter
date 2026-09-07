@@ -35,7 +35,7 @@ export default function PaddingInput(props: PaddingStringInputProps) {
 	);
 
 	return (
-		<Stack space={2}>
+		<Stack gap={2}>
 			{list.length === 0 ? (
 				<Text size={1} muted>
 					No padding options configured.

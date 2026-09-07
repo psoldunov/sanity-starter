@@ -1,0 +1,46 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # The Sanity packages share peer ranges — @sanity/ui in particular must
+      # resolve to a single copy or Studio theming breaks. Bumping them together
+      # keeps the tree consistent.
+      sanity:
+        patterns:
+          - 'sanity'
+          - '@sanity/*'
+          - 'sanity-plugin-*'
+          - 'next-sanity'
+          - '@portabletext/*'
+      react:
+        patterns:
+          - 'react'
+          - 'react-dom'
+          - '@types/react'
+          - '@types/react-dom'
+      tailwind:
+        patterns:
+          - 'tailwindcss'
+          - '@tailwindcss/*'
+      dev-tooling:
+        dependency-type: development
+        patterns:
+          - '@biomejs/biome'
+          - 'typescript'
+          - '@types/*'
+    ignore:
+      # TypeScript 7 ships no programmatic API, so the `next` language-service
+      # plugin in tsconfig.json stops loading. Revisit at 7.1.
+      # See docs/upgrading.md.
+      - dependency-name: typescript
+        versions: ['7.x']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

@@ -1,24 +1,145 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens.
+ *
+ * Deliberately small and neutral — this is a starter, and the first thing most
+ * adopters do is replace these values. Everything downstream references the
+ * token, never a raw hex, so a rebrand is an edit to this block alone.
+ */
 :root {
-	--background: #ffffff;
-	--foreground: #171717;
+	/* Light is the default; the dark block below overrides in place. */
+	color-scheme: light dark;
+
+	--background: oklch(100% 0 0);
+	--foreground: oklch(20% 0 0);
+	--muted: oklch(55% 0 0);
+	--border: oklch(92% 0 0);
+	--surface: oklch(98% 0 0);
+	--accent: oklch(55% 0.19 264);
+	--accent-foreground: oklch(100% 0 0);
+
+	--radius: 0.625rem;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--background: oklch(15% 0 0);
+		--foreground: oklch(96% 0 0);
+		--muted: oklch(68% 0 0);
+		--border: oklch(28% 0 0);
+		--surface: oklch(20% 0 0);
+		--accent: oklch(72% 0.15 264);
+		--accent-foreground: oklch(15% 0 0);
+	}
 }
 
 @theme inline {
 	--color-background: var(--background);
 	--color-foreground: var(--foreground);
+	--color-muted: var(--muted);
+	--color-border: var(--border);
+	--color-surface: var(--surface);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+
 	--font-sans: var(--font-geist-sans);
 	--font-mono: var(--font-geist-mono);
+
+	--radius-theme: var(--radius);
 }
 
-@media (prefers-color-scheme: dark) {
-	:root {
-		--background: #0a0a0a;
-		--foreground: #ededed;
+@layer base {
+	html {
+		scroll-behavior: smooth;
+		/*
+		 * Section anchors (`SmartLink` + `sectionId`) scroll the target under the
+		 * sticky header without this. Keep it in step with the header height.
+		 */
+		scroll-padding-top: 5rem;
+	}
+
+	body {
+		@apply bg-background font-sans text-foreground antialiased;
+	}
+
+	/*
+	 * One global focus ring. Without it the only focus indicator is the UA
+	 * default, which several resets remove — WCAG 2.4.7.
+	 */
+	:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
+		border-radius: 2px;
+	}
+
+	/* Honour a reduced-motion preference everywhere — WCAG 2.3.3. */
+	@media (prefers-reduced-motion: reduce) {
+		html {
+			scroll-behavior: auto;
+		}
+
+		*,
+		*::before,
+		*::after {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+		}
 	}
 }
 
-body {
-	@apply bg-background text-foreground font-sans antialiased;
+/*
+ * Long-form body copy, used by the Portable Text renderer on post pages.
+ * Written as a component class rather than per-element utilities so the
+ * renderer stays a plain mapping and the typography lives in one place.
+ */
+@layer components {
+	.prose-content {
+		@apply text-base/7 text-foreground;
+	}
+
+	.prose-content > * + * {
+		@apply mt-6;
+	}
+
+	.prose-content h2 {
+		@apply mt-12 font-semibold text-2xl tracking-tight;
+	}
+
+	.prose-content h3 {
+		@apply mt-10 font-semibold text-xl tracking-tight;
+	}
+
+	.prose-content h4 {
+		@apply mt-8 font-semibold text-lg tracking-tight;
+	}
+
+	.prose-content ul {
+		@apply list-disc space-y-2 pl-6;
+	}
+
+	.prose-content ol {
+		@apply list-decimal space-y-2 pl-6;
+	}
+
+	.prose-content blockquote {
+		@apply border-accent border-l-2 pl-4 text-muted italic;
+	}
+
+	.prose-content a {
+		@apply text-accent underline underline-offset-4 hover:no-underline;
+	}
+
+	.prose-content code {
+		@apply rounded bg-surface px-1.5 py-0.5 font-mono text-sm;
+	}
+
+	.prose-content figure {
+		@apply my-8;
+	}
+
+	.prose-content figcaption {
+		@apply mt-2 text-center text-muted text-sm;
+	}
 }
