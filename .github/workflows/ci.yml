@@ -24,7 +24,7 @@ jobs:
     name: Lint, typecheck, test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           # `fallow audit` diffs against the base ref, so the shallow clone
           # actions/checkout takes by default is not enough history.
