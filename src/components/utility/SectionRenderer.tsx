@@ -13,14 +13,20 @@ export type { SectionData };
  *
  * @param props.section - The section object from `PAGE_QUERY`.
  * @param props.searchParams - Search params, forwarded to dynamic sections only.
+ * @param props.isFirstSection - Whether this is the page's first section. A
+ *   section that renders the page's LCP image reads it to decide whether to
+ *   preload: only the first placement can be above the fold, and preloading
+ *   several candidates prioritises none of them.
  * @returns The section component, or `null` when the type is not registered.
  */
 export function SectionRenderer({
 	section,
 	searchParams,
+	isFirstSection,
 }: {
 	section: SectionData;
 	searchParams?: { [key: string]: string | string[] | undefined };
+	isFirstSection?: boolean;
 }) {
 	const { _type } = section;
 
@@ -35,5 +41,11 @@ export function SectionRenderer({
 
 	const Renderer = sections[_type as keyof typeof sections] as ElementType;
 
-	return <Renderer {...section} searchParams={searchParams} />;
+	return (
+		<Renderer
+			{...section}
+			searchParams={searchParams}
+			isFirstSection={isFirstSection}
+		/>
+	);
 }

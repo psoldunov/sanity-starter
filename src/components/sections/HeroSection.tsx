@@ -3,8 +3,10 @@ import Section from '@/components/utility/Section';
 import SmartImage from '@/components/utility/SmartImage';
 import type { SectionProps } from '@/types';
 
-export default function HeroSection(props: SectionProps<'heroSection'>) {
-	const { heading, paragraph, image } = props;
+export default function HeroSection(
+	props: SectionProps<'heroSection'> & { isFirstSection?: boolean },
+) {
+	const { heading, paragraph, image, isFirstSection } = props;
 
 	return (
 		<Section {...props}>
@@ -25,10 +27,12 @@ export default function HeroSection(props: SectionProps<'heroSection'>) {
 					{!!image && (
 						<SmartImage
 							image={image}
-							// The hero image is the LCP element on most pages, so it must not
-							// be lazy-loaded, and `sizes` stops the browser fetching the
-							// widest srcset candidate on a phone.
-							priority
+							// Preloaded from `<head>` rather than discovered in the body,
+							// but only as the page's first section — nothing stops an
+							// editor placing several heroes, and preloading each one's
+							// image prioritises none of them. `sizes` stops the browser
+							// fetching the widest srcset candidate on a phone.
+							preload={isFirstSection}
 							sizes='(min-width: 768px) 50vw, 100vw'
 							className='h-auto w-full rounded-theme'
 						/>

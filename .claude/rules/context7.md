@@ -39,6 +39,31 @@ a prop was renamed, a flag was added — confirm it against the installed
 `.d.ts` or `package.json` before you rely on it. Both sources have been wrong in
 this repository at least once.
 
+**Next.js ships its whole documentation set inside the package**, at the exact
+version installed here. Reach for it first — it is faster than any network call
+and cannot be stale relative to the code it describes:
+
+```bash
+ls node_modules/next/dist/docs/                       # 01-app, 02-pages, 03-architecture
+rg -l "cacheComponents" node_modules/next/dist/docs/  # find the page by keyword
+```
+
+That is how the `priority` → `preload` deprecation in `SmartImage` was caught:
+`node_modules/next/dist/shared/lib/get-img-props.d.ts` marks `priority` as
+deprecated, and `docs/01-app/03-api-reference/02-components/image.md` says what
+replaced it and when *not* to use it.
+
+For any other dependency, check before assuming there is nothing:
+
+```bash
+ls node_modules/<pkg>/{docs,dist/docs} 2>/dev/null
+rg -n '"(types|exports)"' node_modules/<pkg>/package.json   # shipped .d.ts
+```
+
+Failing prose docs, the shipped `.d.ts` files are authoritative for signatures.
+Pin the installed version into the question before asking Context7 — an answer
+for the wrong major is worse than no answer.
+
 ## When this rule does not apply
 
 Refactoring, writing scripts from scratch, debugging this repository's own

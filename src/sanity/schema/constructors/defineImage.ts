@@ -3,7 +3,7 @@ import type { DefineImageOptions } from './types';
 
 /**
  * Defines a Sanity image field with common configuration.
- * Configures accepted formats, blurhash metadata, and optional hotspot.
+ * Configures accepted formats, LQIP metadata, and optional hotspot.
  * Alt text is provided by the Sanity media plugin on the asset document,
  * not added as a field here.
  *
@@ -37,7 +37,11 @@ export default function defineImage(options: DefineImageOptions = {}) {
 		validation,
 		options: {
 			accept: 'image/webp, image/png, image/jpeg, image/avif',
-			metadata: ['blurhash'],
+			// LQIP, not blurhash: Sanity stores it as a base64 data URI usable
+			// as-is for `next/image`'s `blurDataURL`, where a blurhash needs a
+			// decoder library at runtime. Metadata is written at upload time, so
+			// assets uploaded under a different setting keep what they had.
+			metadata: ['lqip'],
 			hotspot,
 		},
 		fields,

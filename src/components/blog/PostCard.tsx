@@ -6,10 +6,11 @@ import type { PostListItem } from '@/types';
 type PostCardProps = {
 	post: PostListItem;
 	/**
-	 * Set on the first card above the fold so its image is not lazy-loaded —
-	 * on the blog index that image is usually the LCP element.
+	 * Preloads the cover image from `<head>`. Set it on the first card of the
+	 * first page and nothing else — that image is the likely LCP element, and
+	 * preloading several candidates at once prioritises none of them.
 	 */
-	priority?: boolean;
+	preload?: boolean;
 };
 
 /**
@@ -20,10 +21,10 @@ type PostCardProps = {
  * than twice.
  *
  * @param props.post - Post as projected by `POSTS_PAGE_QUERY`.
- * @param props.priority - Eagerly load the cover image.
+ * @param props.preload - Preload the cover image from `<head>`.
  * @returns An article card linking to the post.
  */
-export default function PostCard({ post, priority }: PostCardProps) {
+export default function PostCard({ post, preload }: PostCardProps) {
 	return (
 		<article className='group relative flex flex-col gap-4'>
 			{post.coverImage?.asset && (
@@ -32,7 +33,7 @@ export default function PostCard({ post, priority }: PostCardProps) {
 						image={post.coverImage}
 						fill
 						decorative
-						priority={priority}
+						preload={preload}
 						sizes='(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw'
 						className='object-cover transition-transform duration-300 group-hover:scale-[1.02]'
 					/>

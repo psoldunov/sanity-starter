@@ -45,7 +45,9 @@ src/app/(site)/posts/
 
   Page 12 costs the same as page 1. Fetching every post and slicing in
   JavaScript is the mistake this avoids.
-- The first three cards on page 1 get `priority` — they are the likely LCP.
+- The first card on page 1 gets `preload` — it is the likely LCP. Only one:
+  Next documents `preload` as the wrong tool once several images are LCP
+  candidates, because preloading all of them prioritises none.
 - Empty state and pagination are explicit; `Pagination` renders real links so
   the pages are crawlable and work without JavaScript, and renders `null` when
   there is only one page.

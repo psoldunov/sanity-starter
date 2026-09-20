@@ -3,7 +3,9 @@ import {
 	isDereferencedAsset,
 	resolveAltText,
 	resolveImageDimensions,
+	resolveImagePlaceholder,
 	resolveImageSizes,
+	resolveImageSource,
 } from '@/lib/image';
 
 describe('isDereferencedAsset', () => {
@@ -110,5 +112,75 @@ describe('resolveImageSizes', () => {
 	test('a non-filled image gets no sizes', () => {
 		expect(resolveImageSizes(undefined, false)).toBeUndefined();
 		expect(resolveImageSizes(undefined, undefined)).toBeUndefined();
+	});
+});
+
+describe('resolveImagePlaceholder', () => {
+	test('keeps the LQIP for a raster image', () => {
+		const lqip = 'data:image/png;base64,iVBORw0KGgo=';
+		expect(
+			resolveImagePlaceholder('https://cdn.sanity.io/images/p/d/x.jpg', lqip),
+		).toBe(lqip);
+	});
+
+	test('drops the placeholder for an SVG', () => {
+		// `next/image` paints the placeholder *behind* the image until it loads,
+		// and vector art is usually a logo on transparency — so a blur under an
+		// SVG shows straight through the artwork.
+		expect(
+			resolveImagePlaceholder(
+				'https://cdn.sanity.io/images/p/d/logo.svg',
+				'data:image/png;base64,iVBORw0KGgo=',
+			),
+		).toBeUndefined();
+	});
+
+	test('reads the path, not the whole URL', () => {
+		// A Sanity URL carrying transformation parameters no longer ends in its
+		// file extension. A naive `endsWith('.svg')` misses every one of them.
+		expect(
+			resolveImagePlaceholder(
+				'https://cdn.sanity.io/images/p/d/logo.svg?w=320&q=75',
+				'data:image/png;base64,iVBORw0KGgo=',
+			),
+		).toBeUndefined();
+	});
+});
+
+describe('resolveImageSource', () => {
+	test('a raster image gets CDN transformation parameters', () => {
+		const { src, unoptimized } = resolveImageSource(
+			'https://cdn.sanity.io/images/p/d/photo.jpg',
+			{ width: 640, quality: 80 },
+		);
+
+		expect(unoptimized).toBe(false);
+		expect(src).toContain('w=640');
+		expect(src).toContain('q=80');
+	});
+
+	test('an SVG is passed through unoptimised', () => {
+		// Next's optimiser refuses SVG outright unless `dangerouslyAllowSVG` is
+		// set, and it only skips optimisation by itself when `src` ends in
+		// `.svg` — which a transformed Sanity URL does not.
+		const { src, unoptimized } = resolveImageSource(
+			'https://cdn.sanity.io/images/p/d/logo.svg?w=320',
+			{ width: 640 },
+		);
+
+		expect(unoptimized).toBe(true);
+		expect(src).toBe('https://cdn.sanity.io/images/p/d/logo.svg?w=320');
+	});
+
+	test('a GIF is passed through unoptimised', () => {
+		// The optimiser serves an animated GIF unchanged and warns about it, so
+		// the round trip buys nothing and costs a transform.
+		const { src, unoptimized } = resolveImageSource(
+			'https://cdn.sanity.io/images/p/d/loop.GIF',
+			{ width: 640 },
+		);
+
+		expect(unoptimized).toBe(true);
+		expect(src).toBe('https://cdn.sanity.io/images/p/d/loop.GIF');
 	});
 });

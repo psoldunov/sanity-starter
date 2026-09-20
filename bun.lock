@@ -11,7 +11,6 @@
         "@sanity/image-url": "^2.1.1",
         "@sanity/orderable-document-list": "^2.0.23",
         "@sanity/ui": "^4.0.7",
-        "blurhash-base64": "^0.0.3",
         "clsx": "^2.1.1",
         "lucide-react": "^1.41.0",
         "next": "^16.3.4",
@@ -941,10 +940,6 @@
     "bidi-js": ["bidi-js@1.0.3", "", { "dependencies": { "require-from-string": "^2.0.2" } }, "sha512-RKshQI1R3YQ+n9YJz2QQ147P66ELpa1FQEg20Dk8oW9t2KgLbpDLLp9aGZ7y8WHSshDknG0bknqGw5/tyCs5tw=="],
 
     "binary-extensions": ["binary-extensions@2.3.0", "", {}, "sha512-Ceh+7ox5qe7LJuLHoY0feh3pHuUDHAcRUeyL2VYghZwfpkNIy/+8Ocg0a3UuSoYzavmylwuLWQOf3hl0jjMMIw=="],
-
-    "blurhash": ["blurhash@2.0.5", "", {}, "sha512-cRygWd7kGBQO3VEhPiTgq4Wc43ctsM+o46urrmPOiuAe+07fzlSB9OJVdpgDL0jPqXUVQ9ht7aq7kxOeJHRK+w=="],
-
-    "blurhash-base64": ["blurhash-base64@0.0.3", "", { "dependencies": { "blurhash": "^2.0.5" } }, "sha512-9cK+r4IZ73Bn6ee2ukHhURAkYX/aMvpHzuZHAe+y0mPqc2rsjpUwHBAv0HHHaOkeneQF+Odt1Qfps2K1wm7r5w=="],
 
     "boolbase": ["boolbase@1.0.0", "", {}, "sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww=="],
 

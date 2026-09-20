@@ -81,12 +81,21 @@ export type SmartImageObject = {
 };
 
 export type SmartImageProps = {
-	image: SmartImageObject;
+	/**
+	 * Nullable on purpose: a required image is still empty in a draft — a
+	 * section just added in Presentation — whatever the generated types say.
+	 */
+	image: SmartImageObject | null | undefined;
 	width?: number;
 	height?: number;
 	className?: string;
 	quality?: number;
-	priority?: boolean;
+	/**
+	 * Preloads the image with a `<link>` in `<head>`. Set it on the LCP image
+	 * only — typically one hero image per page, and never alongside `loading`
+	 * or `fetchPriority`, which Next documents as alternatives to it.
+	 */
+	preload?: boolean;
 	fill?: boolean;
 	sizes?: string;
 	alt?: string;

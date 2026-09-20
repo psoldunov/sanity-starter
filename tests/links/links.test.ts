@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
+	documentPath,
 	hasDestination,
 	isSafeInternalPath,
 	resolveDestinationUrl,
@@ -274,5 +275,26 @@ describe('resolveLinkRel', () => {
 		expect(
 			resolveLinkRel({ target: undefined, rel: undefined, linkRel: null }),
 		).toBeUndefined();
+	});
+});
+
+describe('documentPath', () => {
+	test('builds the index path of a registered type', () => {
+		expect(documentPath('post')).toBe('/posts');
+	});
+
+	test('builds a document path from the registry base path', () => {
+		// The point of the helper: `/posts` is written once, in
+		// `src/config/linkables.ts`. Moving the blog is a one-line change there
+		// rather than a grep across the sitemap, canonicals and Presentation.
+		expect(documentPath('post', 'hello-world')).toBe('/posts/hello-world');
+	});
+
+	test('throws for a type that is not registered', () => {
+		// A programming error rather than content, so it fails loudly at build
+		// instead of emitting `/undefined/slug` into the sitemap.
+		expect(() => documentPath('widget', 'x')).toThrow(
+			'not registered in LINKABLE_DOCUMENTS',
+		);
 	});
 });

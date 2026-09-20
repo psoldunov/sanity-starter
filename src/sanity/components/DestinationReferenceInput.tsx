@@ -59,7 +59,13 @@ const typeLabelSelect = [
 	),
 ].join(',\n');
 
-const DESTINATION_QUERY = `*[_type in $types]|order(_type asc, orderRank asc){
+// `orderRank` is the drag order of the orderable types (pages). A type that is
+// not orderable — `post` — has no rank, so every one of its documents ties and
+// the picker lists them in whatever order the Content Lake returns. Falling
+// through to `_createdAt desc` puts the newest first, which is the order the
+// Studio list and the blog queries already use. A type with neither field
+// still sorts deterministically by `_id`.
+const DESTINATION_QUERY = `*[_type in $types]|order(_type asc, orderRank asc, _createdAt desc, _id asc){
 	"value": _id,
 	"kind": "document",
 	"title": select(${titleSelect}),

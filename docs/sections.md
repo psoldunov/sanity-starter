@@ -140,7 +140,8 @@ Two projection details:
   `INTERNAL_DESTINATION_PROJECTION` (defined at the top of the same file). A
   bare `page->` returns a reference the resolver cannot use.
 - **Images** need `image { ..., asset-> }`, otherwise `SmartImage` gets an
-  unresolved reference and loses blurhash and intrinsic dimensions. See
+  unresolved reference and loses its LQIP placeholder and intrinsic
+  dimensions. See
   `HERO_SECTION_FRAGMENT` in the same file.
 
 ## 4. Add the fragment to `PAGE_QUERY`

@@ -159,7 +159,7 @@ Use these instead of hand-writing repeated field definitions
   `{ type: 'linkWithLabel' }`, a reference to the registered type rather than
   inline fields. Spread it to add `name`, `title` or `description`.
 - **`defineImage({ name, title, group, description, validation, fields, hotspot })`** —
-  an image field accepting WebP/PNG/JPEG/AVIF with blurhash metadata. Alt text
+  an image field accepting WebP/PNG/JPEG/AVIF with LQIP placeholder metadata. Alt text
   comes from the media library's `altText` on the asset, not from a field here.
 
 Option types live in

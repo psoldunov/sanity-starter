@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { documentPath } from '@/lib/links';
 import { getSiteUrl } from '@/lib/url';
 import { sanityFetch } from '@/sanity/lib/live';
 import { PAGES_SITEMAP_QUERY, POSTS_SITEMAP_QUERY } from '@/sanity/lib/queries';
@@ -46,7 +47,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 			slug
 				? [
 						{
-							url: `${baseUrl}/posts/${slug}`,
+							url: `${baseUrl}${documentPath('post', slug)}`,
 							lastModified: _updatedAt || new Date(),
 							changeFrequency: 'weekly' as const,
 							priority: 0.8,
@@ -57,7 +58,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
 	return [
 		{
-			url: `${baseUrl}/posts`,
+			url: `${baseUrl}${documentPath('post')}`,
 			lastModified: new Date(),
 			changeFrequency: 'daily',
 			priority: 0.9,

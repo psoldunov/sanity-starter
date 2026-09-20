@@ -76,6 +76,28 @@ Add the domain in Vercel, then update:
 - `NEXT_PUBLIC_SITE_URL` (if set)
 - the CORS origins in sanity.io/manage
 
+### 7. Skipped builds
+
+[`vercel.json`](../vercel.json) sets an `ignoreCommand` so a commit that
+touches only prose and agent configuration does not spend a production build.
+Excluded: `docs/`, `.github/`, `.claude/`, `.vscode/`, `.ensemblr/`,
+`.mcp.json`, `doctor.config.json`, `.fallowrc.jsonc` and any `*.md`. A skipped
+deployment shows as **"Build skipped"** in the Vercel log — that is the
+explanation.
+
+It errs towards building. `ignoreCommand` skips on exit 0 and builds on
+anything else, and the command exits non-zero whenever it cannot be sure:
+
+- **No `VERCEL_GIT_PREVIOUS_SHA`** — the first deployment of a project or
+  branch, and any deployment after a failed one. There is no known-good commit
+  to diff against, so it always builds. Getting this wrong is how a production
+  domain ends up with nothing aliased to it.
+- **The previous SHA is not in the clone** — `git diff` errors, so it builds.
+
+The one case it will skip is redeploying a commit that already deployed
+successfully and unchanged. Push an empty commit, or delete the file, if you
+need to force that build.
+
 ## Other platforms
 
 Nothing here is Vercel-specific except the `VERCEL_*` fallbacks in

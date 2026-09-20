@@ -5,6 +5,7 @@ import PostCard from '@/components/blog/PostCard';
 import Container from '@/components/layout/Container';
 import SmartImage from '@/components/utility/SmartImage';
 import { formatPostDate } from '@/lib/date';
+import { documentPath } from '@/lib/links';
 import { getSiteUrl } from '@/lib/url';
 import {
 	getPost,
@@ -43,7 +44,7 @@ export async function generateMetadata({
 		return { title: 'Not found' };
 	}
 
-	const canonicalUrl = `${getSiteUrl()}/posts/${slug}`;
+	const canonicalUrl = `${getSiteUrl()}${documentPath('post', slug)}`;
 	const ogImage = post.ogImage ?? post.coverImage ?? settings?.siteOgImage;
 
 	return {
@@ -111,7 +112,7 @@ export default async function PostPage({
 						<SmartImage
 							image={post.coverImage}
 							sizes='(min-width: 768px) 768px, 100vw'
-							priority
+							preload
 							className='mb-12 h-auto w-full rounded-theme'
 						/>
 					)}

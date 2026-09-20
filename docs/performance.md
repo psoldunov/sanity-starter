@@ -23,9 +23,9 @@ projected down to what its call site reads. `PAGE_ROUTES_QUERY` returns one
 field. `PAGES_SITEMAP_QUERY` returns two and filters `noIndex` in the query
 rather than in the app.
 
-Dereference deliberately, too. `asset->` on an image is what supplies blurhash
-and dimensions to `SmartImage`, but only project it where the image is actually
-rendered — not in a listing that shows a title.
+Dereference deliberately, too. `asset->` on an image is what supplies the LQIP
+placeholder and dimensions to `SmartImage`, but only project it where the image
+is actually rendered — not in a listing that shows a title.
 
 ## 2. Page in the query, not in the app
 
@@ -89,19 +89,31 @@ const [page, settings] = await Promise.all([
 Used in the catch-all page's `generateMetadata`, the site layout (settings and
 `draftMode()` together), the article page, the blog index, and `sitemap.ts`.
 
-## 6. Images: `priority` and `sizes`
+## 6. Images: `preload`, `sizes` and the optimiser
 
 [`SmartImage`](../src/components/utility/SmartImage.tsx) wraps `next/image` and
-adds blurhash placeholders from dereferenced assets.
+adds blur placeholders from dereferenced assets. The placeholder is Sanity's
+**LQIP** — a base64 data URI usable as `blurDataURL` as-is, so no decoder ships
+to the browser. `defineImage()` requests `metadata: ['lqip']`; metadata is
+written at upload time, so assets uploaded under a different setting keep what
+they had and simply render without a placeholder.
 
 - **`sizes` on every non-trivial image.** Without it a filled image makes the
   browser assume `100vw` and pick the widest candidate in the srcset at every
   viewport. `SmartImage` defaults `fill` images to `100vw`, which is correct only
   when the image really is full-bleed. Be explicit:
   `sizes='(min-width: 768px) 50vw, 100vw'`.
-- **`priority` on the LCP image and nothing else.** The article cover image has
-  it; the blog index gives it to the first three cards on page 1 only. Marking
-  everything priority removes the prioritisation.
+- **`preload` on the LCP image and nothing else.** (`priority` is deprecated in
+  Next 16 — `SmartImage` still accepts it, marked as such.) The article cover
+  image has it; the blog index gives it to the first card on page 1 only.
+  Marking several images removes the prioritisation, and Next documents
+  `preload` as the wrong tool once more than one is a candidate.
+- **SVG and GIF bypass the optimiser.** `resolveImageSource()` sets
+  `unoptimized` for both: Next refuses SVG without `dangerouslyAllowSVG`, and
+  passes an animated GIF through unchanged while warning about it. It only
+  detects this itself when `src` ends in `.svg`, which a transformed Sanity URL
+  does not — so the check reads the URL path. SVGs also get no blur
+  placeholder, which would otherwise show through their transparency.
 - **Alt text.** `SmartImage` resolves `alt` prop → media library `altText` →
   `image.caption`, and logs in development when all three are empty. Pass
   `decorative` for genuinely presentational images — that is the only case where
