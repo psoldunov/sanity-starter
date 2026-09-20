@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
 	appendPreservedSlug,
+	canEverMatch,
 	normalizeMatchType,
 	pickRedirect,
 	redirectStatusCode,
@@ -96,6 +97,31 @@ describe('redirectStatusCode', () => {
 
 	test('an explicit 307 is honoured', () => {
 		expect(redirectStatusCode(307)).toBe(307);
+	});
+});
+
+describe('canEverMatch', () => {
+	test('a prefix that could never fire is rejected', () => {
+		// ROUTING: a prefix is compared as `route + "/"`, so a prefix on `/` looks
+		// for a path beginning `//`, which `normalizeSlug` (`src/lib/slug.ts`)
+		// never produces. The rule would save cleanly and then silently do
+		// nothing, so `validateRedirectRoute` (`src/sanity/lib/validations.ts`)
+		// refuses it at authoring time rather than letting an editor ship a dead
+		// redirect. A prefix with no route is dead for the same reason.
+		expect(canEverMatch('/', 'prefix')).toBe(false);
+		expect(canEverMatch('', 'prefix')).toBe(false);
+		expect(canEverMatch(undefined, 'prefix')).toBe(false);
+		expect(canEverMatch(null, 'prefix')).toBe(false);
+	});
+
+	test('every rule that can still match is left alone', () => {
+		// `/` is the home route and a perfectly good *exact* redirect, which is why
+		// this rule cannot live in `validateRouteString` — that one is shared with
+		// page routes and knows nothing about `matchType`.
+		expect(canEverMatch('/', 'exact')).toBe(true);
+		expect(canEverMatch('/', undefined)).toBe(true);
+		expect(canEverMatch('/work', 'prefix')).toBe(true);
+		expect(canEverMatch('/work', 'exact')).toBe(true);
 	});
 });
 
