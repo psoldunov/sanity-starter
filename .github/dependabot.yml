@@ -1,7 +1,11 @@
 version: 2
 
 updates:
-  - package-ecosystem: npm
+  # `bun`, not `npm`: the npm ecosystem bumps `package.json` but never touches
+  # `bun.lock`, so every PR it opens fails `bun install --frozen-lockfile` in
+  # CI. Requires Bun >= 1.1.39 (`mise.toml` pins it) and the text `bun.lock` —
+  # the binary `bun.lockb` is not supported.
+  - package-ecosystem: bun
     directory: /
     schedule:
       interval: weekly
@@ -27,8 +31,10 @@ updates:
         patterns:
           - 'tailwindcss'
           - '@tailwindcss/*'
+      # No `dependency-type: development` here. That key is supported only for
+      # bundler, composer, mix, maven, npm and pip — not bun — and every pattern
+      # below is already a devDependency, so it narrowed nothing.
       dev-tooling:
-        dependency-type: development
         patterns:
           - '@biomejs/biome'
           - 'typescript'

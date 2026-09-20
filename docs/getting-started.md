@@ -112,6 +112,24 @@ Because typegen is a prestep of both `dev` and `build`, generated types can neve
 drift from the schema in normal use. If you edit a schema file while the dev
 server is running, re-run `bun run typegen` to refresh the types.
 
+## Agent tooling (optional, delete it if you do not want it)
+
+Two files exist only for AI coding agents and have no effect on the site:
+
+- [`.mcp.json`](../.mcp.json) registers the [Chrome DevTools MCP
+  server](https://github.com/ChromeDevTools/chrome-devtools-mcp), so an agent
+  can drive a headless browser against your dev server to check a change it
+  made. The version is pinned rather than `@latest` — it is executed via `npx`,
+  so pin it deliberately when you bump it. Editors that support project-scoped
+  MCP servers ask before starting it. Delete the file to opt out.
+- `public/.well-known/appspecific/com.chrome.devtools.json` returns `{}` so the
+  probe Chrome DevTools makes for its automatic-workspace-folders feature gets
+  a 200 instead of filling the dev log with 404s. It is served in production
+  too, at three bytes.
+
+Agent conventions themselves live in [`AGENTS.md`](../AGENTS.md) and
+[`.claude/rules/`](../.claude/rules/).
+
 ## Commands
 
 | Command | What it does |
@@ -124,7 +142,7 @@ server is running, re-run `bun run typegen` to refresh the types.
 | `bun run lint` | Biome check. |
 | `bun run lint:fix` | Biome check with safe fixes applied. |
 | `bun run format` | Biome formatter. |
-| `bun run typecheck` | `tsc --noEmit`. |
+| `bun run typecheck` | `next typegen`, then `tsc --noEmit`. |
 | `bun test` | Unit tests (Bun's runner). |
 | `bun run test:coverage` | Tests with a coverage report. |
 | `bun run check` | Lint, then typecheck, then test — run this before pushing. |

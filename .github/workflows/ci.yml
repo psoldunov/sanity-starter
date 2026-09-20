@@ -96,7 +96,20 @@ jobs:
         # `audit` is fallow's changed-files gate. `.fallowrc.jsonc` sets
         # `gate: new-only`, so only findings this changeset introduces fail —
         # a fork's first PR does not inherit the repository's backlog.
-        run: npx -y fallow@3.22.0 audit --base "origin/${{ github.event.pull_request.base.ref || 'main' }}"
+        #
+        # A pull request audits against its own base branch. A push to `main`
+        # has no base ref, and `origin/main` would then be HEAD itself and diff
+        # to nothing — every finding would read as pre-existing and the gate
+        # would pass vacuously. So a push audits against the parent commit,
+        # falling back to HEAD on a repository's very first commit, which has
+        # no parent and nothing to compare against anyway.
+        run: |
+          if [ -z "$FALLOW_BASE" ]; then
+            FALLOW_BASE="$(git rev-parse --verify --quiet 'HEAD^' || echo HEAD)"
+          fi
+          npx -y fallow@3.22.0 audit --base "$FALLOW_BASE"
+        env:
+          FALLOW_BASE: ${{ github.event.pull_request.base.ref && format('origin/{0}', github.event.pull_request.base.ref) || '' }}
 
       # Typecheck and build depend on generated Sanity types, so both skip when
       # the project id is not configured. A skipped step renders as a grey tick

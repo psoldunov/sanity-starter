@@ -1,0 +1,4 @@
+{
+	"$schema": "https://openapi.vercel.sh/vercel.json",
+	"ignoreCommand": "if [ -z \"$VERCEL_GIT_PREVIOUS_SHA\" ]; then exit 1; fi; git diff --quiet \"$VERCEL_GIT_PREVIOUS_SHA\" HEAD -- . ':(exclude)docs/**' ':(exclude).github/**' ':(exclude).claude/**' ':(exclude).vscode/**' ':(exclude).ensemblr/**' ':(exclude).mcp.json' ':(exclude)doctor.config.json' ':(exclude).fallowrc.jsonc' ':(exclude)*.md'"
+}

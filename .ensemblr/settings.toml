@@ -15,7 +15,7 @@ command = "bun run lint"
 icon = "list-checks"
 
 [scripts.run.typecheck]
-command = "bun run typegen && bunx tsc --noEmit"
+command = "bun run typegen && bun run typecheck"
 icon = "badge-check"
 
 [scripts.run.typegen]

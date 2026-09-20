@@ -15,7 +15,7 @@
 		"lint": "biome check",
 		"lint:fix": "biome check --write",
 		"format": "biome format --write",
-		"typecheck": "tsc --noEmit",
+		"typecheck": "next typegen && tsc --noEmit",
 		"test": "bun test",
 		"test:coverage": "bun test --coverage",
 		"check": "bun run lint && bun run typecheck && bun test",
