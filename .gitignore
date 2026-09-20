@@ -53,3 +53,5 @@ next-env.d.ts
 
 # Playwright artifacts
 .playwright-mcp
+# Playwright CLI output (may contain credentials)
+.playwright-cli/

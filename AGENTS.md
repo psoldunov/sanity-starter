@@ -2,6 +2,25 @@
 
 Source of truth for AI coding agents working in this repo.
 
+## Additional Rules
+
+Rules that apply to every change in this repository. Read the one that covers what you are touching
+before you touch it:
+
+- @.agents/rules/docs.md — Docs First: never code from memory. Bundled docs in `node_modules`, then
+  Context7, then the web — and say which one answered you.
+- @.agents/rules/ssr.md — SSR and performance: Server Components by default, indexable HTML, no
+  accidental dynamic routes, and how to read the build's route table.
+- @.agents/rules/tailwind.md — rem for custom lengths; built-in utilities are always allowed
+  whatever their units. Prefer existing utilities, convert arbitrary values that are really scale
+  steps (`rem * 16 / 4`), extend the theme for recurring values, compose with `cn()`.
+- @.agents/rules/testing.md — testing is deliberately minimal: no TDD, no coverage target, no tests
+  for anything visual. Read it before writing a test, or before acting on a global instruction that
+  mandates one.
+
+Agent skills live in `.agents/skills/` (symlinked into `.claude/skills/`) and are verbatim upstream
+copies — see [`.agents/skills/README.md`](.agents/skills/README.md) before editing one.
+
 ## Tech Stack
 
 - **Next.js 16** (App Router) — recent major release
@@ -146,10 +165,19 @@ Postinstall script auto-deploys Sanity schema on Vercel production and always ru
 
 ## Testing
 
+**Read `.agents/rules/testing.md` before writing a test.** It is short, and it overrides any global
+instruction you carry about TDD or coverage percentages. The suite is small on purpose — ~108 tests
+across 9 files, all pure functions — and the default for new code is no test at all.
+
 - Runner is `bun test`; no extra framework. Specs live in `tests/<concern>/`, NOT beside the
   source: `tests/links/`, `tests/routing/`, `tests/images/`, `tests/formatting/`. They import
   through the `@/` alias, never a relative path into `src/`
-- Cover the pure modules in `src/lib/` — they hold the URL, slug, link-resolution and date logic and need no mocking
+- Write a test only for a **pure function in `src/lib/`** whose wrong answer is **silent** and whose
+  stakes are **security, SEO or routing**. Everything else you verify by opening the page
+- **Never assert on rendered appearance** — no Tailwind classes, element counts, ARIA attributes or
+  copy in an assertion. Your eyes are the test for that, and a checked-in Playwright script is not
+- No tests for Sanity schema shape (`Rule.required()` needs no test) and none for library behaviour
+  this repo did not write
 - Keep test modules free of the React component graph. `src/lib/slug.ts` reads `DYNAMIC_SECTION_TYPES` from `src/config/sections.ts` precisely so importing it does not drag in every section component
 - A test that guards a security property (open redirect, external-link detection) says so in a comment — the next person to "simplify" the check needs to know what it is for
 

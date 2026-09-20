@@ -244,9 +244,8 @@ Notes:
 - **Consult current documentation before changing framework code.** Next 16,
   React 19 and recent Sanity releases are newer than most model training data.
   The repository has a hard rule about this in
-  [`.claude/rules/context7.md`](../.claude/rules/context7.md), and
-  `node_modules` is the final ground truth for the versions you actually
-  installed.
+  [`.agents/rules/docs.md`](../.agents/rules/docs.md), and `node_modules` is the
+  final ground truth for the versions you actually installed.
 - **Read the upstream upgrade guides**:
   [Next.js](https://nextjs.org/docs/app/guides/upgrading),
   [Sanity](https://www.sanity.io/docs), [React](https://react.dev/blog).
