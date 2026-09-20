@@ -159,6 +159,15 @@ two rarely move to the same place — a retired index page usually belongs
 somewhere different from its children — and a prefix that swallowed its own root
 would make that impossible to express.
 
+A prefix on `/` is refused at save time. Matching compares `route + "/"`, so it
+would look for a path beginning `//`, which `normalizeSlug` never produces: the
+rule saves cleanly and then never fires. It is refused rather than widened into
+"every path", because that would turn every 404 on the site into a redirect from
+one document, and a mass redirect onto a single page reads to search engines as
+a soft 404. Author the home route as an `exact` redirect and use one prefix per
+section. `canEverMatch` in [`src/lib/redirects.ts`](../src/lib/redirects.ts)
+is the rule.
+
 `preserveSlug` is what turns one document into a whole collection's worth of
 redirects: `/work` → `/projects` with it set sends `/work/kast` to
 `/projects/kast`. Left off, everything beneath the prefix lands on one page.

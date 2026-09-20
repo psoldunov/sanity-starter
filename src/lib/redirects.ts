@@ -31,6 +31,40 @@ export function normalizeMatchType(
 	return matchType === PREFIX_MATCH ? PREFIX_MATCH : EXACT_MATCH;
 }
 
+/**
+ * Whether a stored rule could ever be matched by a request.
+ *
+ * A prefix is compared as `route + "/"`, so a prefix on `/` looks for a path
+ * beginning `//` — which `normalizeSlug` (`src/lib/slug.ts`) never produces,
+ * since it joins URL segments behind a single leading slash. Such a rule saves
+ * cleanly and then does nothing, the same silent failure the trailing-slash
+ * rule in `validateRouteString` (`src/lib/routes.ts`) exists to catch, so
+ * `validateRedirectRoute` (`src/sanity/lib/validations.ts`) refuses it at
+ * authoring time.
+ *
+ * Deliberately not widened to let a `/` prefix mean "every path": that would
+ * turn every 404 on the site into a redirect from one CMS document, and a mass
+ * redirect onto a single page reads to search engines as a soft 404 — the
+ * opposite of what these rules are for. A catch-all belongs in its own
+ * deliberate feature, not in a combination of two dropdowns.
+ *
+ * This rule cannot live in `validateRouteString`, which is shared with page
+ * routes: `/` is the home page and a perfectly valid page route, and a perfectly
+ * valid *exact* redirect too.
+ *
+ * @param route - The redirect's stored route, e.g. `/work`.
+ * @param matchType - The redirect's stored `matchType`.
+ * @returns `true` when some request path could match the rule.
+ */
+export function canEverMatch(
+	route: string | null | undefined,
+	matchType: string | null | undefined,
+): boolean {
+	if (normalizeMatchType(matchType) !== PREFIX_MATCH) return true;
+
+	return Boolean(route) && route !== '/';
+}
+
 /** Permanent: the destination inherits the old route's ranking. */
 const PERMANENT = 308;
 
