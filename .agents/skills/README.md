@@ -5,8 +5,9 @@ and nothing in them should be hand-edited — a local edit makes the copy diverg
 next refresh will clobber it. To change behaviour, write a rule in
 [`.agents/rules/`](../rules) instead.
 
-`.claude/skills/` holds symlinks into this directory so Claude Code's skill discovery finds them.
-Other agents read them from here directly.
+`.claude/skills/` holds symlinks into this directory so Claude Code's skill discovery finds them,
+and `.claude/rules` symlinks to [`../rules`](../rules) for the same reason. `.agents/` is the
+canonical location; other agents read it directly.
 
 | Skill | Upstream | Vendored version |
 | --- | --- | --- |
