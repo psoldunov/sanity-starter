@@ -5,6 +5,45 @@ break things that no amount of recall predicts. This page records the procedure,
 the breaking changes already hit and worked around, and the two version pins
 that are deliberate.
 
+## Image placeholders moved from blurhash to LQIP
+
+**If you are upgrading an existing project with images already uploaded, read
+this — the change does not backfill.**
+
+`defineImage()` now asks Sanity for `metadata: ['lqip']` instead of
+`['blurhash']`, and `SmartImage` uses that value directly as `next/image`'s
+`blurDataURL`. LQIP is a base64 data URI that needs no decoding, so the
+`blurhash-base64` dependency is gone.
+
+Sanity writes image metadata **at upload time, from the schema settings in
+force then**. Changing the array does not add metadata to assets already in the
+dataset. So on an existing project:
+
+- assets uploaded under `['blurhash']` have `metadata.blurHash` and **no**
+  `metadata.lqip`;
+- `SmartImage` reads only `lqip`, so those images render with no blur
+  placeholder — they still load correctly, they just pop in;
+- new uploads get LQIP and behave as documented.
+
+To backfill, re-upload the affected assets — through the media library at
+`/admin`, or with a script over `*[_type == "sanity.imageAsset" &&
+!defined(metadata.lqip)]`. If you would rather not, set
+`metadata: ['lqip', 'blurhash']` in
+[`src/sanity/schema/constructors/defineImage.ts`](../src/sanity/schema/constructors/defineImage.ts)
+and reinstate the decoder — but note that the array alone changes nothing for
+assets already uploaded.
+
+## `SmartImage` renamed `priority` to `preload`
+
+Next 16 deprecated `priority` on `next/image` in favour of `preload`, and
+**throws if both are set**. `SmartImageProps` therefore dropped `priority`
+outright rather than keeping an alias that invites the error: a call site
+passing it is now a type error naming exactly what to rename.
+
+Preload one image per page — the LCP candidate. `HeroSection` preloads only
+when it is the page's first section; the blog index preloads only the first
+card of page one.
+
 ## The read token was renamed and must be rotated
 
 **If you are upgrading an existing deployment, do this first.**

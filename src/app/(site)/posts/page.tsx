@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import Pagination from '@/components/blog/Pagination';
 import PostCard from '@/components/blog/PostCard';
 import Container from '@/components/layout/Container';
+import { documentPath } from '@/lib/links';
 import { getSettingsForMetadata } from '@/sanity/lib/fetchers';
 import { sanityFetch } from '@/sanity/lib/live';
 import { POSTS_COUNT_QUERY, POSTS_PAGE_QUERY } from '@/sanity/lib/queries';
@@ -17,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
 		title: 'Blog',
 		description:
 			settings?.siteDescription || 'Writing, updates and announcements.',
-		alternates: { canonical: '/posts' },
+		alternates: { canonical: documentPath('post') },
 	};
 }
 
@@ -95,7 +96,11 @@ export default async function PostsIndexPage({
 							<PostCard
 								key={post._id}
 								post={post}
-								priority={currentPage === 1 && index < 3}
+								// One preload, not three. Which card is the LCP depends on
+								// the viewport, and Next documents `preload` as the wrong
+								// tool once several images are candidates — preloading all
+								// of them prioritises none. The rest stay lazy.
+								preload={currentPage === 1 && index === 0}
 							/>
 						))}
 					</div>
@@ -104,7 +109,7 @@ export default async function PostsIndexPage({
 				<Pagination
 					currentPage={currentPage}
 					totalPages={totalPages}
-					basePath='/posts'
+					basePath={documentPath('post')}
 				/>
 			</Container>
 		</main>

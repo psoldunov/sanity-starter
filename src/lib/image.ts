@@ -4,8 +4,8 @@ import type { SanityImageAsset } from '@/sanity/types/sanity.types';
  * Whether an image's `asset` has been dereferenced by the query (`asset->`)
  * rather than left as a bare reference.
  *
- * Only a dereferenced asset carries the blurhash and intrinsic dimensions, so
- * this is what decides whether a blur placeholder is available.
+ * Only a dereferenced asset carries the LQIP and intrinsic dimensions, so this
+ * is what decides whether a blur placeholder is available.
  *
  * @param asset - The `asset` value from a Sanity image object.
  * @returns `true` when the asset is a full `sanity.imageAsset` document.
@@ -101,6 +101,94 @@ export function resolveImageSizes(
 }
 
 /**
+ * Lowercased path of an image URL.
+ *
+ * File-type checks read the path rather than the whole URL: a Sanity URL
+ * carrying transformation parameters (`…/logo.svg?w=320`) no longer ends in
+ * its file extension.
+ *
+ * @param url - An absolute image URL.
+ * @returns The lowercased pathname, or `''` when the URL does not parse.
+ */
+function getImagePath(url: string): string {
+	try {
+		return new URL(url).pathname.toLowerCase();
+	} catch {
+		return '';
+	}
+}
+
+/**
+ * Whether an image URL points at an SVG.
+ *
+ * @param url - An absolute image URL.
+ * @returns `true` when the URL's path ends in `.svg`.
+ */
+function isSvgUrl(url: string): boolean {
+	return getImagePath(url).endsWith('.svg');
+}
+
+/**
+ * Drops the blur placeholder for SVGs.
+ *
+ * `next/image` paints the placeholder behind the `<img>` until the file has
+ * loaded, and vector art is usually a logo on a transparent background — so
+ * the blur shows straight through the artwork.
+ *
+ * @param url - The resolved image URL.
+ * @param lqip - The asset's low-quality image placeholder, a base64 data URI.
+ * @returns The LQIP for raster images, or `undefined` for SVGs.
+ */
+export function resolveImagePlaceholder(
+	url: string,
+	lqip: string | undefined,
+): string | undefined {
+	return isSvgUrl(url) ? undefined : lqip;
+}
+
+/**
+ * Whether an image URL points at a file Next's optimiser should not touch: an
+ * SVG or a GIF.
+ *
+ * SVG is vector, so there is nothing to resize or re-encode, and Next refuses
+ * it outright unless `dangerouslyAllowSVG` is set. A GIF is here for its
+ * animation, which the optimiser passes through unchanged while warning about
+ * it — so the round trip buys nothing.
+ *
+ * Next already forces `unoptimized` for SVG on its own (`get-img-props`
+ * strips the query before testing the extension, so a transformed Sanity URL
+ * is still recognised). GIF is the case it does not cover. SVG stays listed
+ * here so the decision is explicit and testable in one place, and so the CDN
+ * transformation parameters are not appended to a URL that ignores them.
+ *
+ * @param url - An absolute image URL.
+ * @returns `true` when the URL's path ends in `.svg` or `.gif`.
+ */
+function isPassThroughUrl(url: string): boolean {
+	return isSvgUrl(url) || getImagePath(url).endsWith('.gif');
+}
+
+/**
+ * Chooses what `next/image` is handed for a Sanity image URL: raster images get
+ * the CDN transformation parameters, vector art and GIFs go through untouched
+ * and unoptimised (see `isPassThroughUrl`).
+ *
+ * @param url - The resolved Sanity image URL.
+ * @param options - Width, height and quality for raster transformations.
+ * @returns The `src` to render and whether to skip Next's optimiser.
+ */
+export function resolveImageSource(
+	url: string,
+	options: { width?: number; height?: number; quality?: number },
+): { src: string; unoptimized: boolean } {
+	if (isPassThroughUrl(url)) {
+		return { src: url, unoptimized: true };
+	}
+
+	return { src: buildOptimizedImageUrl(url, options), unoptimized: false };
+}
+
+/**
  * Builds an optimized Sanity CDN image URL with transformation query parameters.
  *
  * Adds width (`w`), height (`h`), and quality (`q`) query parameters to a Sanity image URL
@@ -112,6 +200,7 @@ export function resolveImageSizes(
  * @param options.height - Optional height in pixels (adds `h` query parameter)
  * @param options.quality - Image quality from 1-100 (adds `q` query parameter, defaults to 75)
  * @returns The optimized Sanity CDN URL string with transformation query parameters appended
+ * @throws {TypeError} When `url` is not an absolute URL.
  */
 export function buildOptimizedImageUrl(
 	url: string,
@@ -125,7 +214,15 @@ export function buildOptimizedImageUrl(
 		quality?: number;
 	},
 ): string {
-	const urlObject = new URL(url);
+	let urlObject: URL;
+
+	// `new URL` throws a bare "Invalid URL" that names nothing. Which asset is
+	// the only thing worth knowing when this fires from inside a page render.
+	try {
+		urlObject = new URL(url);
+	} catch (error) {
+		throw new TypeError(`Invalid image URL: ${url}`, { cause: error });
+	}
 
 	if (width) {
 		urlObject.searchParams.set('w', width.toString());

@@ -110,11 +110,12 @@ export default async function PageComponent({
 
 	return (
 		<main id='main'>
-			{page.sections.map((section) => (
+			{page.sections.map((section, index) => (
 				<SectionRenderer
 					key={section._key}
 					section={section}
 					searchParams={searchParamsObj}
+					isFirstSection={index === 0}
 				/>
 			))}
 		</main>

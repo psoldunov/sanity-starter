@@ -15,6 +15,12 @@ import type { LinkableDocument, StaticRoute } from '@/types';
  * `PROTECTED_ROUTE_PATTERNS` in `src/config/index.ts` derives from
  * `LINKABLE_DOCUMENTS`, so adding an entry here also stops a CMS page from
  * claiming that prefix.
+ *
+ * It is load-bearing beyond the picker: `documentPath()` in `src/lib/links.ts`
+ * reads `basePath` to build the site's own URLs — canonicals, the sitemap,
+ * pagination and the Presentation locations — and throws for a type it does
+ * not find. Removing an entry to stop editors linking to a type therefore also
+ * breaks the routes that render it. Remove the routes too, or leave the entry.
  */
 
 /**

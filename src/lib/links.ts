@@ -10,6 +10,34 @@ const LINKABLE_BASE_PATHS: Record<string, string> = Object.fromEntries(
 );
 
 /**
+ * The app path of a templated document route: its index without a slug, one
+ * document with one. Reads the `basePath` the type registers in
+ * `LINKABLE_DOCUMENTS`, so a route such as `/posts` is spelled out once and
+ * moving the blog is a one-line change to the registry.
+ *
+ * For the site's own URLs — canonicals, the sitemap, JSON-LD. A CMS-authored
+ * link goes through `resolveDestinationUrl` instead, which also guards the
+ * slug against path traversal.
+ *
+ * @param type - A document type registered in `LINKABLE_DOCUMENTS`, e.g. `post`.
+ * @param slug - The document slug; omit it for the index.
+ * @returns The path, e.g. `/posts/hello`.
+ * @throws {Error} When `type` is not registered — a programming error, not
+ *   content, so it should fail loudly at build rather than emit a broken URL.
+ */
+export function documentPath(type: string, slug?: string): string {
+	const basePath = LINKABLE_BASE_PATHS[type];
+
+	if (!basePath) {
+		throw new Error(
+			`documentPath: "${type}" is not registered in LINKABLE_DOCUMENTS.`,
+		);
+	}
+
+	return slug ? `${basePath}/${slug}` : basePath;
+}
+
+/**
  * Whether an `internalDestination` value holds a real destination — a document
  * reference or a static path. Single source of truth for "has a destination",
  * shared by schema `hidden` predicates and redirect validation so they cannot

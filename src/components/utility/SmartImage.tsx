@@ -1,28 +1,54 @@
 import { getImage, type SanityImageSource } from '@sanity/asset-utils';
-import { blurhashToBase64 } from 'blurhash-base64';
 import Image from 'next/image';
 import {
-	buildOptimizedImageUrl,
 	isDereferencedAsset,
 	resolveAltText,
 	resolveImageDimensions,
+	resolveImagePlaceholder,
 	resolveImageSizes,
+	resolveImageSource,
 } from '@/lib/image';
 import { dataset, projectId } from '@/sanity/env';
 import urlFor from '@/sanity/lib/utils';
 import type { SmartImageProps } from '@/types';
 
 /**
- * Renders a Sanity image with `next/image`, supporting both dereferenced and
- * referenced assets. Dereferenced assets carry blurhash metadata, which becomes
- * the blur placeholder.
+ * Reports a content image that ended up with no alt text from any source.
  *
- * The resolution rules — alt text, dimensions, `sizes` — live in
- * `src/lib/image.ts` so they are unit-testable without rendering, and so this
- * component stays a thin mapping onto `next/image`.
+ * Development only: an empty alt is correct for a decorative image and a
+ * content bug everywhere else, and a build should not fail on CMS content.
+ *
+ * @param alt - The alt text that was resolved.
+ * @param decorative - Whether the image is marked presentational.
+ * @param url - Image URL, so the message names the offending asset.
+ */
+function warnOnMissingAlt(
+	alt: string,
+	decorative: boolean | undefined,
+	url: string,
+): void {
+	if (decorative || alt || process.env.NODE_ENV === 'production') {
+		return;
+	}
+
+	console.error(
+		`SmartImage: no alt text for ${url}. Set altText in the media library, pass alt, or pass decorative if the image is purely presentational.`,
+	);
+}
+
+/**
+ * Renders a Sanity image with `next/image`, supporting both dereferenced and
+ * referenced assets. Dereferenced assets carry Sanity's LQIP — a base64 data
+ * URI usable as-is — which becomes the blur placeholder.
+ *
+ * The resolution rules — alt text, dimensions, `sizes`, whether the optimiser
+ * should be skipped — live in `src/lib/image.ts` so they are unit-testable
+ * without rendering, and so this component stays a thin mapping onto
+ * `next/image`.
  *
  * @param props - Sanity image object plus `next/image` options.
- * @returns A `next/image` element pointing at the Sanity CDN.
+ * @returns A `next/image` element pointing at the Sanity CDN, or `null` when
+ *   there is no image or no asset yet.
  */
 export default function SmartImage({
 	image,
@@ -33,15 +59,19 @@ export default function SmartImage({
 	decorative,
 	sizes,
 	quality,
+	preload,
 	...rest
 }: SmartImageProps) {
-	const { asset } = image;
-
-	if (!asset) {
+	// Nullable on purpose: a required image is still empty in a draft — a
+	// section just added in Presentation — whatever the generated types say.
+	if (!image?.asset) {
 		return null;
 	}
 
+	const { asset } = image;
 	const isDereferenced = isDereferencedAsset(asset);
+	// SAFETY: SmartImageObject is the queried subset of SanityImageSource; the
+	// asset guard above supplies the field the URL helpers require.
 	const source = image as unknown as SanityImageSource;
 	const imageAsset = isDereferenced
 		? asset
@@ -56,7 +86,10 @@ export default function SmartImage({
 		return null;
 	}
 
-	const blurHash = isDereferenced ? imageAsset.metadata?.blurHash : undefined;
+	const placeholder = resolveImagePlaceholder(
+		resolvedUrl,
+		isDereferenced ? imageAsset.metadata?.lqip : undefined,
+	);
 	const resolvedAlt = resolveAltText({
 		alt,
 		altText: isDereferenced ? asset.altText : undefined,
@@ -64,11 +97,7 @@ export default function SmartImage({
 		decorative,
 	});
 
-	if (!decorative && !resolvedAlt && process.env.NODE_ENV !== 'production') {
-		console.error(
-			`SmartImage: no alt text for ${resolvedUrl}. Set altText in the media library, pass alt, or pass decorative if the image is purely presentational.`,
-		);
-	}
+	warnOnMissingAlt(resolvedAlt, decorative, resolvedUrl);
 
 	const dimensions = resolveImageDimensions({
 		width,
@@ -77,17 +106,28 @@ export default function SmartImage({
 		dimensions: imageAsset.metadata?.dimensions,
 	});
 
+	// Vector art and GIFs go to the browser as-is: there is nothing to resize
+	// or re-encode in an SVG, which Next's optimiser rejects anyway, and an
+	// animated GIF it would only pass through.
+	const { src, unoptimized } = resolveImageSource(resolvedUrl, {
+		width,
+		height,
+		quality,
+	});
+
 	return (
 		<Image
-			src={buildOptimizedImageUrl(resolvedUrl, { width, height, quality })}
+			src={src}
+			unoptimized={unoptimized}
 			alt={resolvedAlt}
 			width={dimensions.width}
 			height={dimensions.height}
-			placeholder={blurHash ? 'blur' : undefined}
-			blurDataURL={blurHash ? blurhashToBase64(blurHash) : undefined}
+			placeholder={placeholder ? 'blur' : undefined}
+			blurDataURL={placeholder}
 			fill={fill}
 			sizes={resolveImageSizes(sizes, fill)}
 			quality={quality}
+			preload={preload}
 			{...rest}
 		/>
 	);

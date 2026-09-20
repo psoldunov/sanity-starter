@@ -1,4 +1,5 @@
 import { defineDocuments, defineLocations } from 'sanity/presentation';
+import { documentPath } from '@/lib/links';
 
 export const locations = {
 	page: defineLocations({
@@ -20,13 +21,14 @@ export const locations = {
 			title: 'title',
 			slug: 'slug',
 		},
+		// A draft post has no slug until the title generates one, and
+		// `documentPath` returns the index path for an empty slug — so an
+		// unguarded location would have that draft claim `/posts` as its own
+		// and highlight the blog index. No slug, no location.
 		resolve: (doc) => ({
-			locations: [
-				{
-					title: doc?.title,
-					href: `/posts/${doc?.slug.current}`,
-				},
-			],
+			locations: doc?.slug?.current
+				? [{ title: doc.title, href: documentPath('post', doc.slug.current) }]
+				: [],
 		}),
 	}),
 };

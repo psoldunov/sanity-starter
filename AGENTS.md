@@ -58,7 +58,9 @@ Use constructors for consistency (located in `src/sanity/schema/constructors/`):
 
 - **`defineSection()`**: base for all sections — auto-adds `id`, `hidden`, `padding` fields in configuration group
 - **`defineLink()`**: returns a reference to the shared `link` / `linkWithLabel` registered type (no inline fields). A link resolves to one of: an **internal destination** (`internalDestination` object — a page/post/linkable-doc reference or a static route), an **external URL** (`http`/`https`/`mailto`/`tel`), or a **file download**. Page references support a section anchor (`sectionId` → `#id`). Optional `withLabel` param
-- **`defineImage()`**: image field with Sanity CDN, hotspot, dimensions, blurhash
+- **`defineImage()`**: image field with Sanity CDN, hotspot, dimensions, LQIP
+  placeholder metadata (`metadata: ['lqip']` — a base64 data URI `SmartImage`
+  hands straight to `next/image` as `blurDataURL`, no decoder needed)
 
 Custom Studio inputs live in `src/sanity/components/` (e.g. `PaddingInput`, `SectionIdInput`).
 
@@ -210,7 +212,10 @@ export default function HeroSection(props: SectionProps<'heroSection'>) {
 ```
 
 - **Section wrapper**: use `<Section>` from `src/components/utility/Section.tsx` for consistent padding via `PADDING_CONFIG`
-- **Images**: use `SmartImage` for Sanity images (blurhash placeholders + CDN optimization)
+- **Images**: use `SmartImage` for Sanity images (LQIP placeholders + CDN
+  optimization; SVG and GIF bypass the optimiser). `preload` marks the LCP
+  image — one per page. `priority` was removed: Next 16 deprecated it and
+  throws when both are set
 - **Links**: use `SmartLink` over raw `<a>` where applicable
 
 ## Error Handling
@@ -249,8 +254,8 @@ export default function HeroSection(props: SectionProps<'heroSection'>) {
 - `src/sanity/env.server.ts` — `server-only` module holding `SANITY_API_READ_TOKEN`
 - `src/lib/slug.ts` — slug normalization and dynamic section detection
 - `src/lib/url.ts` — site URL resolution and link target detection (`getTarget`)
-- `src/lib/links.ts` — internal destination URL resolution (`resolveDestinationUrl`, `hasDestination`)
-- `src/lib/image.ts` — Sanity CDN image URL builder
+- `src/lib/links.ts` — internal destination URL resolution (`resolveDestinationUrl`, `hasDestination`) and `documentPath(type, slug?)` for the site's own URLs (canonicals, sitemap, Presentation), read from `LINKABLE_DOCUMENTS`
+- `src/lib/image.ts` — Sanity CDN image URL builder, plus `resolveImageSource` (SVG/GIF pass-through) and `resolveImagePlaceholder`
 - `src/sanity/lib/fragments.ts` — ALL GROQ projections, including every section fragment. Imports nothing, on purpose
 - `src/sanity/schema/objects/link.ts` — `link` / `linkWithLabel` registered types
 - `src/sanity/schema/objects/internalDestination.ts` — polymorphic link destination (document reference or static path)

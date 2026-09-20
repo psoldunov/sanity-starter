@@ -35,7 +35,7 @@ export const INTERNAL_DESTINATION_PROJECTION = `{
  *
  * Adding a section means adding its fragment here and interpolating it into
  * `PAGE_QUERY`. Dereference image assets with `asset->` so `SmartImage` gets the
- * blurhash and intrinsic dimensions rather than a bare reference.
+ * LQIP placeholder and intrinsic dimensions rather than a bare reference.
  */
 
 export const HERO_SECTION_FRAGMENT = `

@@ -35,3 +35,14 @@ describe('buildOptimizedImageUrl', () => {
 		expect(url.searchParams.getAll('w')).toEqual(['640']);
 	});
 });
+
+describe('buildOptimizedImageUrl error handling', () => {
+	test('names the offending URL when it does not parse', () => {
+		// The bare `TypeError: Invalid URL` that `new URL` throws names nothing,
+		// and this fires from inside a page render where the asset is the only
+		// thing worth knowing.
+		expect(() => buildOptimizedImageUrl('not-a-url', {})).toThrow(
+			'Invalid image URL: not-a-url',
+		);
+	});
+});
