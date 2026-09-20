@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import { notFound, redirect } from 'next/navigation';
+import { notFound, permanentRedirect, redirect } from 'next/navigation';
 import { SectionRenderer } from '@/components/utility/SectionRenderer';
-import { resolveDestinationUrl } from '@/lib/links';
+import { resolveRedirect } from '@/lib/redirects';
 import { hasDynamicParams, normalizeSlug, splitSlug } from '@/lib/slug';
 import { getSiteUrl } from '@/lib/url';
 import {
@@ -88,13 +88,22 @@ export default async function PageComponent({
 			stega: false,
 		});
 
-		const destinationUrl = resolveDestinationUrl(redirectData?.destination);
-		if (destinationUrl) {
+		const match = resolveRedirect(redirectData, normalizedSlug);
+		if (match) {
 			// Editor-authored destination, so `typedRoutes` cannot check it at build
-			// time. `resolveDestinationUrl` is the guarantee: a static path only
-			// survives `isSafeInternalPath`, which rejects the `//host` and `/\host`
-			// forms that would turn this into an open redirect.
-			redirect(destinationUrl as Parameters<typeof redirect>[0]);
+			// time. `resolveRedirect` is the guarantee: every branch ends in
+			// `isSafeInternalPath`, which rejects the `//host` and `/\host` forms
+			// that would turn this into an open redirect.
+			const url = match.url as Parameters<typeof redirect>[0];
+
+			// 308 for a permanent move, so the old route's ranking passes to the
+			// destination. A 307 tells search engines to keep indexing the old URL,
+			// which is the wrong answer for a route that has genuinely moved.
+			if (match.statusCode === 308) {
+				permanentRedirect(url);
+			}
+
+			redirect(url);
 		}
 
 		notFound();

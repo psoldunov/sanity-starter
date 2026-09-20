@@ -82,6 +82,14 @@ export function validateRouteString(route: string | undefined): string | true {
 		return 'Slug cannot start with // or /\\ — that points at another site, not a page on this one';
 	}
 
+	// A stored `/work/` never matches: request paths come from `normalizeSlug`,
+	// which only ever ends in `/` for the home route, and a prefix redirect is
+	// compared as `route + "/"`, so this would look for `/work//`. Rejecting it
+	// here is cheaper than a rule that saves cleanly and then does nothing.
+	if (route.length > 1 && route.endsWith('/')) {
+		return 'Slug cannot end with a / — write it as "/work", not "/work/"';
+	}
+
 	if (/\s/.test(route)) {
 		return 'Slug cannot contain spaces or tabs';
 	}

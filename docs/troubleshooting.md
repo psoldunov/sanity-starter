@@ -191,18 +191,29 @@ origin.
 
 ### An editor cannot save a page route
 
-`validatePageRoute` rejects routes that do not start with `/`, contain spaces,
-tabs or uppercase letters, or begin with a protected prefix (`/api`, `/admin`,
-`/posts`). The message names the clashing prefix. Protected prefixes come from
+`validatePageRoute` rejects routes that do not start with `/`, end with `/`
+(the home route aside), contain spaces, tabs or uppercase letters, or begin with
+a protected prefix (`/api`, `/admin`, `/posts`). The message names the clashing
+prefix. Protected prefixes come from
 `PROTECTED_ROUTE_PATTERNS` in [`src/config/index.ts`](../src/config/index.ts),
 which derives from `LINKABLE_DOCUMENTS`.
 
 ### A redirect never fires
 
 - Redirects are checked **only when no page matches** the route. A page with the
-  same route always wins; redirect validation rejects that case at save time.
+  same route always wins; redirect validation rejects that case at save time for
+  an `exact` rule (a `prefix` rule is allowed to sit under a surviving page,
+  because it only covers what is beneath it).
+- A `prefix` rule never matches its own route. `/work` as a prefix catches
+  `/work/kast` and not `/work`, which needs its own `exact` document.
+- An `exact` rule beats every prefix above it, and the longest prefix wins among
+  prefixes — see `resolveRedirect` in
+  [`src/lib/redirects.ts`](../src/lib/redirects.ts).
 - The destination must resolve. A reference to an unpublished document, or to a
   document with no slug, resolves to nothing and falls through to a 404.
+- With `preserveSlug` on, the destination plus the remaining path must still be
+  a safe same-origin path, or the redirect falls through to a 404 rather than
+  sending the visitor off-origin.
 
 ### A newly published page 404s until redeploy
 

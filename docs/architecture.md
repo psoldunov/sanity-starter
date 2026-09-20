@@ -45,8 +45,10 @@ with its own shell — it must not inherit the site header, footer or fonts.
    ([`src/lib/slug.ts`](../src/lib/slug.ts)) turns them into `/about`.
 2. `getPage(slug)` ([`src/sanity/lib/fetchers.ts`](../src/sanity/lib/fetchers.ts))
    runs `PAGE_QUERY`.
-3. No page? `REDIRECT_QUERY` is tried; a resolvable destination triggers
-   `redirect()`, otherwise `notFound()`.
+3. No page? `REDIRECT_QUERY` is tried; `resolveRedirect()`
+   ([`src/lib/redirects.ts`](../src/lib/redirects.ts)) picks the winning rule —
+   exact route, else longest prefix — and a resolvable destination triggers
+   `permanentRedirect()` (308) or `redirect()` (307), otherwise `notFound()`.
 4. Each section is handed to `SectionRenderer`
    ([`src/components/utility/SectionRenderer.tsx`](../src/components/utility/SectionRenderer.tsx)),
    which looks the component up by `_type` in the registry.

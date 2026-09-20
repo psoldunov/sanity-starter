@@ -116,8 +116,31 @@ export type SmartImageProps = {
  * produced wherever a link's `page`/`destination` is queried, so this tracks the
  * GROQ projection automatically instead of being hand-maintained.
  */
-export type ResolvedDestination =
-	NonNullable<REDIRECT_QUERY_RESULT>['destination'];
+export type ResolvedDestination = NonNullable<
+	REDIRECT_QUERY_RESULT[number]
+>['destination'];
+
+/**
+ * One redirect rule as `REDIRECT_QUERY` returns it — a candidate, because the
+ * query returns every rule that could handle a path and `resolveRedirect`
+ * (`src/lib/redirects.ts`) decides which one wins.
+ */
+export type RedirectCandidate = REDIRECT_QUERY_RESULT[number];
+
+/**
+ * The HTTP status codes a redirect can answer with. Limited to the two a Server
+ * Component can emit: Next spells 308 `permanentRedirect()` and 307 `redirect()`.
+ */
+export type RedirectStatusCode = 307 | 308;
+
+/**
+ * A redirect that resolved to a destination: where to send the visitor, and the
+ * status code the catch-all route answers with.
+ */
+export type ResolvedRedirect = {
+	url: string;
+	statusCode: RedirectStatusCode;
+};
 
 /**
  * Anything link-shaped that `SmartLink` can resolve.
