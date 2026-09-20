@@ -104,7 +104,7 @@ they had and simply render without a placeholder.
   when the image really is full-bleed. Be explicit:
   `sizes='(min-width: 768px) 50vw, 100vw'`.
 - **`preload` on the LCP image and nothing else.** (`priority` is deprecated in
-  Next 16 — `SmartImage` still accepts it, marked as such.) The article cover
+  Next 16, and `SmartImage` does not expose it at all.) The article cover
   image has it; the blog index gives it to the first card on page 1 only.
   Marking several images removes the prioritisation, and Next documents
   `preload` as the wrong tool once more than one is a candidate.

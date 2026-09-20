@@ -128,7 +128,9 @@ Two files exist only for AI coding agents and have no effect on the site:
   too, at three bytes.
 
 Agent conventions themselves live in [`AGENTS.md`](../AGENTS.md) and
-[`.claude/rules/`](../.claude/rules/).
+[`.agents/rules/`](../.agents/rules/) — docs, SSR, Tailwind and testing. The
+skills an agent can use are vendored in [`.agents/skills/`](../.agents/skills/)
+and symlinked into `.claude/skills/` so Claude Code finds them.
 
 ## Commands
 
