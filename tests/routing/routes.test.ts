@@ -85,6 +85,19 @@ describe('validateRouteString', () => {
 		expect(validateRouteString('/\\evil.com')).toContain('another site');
 	});
 
+	test('rejects a trailing slash, but keeps the home route', () => {
+		// ROUTING: a trailing slash never matches anything. `normalizeSlug` builds
+		// request paths from the URL segments, so no path ever ends in `/` but the
+		// home route, and `REDIRECT_QUERY` compares a prefix as `route + "/"` —
+		// a stored `/work/` would look for `/work//`. The rule saves and does
+		// nothing, silently.
+		expect(validateRouteString('/work/')).toContain('cannot end with a /');
+		expect(validateRouteString('/company/team/')).toContain(
+			'cannot end with a /',
+		);
+		expect(validateRouteString('/')).toBe(true);
+	});
+
 	test('rejects whitespace and uppercase', () => {
 		expect(validateRouteString('/about us')).toContain('spaces');
 		expect(validateRouteString('/About')).toContain('uppercase');

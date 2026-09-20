@@ -57,6 +57,8 @@ A page-builder page. Everything the catch-all route `/[[...slug]]` serves is a
 [`src/sanity/lib/validations.ts`](../src/sanity/lib/validations.ts):
 
 - must start with `/`
+- must not end with `/`, except the home route itself — a stored `/work/`
+  matches no request path and silently does nothing
 - no spaces or tabs
 - no uppercase letters
 - must not begin with a protected prefix — `/api`, `/admin`, or any linkable
@@ -120,20 +122,63 @@ An editor-managed redirect, evaluated when no page owns a requested route.
 | Field | Type | Required | Purpose |
 | --- | --- | --- | --- |
 | `route` | slug | Validated | The source path to redirect from. |
+| `matchType` | string (`exact` / `prefix`) | Yes | `exact` matches the route alone. `prefix` matches every route *beneath* it. |
+| `preserveSlug` | boolean | — | Prefix only: carries the part of the path below the prefix onto the destination. |
 | `destination` | `internalDestination` | Yes | Where it goes: a page, a post, any linkable document, or a static Next route. |
+| `statusCode` | number (`308` / `307`) | Yes | 308 permanent (the default), 307 temporary. |
 | `orderRank` | hidden | — | Studio ordering. |
 
+Only those two codes are offered, because they are the two a Server Component
+can send: Next spells them `permanentRedirect()` and `redirect()`. 301 and 302
+would need the redirect to move into `proxy.ts`, which would put a Sanity read
+in front of every request.
+
 Validation (`validateRedirectRoute`) applies every page-route rule, then queries
-the Content Lake to reject a route an existing page already owns — a redirect
-that shadows a real page would never fire, since the page is matched first.
+the Content Lake to reject a route an existing page already owns — an `exact`
+redirect that shadows a real page would never fire, since the page is matched
+first — and to reject a second redirect of the same `matchType` on the same
+route.
+
+The page check runs for `exact` redirects only. A prefix covers what sits
+*beneath* its route, so a surviving `/work` page and a `/work/*` rule for its
+retired children are both reachable, and blocking that pairing would leave the
+legacy tree unmigratable. Both queries run through the validation client
+(`context.getClient`, drafts perspective, no CDN), so an unpublished redirect
+counts and no stale edge copy answers.
+
+That last check replaces the `slug` type's built-in uniqueness rule, which the
+field turns off with `isUnique: () => true`. The built-in rule is per document
+type and so forbids the pairing this model depends on: an `exact` `/work` and a
+`prefix` `/work` are two different rules that share a route on purpose.
+
+### Matching
+
+A prefix covers what is beneath it and never the route itself: a `/work` prefix
+catches `/work/kast` but not `/work`, which takes its own `exact` document. The
+two rarely move to the same place — a retired index page usually belongs
+somewhere different from its children — and a prefix that swallowed its own root
+would make that impossible to express.
+
+`preserveSlug` is what turns one document into a whole collection's worth of
+redirects: `/work` → `/projects` with it set sends `/work/kast` to
+`/projects/kast`. Left off, everything beneath the prefix lands on one page.
+
+Precedence is decided in `src/lib/redirects.ts`, not in GROQ — `REDIRECT_QUERY`
+returns every rule that *could* match and `resolveRedirect` picks the winner:
+the exact route first, then the longest prefix. Keeping it a pure function is
+what makes it testable (`tests/routing/redirects.test.ts`).
 
 **Developer notes.** `REDIRECT_QUERY` runs in
 `src/app/(site)/[[...slug]]/page.tsx`
 only after `PAGE_QUERY` misses; a resolved destination becomes a Next
-`redirect()`, otherwise `notFound()`. Resolution goes through
+`permanentRedirect()` (308) or `redirect()` (307), otherwise `notFound()`.
+A migrated path wants 308: a 307 tells search engines to keep indexing the old
+URL, so the ranking never reaches the new one. Resolution goes through
 `resolveDestinationUrl`, which rejects protocol-relative paths such as
 `//evil.com` — without that guard an editable CMS field would be an open
-redirect. These are runtime redirects, not `next.config.ts` ones: they cost a
+redirect. `appendPreservedSlug` re-runs the same check on the concatenated
+result, because `/` plus `/evil.com` spells `//evil.com` even when neither half
+was unsafe. These are runtime redirects, not `next.config.ts` ones: they cost a
 render pass but do not need a deploy.
 
 ## Shared objects

@@ -68,9 +68,22 @@ export const PAGE_QUERY =
   }
 }`);
 
-/** Redirect lookup, used when no page matches a route. */
-export const REDIRECT_QUERY =
-	defineQuery(`*[_type == "redirect" && route.current == $slug][0]{
+/**
+ * Every redirect that could handle a route, used when no page matches it.
+ *
+ * Returns candidates rather than one document because two rules can both apply:
+ * an exact route and any number of prefixes above it. `resolveRedirect`
+ * (`src/lib/redirects.ts`) picks between them — exact first, then the longest
+ * prefix — so the precedence is pure and testable rather than buried in GROQ.
+ */
+export const REDIRECT_QUERY = defineQuery(`*[_type == "redirect" && (
+  (matchType != "prefix" && route.current == $slug) ||
+  (matchType == "prefix" && string::startsWith($slug, route.current + "/"))
+)]{
+  "route": route.current,
+  matchType,
+  preserveSlug,
+  statusCode,
   destination ${INTERNAL_DESTINATION_PROJECTION}
 }`);
 
