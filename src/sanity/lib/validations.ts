@@ -1,5 +1,5 @@
 import type { Slug, ValidationContext } from 'sanity';
-import { normalizeMatchType } from '@/lib/redirects';
+import { canEverMatch, normalizeMatchType } from '@/lib/redirects';
 import { validateRouteString } from '@/lib/routes';
 import { apiVersion } from '@/sanity/env';
 
@@ -27,6 +27,10 @@ export function validatePageRoute(value: Slug | undefined): string | true {
  * The page check runs for an exact redirect only: a prefix covers what sits
  * beneath the route, so a surviving `/work` page and a `/work/*` rule for its
  * retired children are both reachable and both wanted.
+ *
+ * Before either read it rejects a rule no request could ever match — a prefix
+ * on `/`, see `canEverMatch` (`src/lib/redirects.ts`) for why that is refused
+ * rather than widened into a catch-all.
  *
  * The duplicate rule replaces the `slug` type's built-in uniqueness check, which is
  * per-document-type and therefore too strict here: an `exact` `/work` and a
@@ -61,6 +65,12 @@ export async function validateRedirectRoute(
 	const matchType = normalizeMatchType(
 		(context.document as { matchType?: string } | undefined)?.matchType,
 	);
+
+	// Checked before the Content Lake reads below: a rule nothing can ever match
+	// is dead whatever else is in the dataset, so there is nothing to query for.
+	if (!canEverMatch(value.current, matchType)) {
+		return 'A prefix redirect cannot use "/". Matching compares the route plus a slash, so this would look for a path starting "//" and never fire. Use an exact redirect for the home route, or one prefix per section such as "/work".';
+	}
 
 	const client = context
 		.getClient({ apiVersion })

@@ -206,6 +206,9 @@ which derives from `LINKABLE_DOCUMENTS`.
   because it only covers what is beneath it).
 - A `prefix` rule never matches its own route. `/work` as a prefix catches
   `/work/kast` and not `/work`, which needs its own `exact` document.
+- A `prefix` rule on `/` is refused at save time: it would compare against `//`
+  and never fire. Use an `exact` rule for the home route and one prefix per
+  section.
 - An `exact` rule beats every prefix above it, and the longest prefix wins among
   prefixes — see `resolveRedirect` in
   [`src/lib/redirects.ts`](../src/lib/redirects.ts).
