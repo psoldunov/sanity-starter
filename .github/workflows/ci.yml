@@ -19,9 +19,13 @@ env:
   NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ vars.NEXT_PUBLIC_SANITY_PROJECT_ID }}
   NEXT_PUBLIC_SANITY_DATASET: ${{ vars.NEXT_PUBLIC_SANITY_DATASET || 'production' }}
 
+# Two jobs that run in parallel. `static` holds everything that reads only
+# source; `build` holds everything downstream of Sanity type generation. Neither
+# needs the other's output, so a run takes as long as the slower of the two
+# rather than the sum of both.
 jobs:
-  check:
-    name: Lint, typecheck, test
+  static:
+    name: Lint, test, static analysis
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -35,9 +39,7 @@ jobs:
           bun-version: '1.4.2'
 
       - name: Install dependencies
-        # Type generation needs Sanity credentials that a fork's PR will not
-        # have. Skip it here and run it explicitly in the step below, which is
-        # allowed to be skipped.
+        # Nothing in this job reads the generated Sanity types.
         env:
           SKIP_SANITY_TYPEGEN: '1'
         run: bun install --frozen-lockfile
@@ -50,31 +52,45 @@ jobs:
 
       # Both tools below are static analysers: they read source and need no
       # Sanity credentials, so they gate every pull request including a fork's.
-      # They run via npx rather than as dependencies — neither is a build input.
+      # They run via bunx rather than as dependencies — neither is a build input.
       #
       # Both versions are pinned. react-doctor in particular is pre-1.0, where a
       # minor release may change rules, output shape, or the score itself; on
       # `@latest` an upstream release would silently move this gate.
 
       - name: React Doctor
-        # TWO INVOCATIONS, DELIBERATELY. Do not collapse them into one.
+        # ONE SCAN, TWO GATES. Do not swap `--json` for `--score`.
         #
         # `--score` suppresses react-doctor's own exit code. Verified against
-        # 0.9.13 on a scratch project with `blocking: warning`: the bare run
-        # exits 1, the identical run with `--score` exits 0 while printing the
-        # same score. Gating only on `--score` would therefore never fail on a
-        # finding, whatever its severity.
+        # 0.9.13 on a scratch project with findings: the bare run and the
+        # `--json` run both exit 1, the identical run with `--score` exits 0
+        # while printing the same score. Gating on `--score` would therefore
+        # never fail on a finding, whatever its severity. `--json` carries the
+        # real exit code and the score from a single scan, where this step used
+        # to scan twice to get both.
         #
-        # So: the bare run is the real gate, and the score floor is a second one
-        # catching accumulated warnings, which are advisory and never move the
-        # exit code at the default `blocking: error`.
+        # So: the exit code is the real gate, and the score floor is a second
+        # one catching accumulated warnings, which are advisory and never move
+        # the exit code at the default `blocking: error`.
         run: |
           set -euo pipefail
-          npx -y react-doctor@0.9.13 .
-          SCORE="$(npx -y react-doctor@0.9.13 . --score | tr -d '[:space:]')"
-          # Fail closed: if --score ever stops printing a bare integer, a
-          # string comparison would error inside `if`, which `set -e` exempts,
-          # and the gate would silently pass.
+          REPORT="$RUNNER_TEMP/react-doctor.json"
+          rm -f "$REPORT"
+          STATUS=0
+          bunx react-doctor@0.9.13 . --json --json-out "$REPORT" || STATUS=$?
+          # Fail closed: a run that died before writing its report has not
+          # passed, whatever its exit code says.
+          if [ ! -s "$REPORT" ]; then
+            echo "::error::React Doctor exited $STATUS without writing a report"
+            exit 1
+          fi
+          # `--json` replaces the human-readable report, so print the findings.
+          jq -r '.error // empty | "::error::React Doctor: \(.)"' "$REPORT"
+          jq -r '(.diagnostics // [])[] | "\(.severity)  \(.filePath):\(.line):\(.column)  \(.plugin)/\(.rule)  \(.message)"' "$REPORT"
+          SCORE="$(jq -r '.summary.score' "$REPORT")"
+          # Fail closed: if the report ever stops carrying a bare integer
+          # score, a string comparison would error inside `if`, which `set -e`
+          # exempts, and the floor would silently pass.
           case "$SCORE" in
             ''|*[!0-9]*)
               echo "::error::Could not parse a React Doctor score (got: '$SCORE')"
@@ -82,6 +98,10 @@ jobs:
               ;;
           esac
           echo "React Doctor score: $SCORE / 100 (floor: $MIN_SCORE)" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$STATUS" -ne 0 ]; then
+            echo "::error::React Doctor reported a blocking finding (exit $STATUS)"
+            exit "$STATUS"
+          fi
           if [ "$SCORE" -lt "$MIN_SCORE" ]; then
             echo "::error::React Doctor score $SCORE is below the floor of $MIN_SCORE"
             exit 1
@@ -107,9 +127,27 @@ jobs:
           if [ -z "$FALLOW_BASE" ]; then
             FALLOW_BASE="$(git rev-parse --verify --quiet 'HEAD^' || echo HEAD)"
           fi
-          npx -y fallow@3.22.0 audit --base "$FALLOW_BASE"
+          bunx fallow@3.22.0 audit --base "$FALLOW_BASE"
         env:
           FALLOW_BASE: ${{ github.event.pull_request.base.ref && format('origin/{0}', github.event.pull_request.base.ref) || '' }}
+
+  build:
+    name: Typecheck, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+
+      - name: Install dependencies
+        # postinstall runs typegen best-effort and swallows a failure, which is
+        # right for a fresh clone and wrong for a gate. Skip it here and run it
+        # once, explicitly, below — where a failure fails the job.
+        env:
+          SKIP_SANITY_TYPEGEN: '1'
+        run: bun install --frozen-lockfile
 
       # Typecheck and build depend on generated Sanity types, so both skip when
       # the project id is not configured. A skipped step renders as a grey tick
@@ -132,16 +170,11 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
+      # The only Sanity typegen of the run. Every step below reuses its output.
       - name: Generate Sanity types
         id: typegen
         if: env.NEXT_PUBLIC_SANITY_PROJECT_ID != ''
         run: bun run typegen
-
-      - name: Typecheck
-        # Typechecking needs the generated types, so it only runs when the
-        # previous step did. Lint and tests above cover the rest.
-        if: steps.typegen.outcome == 'success'
-        run: bun run typecheck
 
       # A fork's pull request gets `vars` but never `secrets`, so the read token
       # can be absent while typegen above still succeeds. Record whether it is
@@ -156,14 +189,65 @@ jobs:
             echo 'present=true' >> "$GITHUB_OUTPUT"
           else
             echo 'present=false' >> "$GITHUB_OUTPUT"
-            echo 'No SANITY_API_READ_TOKEN — skipping build.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'No SANITY_API_READ_TOKEN — skipping build, typechecking only.' >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Build
+      # `next build` type-checks the whole project itself: it runs
+      # `tsc --project tsconfig.json --noEmit` over everything tsconfig.json
+      # selects, tests included (`runTypeCheckCli` in
+      # node_modules/next/dist/lib/typescript/, next@16.3.4). Running
+      # `bun run typecheck` before it would check the same program twice, so the
+      # standalone typecheck runs only when the build does not.
+      - name: Typecheck
+        if: steps.typegen.outcome == 'success' && steps.token.outputs.present != 'true'
+        run: bun run typecheck
+
+      # `.next/cache` holds Turbopack's build cache (on by default for
+      # `next build` since 16.3) and the `.tsbuildinfo` of the build's own type
+      # check, so a restored cache makes both incremental. See
+      # node_modules/next/dist/docs/01-app/02-guides/ci-build-caching.md.
+      #
+      # `fetch-cache` is left out: restoring it could let the build answer
+      # Sanity queries from an earlier run instead of the live dataset.
+      #
+      # Restored on every build, saved only from `main`. A pull request's cache
+      # is visible to that pull request alone, so saving one per PR run would
+      # upload hundreds of megabytes nothing else reads — and code from a pull
+      # request never writes a cache that `main` later restores. The key ends
+      # in the commit sha so every push to `main` refreshes it; `restore-keys`
+      # picks the newest one built from the same lockfile, so a dependency bump
+      # starts cold rather than from another version's cache.
+      - name: Restore Next.js build cache
+        id: next-cache
+        if: steps.typegen.outcome == 'success' && steps.token.outputs.present == 'true'
+        uses: actions/cache/restore@v6
+        with:
+          # Must match the save step below exactly: the path is part of the
+          # cache version, and a mismatch never restores.
+          path: |
+            .next/cache
+            !.next/cache/fetch-cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('bun.lock') }}-${{ github.sha }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('bun.lock') }}-
+
+      - name: Typecheck and build
+        id: build
         # Needs the generated types from typegen and a read token for the
         # draft-mode route. Skipping beats failing a contributor's fork PR for
         # a secret they were never going to have.
         if: steps.typegen.outcome == 'success' && steps.token.outputs.present == 'true'
         env:
           SANITY_API_READ_TOKEN: ${{ secrets.SANITY_API_READ_TOKEN }}
-        run: bun run build
+        # `next build`, not `bun run build`: the script's `prebuild` hook would
+        # run Sanity typegen a second time.
+        run: bunx next build
+
+      - name: Save Next.js build cache
+        if: github.event_name == 'push' && steps.build.outcome == 'success' && steps.next-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            .next/cache
+            !.next/cache/fetch-cache
+          key: ${{ steps.next-cache.outputs.cache-primary-key }}
