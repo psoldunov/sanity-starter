@@ -45,11 +45,11 @@
 		"tailwind-merge": "^3.7.0"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.5.14",
+		"@biomejs/biome": "2.5.15",
 		"@sanity/cli": "^8.11.0",
 		"@tailwindcss/postcss": "^4.3.3",
 		"@types/bun": "^1.4.2",
-		"@types/node": "^26.6.1",
+		"@types/node": "^26.6.4",
 		"@types/react": "^19.3.0",
 		"@types/react-dom": "^19.3.0",
 		"tailwindcss": "^4.3.3",
