@@ -256,6 +256,6 @@ Notes:
 | --- | --- | --- |
 | `typescript` | `^6.0.3` | TS 7 drops the programmatic API the `next` language-service plugin needs. Revisit at 7.1. |
 | `bun` | `1.4.2` (in [`mise.toml`](../mise.toml)) | Reproducible toolchain across machines and CI. |
-| `@biomejs/biome` | `2.5.12`, exact | Formatter output must not change under a patch bump and reformat unrelated files. |
+| `@biomejs/biome` | `2.5.15`, exact | Formatter output must not change under a patch bump and reformat unrelated files. |
 
 Related: [configuration](./configuration.md) · [troubleshooting](./troubleshooting.md)

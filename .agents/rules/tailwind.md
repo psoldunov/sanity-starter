@@ -167,7 +167,7 @@ browser setting.
 `fallow audit` only scans a diff. To sweep the whole repo, point `--base` at the root commit:
 
 ```bash
-bunx fallow@3.22.0 audit --base "$(git rev-list --max-parents=0 HEAD)" --gate all --css-deep
+bunx fallow@3.31.0 audit --base "$(git rev-list --max-parents=0 HEAD)" --gate all --css-deep
 
 bun run build   # needs the Sanity env vars; see docs/configuration.md
 find .next/static -name '*.css' -exec cat {} + > /tmp/compiled.css
