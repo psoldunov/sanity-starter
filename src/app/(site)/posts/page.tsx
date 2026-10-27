@@ -78,7 +78,7 @@ export default async function PostsIndexPage({
 		<main id='main'>
 			<Container className='py-16'>
 				<header className='mb-12 max-w-2xl'>
-					<h1 className='font-semibold text-4xl text-foreground tracking-tight'>
+					<h1 className='text-4xl font-semibold tracking-tight text-foreground'>
 						Blog
 					</h1>
 					<p className='mt-4 text-lg text-muted'>
@@ -87,7 +87,7 @@ export default async function PostsIndexPage({
 				</header>
 
 				{posts.length === 0 ? (
-					<p className='rounded-theme border border-border border-dashed p-12 text-center text-muted'>
+					<p className='rounded-theme border border-dashed border-border p-12 text-center text-muted'>
 						No posts published yet.
 					</p>
 				) : (

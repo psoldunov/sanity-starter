@@ -36,7 +36,7 @@ export default function DisableDraftMode() {
 				type='button'
 				// #C7291C reaches 5.9:1 against white; the brand red it replaced was
 				// 3.71:1, which fails WCAG 1.4.3 at this text size.
-				className='flex items-center gap-2 text-nowrap rounded-theme bg-[#C7291C] px-3 py-2 font-medium font-mono text-white text-xs uppercase shadow-lg transition-colors disabled:bg-[#8A1D14]'
+				className='flex items-center gap-2 rounded-theme bg-[#C7291C] px-3 py-2 font-mono text-xs font-medium text-nowrap text-white uppercase shadow-lg transition-colors disabled:bg-[#8A1D14]'
 				disabled={pending}
 				onClick={disable}
 			>

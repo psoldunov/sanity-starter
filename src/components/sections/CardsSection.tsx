@@ -10,7 +10,7 @@ export default function CardsSection(props: SectionProps<'cardsSection'>) {
 		<Section {...props}>
 			<Container>
 				{!!heading && (
-					<h2 className='mb-12 text-balance text-center font-semibold text-3xl text-foreground tracking-tight sm:text-4xl'>
+					<h2 className='mb-12 text-center text-3xl font-semibold tracking-tight text-balance text-foreground sm:text-4xl'>
 						{heading}
 					</h2>
 				)}
@@ -33,12 +33,12 @@ export default function CardsSection(props: SectionProps<'cardsSection'>) {
 								/>
 							)}
 							{!!card.heading && (
-								<h3 className='mb-2 font-semibold text-foreground text-lg'>
+								<h3 className='mb-2 text-lg font-semibold text-foreground'>
 									{card.heading}
 								</h3>
 							)}
 							{!!card.paragraph && (
-								<p className='text-muted text-sm/6'>{card.paragraph}</p>
+								<p className='text-sm/6 text-muted'>{card.paragraph}</p>
 							)}
 						</div>
 					))}

@@ -33,14 +33,14 @@ export default function SiteError({
 	return (
 		<main id='main'>
 			<Container className='flex min-h-[60vh] max-w-xl flex-col items-center justify-center py-24 text-center'>
-				<h1 className='font-semibold text-3xl text-foreground tracking-tight'>
+				<h1 className='text-3xl font-semibold tracking-tight text-foreground'>
 					Something went wrong
 				</h1>
 				<p className='mt-4 text-muted'>
 					This page could not be displayed. Trying again may be enough.
 				</p>
 				{error.digest && (
-					<p className='mt-2 font-mono text-muted text-xs'>
+					<p className='mt-2 font-mono text-xs text-muted'>
 						Reference: {error.digest}
 					</p>
 				)}

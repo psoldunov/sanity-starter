@@ -55,7 +55,7 @@ export default async function Section({
 			className={cn(
 				PADDING_CLASSES.top[topPadding],
 				PADDING_CLASSES.bottom[bottomPadding],
-				props.hidden && 'opacity-40 outline-dashed outline-2 outline-amber-500',
+				props.hidden && 'opacity-40 outline-2 outline-amber-500 outline-dashed',
 				className,
 			)}
 		>

@@ -28,7 +28,7 @@ export default function Header({ menu, logo, siteName }: HeaderProps) {
 	const brand = siteName || 'Home';
 
 	return (
-		<header className='sticky top-0 z-40 border-border border-b bg-background/85 backdrop-blur-sm'>
+		<header className='sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-sm'>
 			<a
 				href='#main'
 				className='sr-only rounded-theme bg-accent px-4 py-2 text-accent-foreground focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50'
@@ -39,7 +39,7 @@ export default function Header({ menu, logo, siteName }: HeaderProps) {
 				<nav aria-label='Main' className='flex h-16 items-center gap-6'>
 					<SmartLink
 						link={{ href: '/' }}
-						className='flex shrink-0 items-center gap-2 font-semibold text-foreground text-lg tracking-tight'
+						className='flex shrink-0 items-center gap-2 text-lg font-semibold tracking-tight text-foreground'
 					>
 						{logo?.asset ? (
 							<SmartImage
@@ -59,7 +59,7 @@ export default function Header({ menu, logo, siteName }: HeaderProps) {
 							<li key={link._key}>
 								<SmartLink
 									link={link}
-									className='text-muted text-sm transition-colors hover:text-foreground'
+									className='text-sm text-muted transition-colors hover:text-foreground'
 								/>
 							</li>
 						))}
@@ -90,7 +90,7 @@ export default function Header({ menu, logo, siteName }: HeaderProps) {
 									<li key={link._key}>
 										<SmartLink
 											link={link}
-											className='block rounded px-3 py-2 text-muted text-sm hover:bg-surface hover:text-foreground'
+											className='block rounded px-3 py-2 text-sm text-muted hover:bg-surface hover:text-foreground'
 										/>
 									</li>
 								))}

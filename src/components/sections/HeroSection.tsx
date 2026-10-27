@@ -14,12 +14,12 @@ export default function HeroSection(
 				<div className='grid grid-cols-1 items-center gap-12 md:grid-cols-2'>
 					<div>
 						{!!heading && (
-							<h1 className='text-balance font-semibold text-4xl text-foreground tracking-tight sm:text-5xl'>
+							<h1 className='text-4xl font-semibold tracking-tight text-balance text-foreground sm:text-5xl'>
 								{heading}
 							</h1>
 						)}
 						{!!paragraph && (
-							<p className='mt-6 whitespace-pre-line text-lg text-muted leading-relaxed'>
+							<p className='mt-6 text-lg leading-relaxed whitespace-pre-line text-muted'>
 								{paragraph}
 							</p>
 						)}

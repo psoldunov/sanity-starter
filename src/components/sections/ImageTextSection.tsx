@@ -21,12 +21,12 @@ export default function ImageTextSection(
 					)}
 					<div>
 						{!!heading && (
-							<h2 className='text-balance font-semibold text-3xl text-foreground tracking-tight sm:text-4xl'>
+							<h2 className='text-3xl font-semibold tracking-tight text-balance text-foreground sm:text-4xl'>
 								{heading}
 							</h2>
 						)}
 						{!!paragraph && (
-							<p className='mt-6 whitespace-pre-line text-lg text-muted leading-relaxed'>
+							<p className='mt-6 text-lg leading-relaxed whitespace-pre-line text-muted'>
 								{paragraph}
 							</p>
 						)}

@@ -36,7 +36,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: '1.4.2'
+          bun-version: '1.4.4'
 
       - name: Install dependencies
         # Nothing in this job reads the generated Sanity types.
@@ -62,7 +62,7 @@ jobs:
         # ONE SCAN, TWO GATES. Do not swap `--json` for `--score`.
         #
         # `--score` suppresses react-doctor's own exit code. Verified against
-        # 0.9.13, and again against 0.9.17, on a scratch project with
+        # 0.9.13, and again against 0.9.17 and 0.9.18, on a scratch project with
         # error-level findings: the bare run and the `--json` run both exit 1,
         # the identical run with `--score` exits 0 while printing the same
         # score. Gating on `--score` would therefore
@@ -78,7 +78,7 @@ jobs:
           REPORT="$RUNNER_TEMP/react-doctor.json"
           rm -f "$REPORT"
           STATUS=0
-          bunx react-doctor@0.9.17 . --json --json-out "$REPORT" || STATUS=$?
+          bunx react-doctor@0.9.18 . --json --json-out "$REPORT" || STATUS=$?
           # Fail closed: a run that died before writing its report has not
           # passed, whatever its exit code says.
           if [ ! -s "$REPORT" ]; then
@@ -128,7 +128,7 @@ jobs:
           if [ -z "$FALLOW_BASE" ]; then
             FALLOW_BASE="$(git rev-parse --verify --quiet 'HEAD^' || echo HEAD)"
           fi
-          bunx fallow@3.31.0 audit --base "$FALLOW_BASE"
+          bunx fallow@3.36.0 audit --base "$FALLOW_BASE"
         env:
           FALLOW_BASE: ${{ github.event.pull_request.base.ref && format('origin/{0}', github.event.pull_request.base.ref) || '' }}
 
@@ -140,7 +140,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: '1.4.2'
+          bun-version: '1.4.4'
 
       - name: Install dependencies
         # postinstall runs typegen best-effort and swallows a failure, which is
@@ -196,7 +196,7 @@ jobs:
       # `next build` type-checks the whole project itself: it runs
       # `tsc --project tsconfig.json --noEmit` over everything tsconfig.json
       # selects, tests included (`runTypeCheckCli` in
-      # node_modules/next/dist/lib/typescript/, next@16.3.8). Running
+      # node_modules/next/dist/lib/typescript/, next@16.4.3). Running
       # `bun run typecheck` before it would check the same program twice, so the
       # standalone typecheck runs only when the build does not.
       - name: Typecheck

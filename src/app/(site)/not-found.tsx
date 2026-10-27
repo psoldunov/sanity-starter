@@ -15,8 +15,8 @@ export default function NotFound() {
 	return (
 		<main id='main'>
 			<Container className='flex min-h-[60vh] max-w-xl flex-col items-center justify-center py-24 text-center'>
-				<p className='font-mono text-muted text-sm'>404</p>
-				<h1 className='mt-4 font-semibold text-3xl text-foreground tracking-tight'>
+				<p className='font-mono text-sm text-muted'>404</p>
+				<h1 className='mt-4 text-3xl font-semibold tracking-tight text-foreground'>
 					This page does not exist
 				</h1>
 				<p className='mt-4 text-muted'>
