@@ -2,6 +2,7 @@ import page from '@/sanity/schema/documents/base/page';
 import redirect from '@/sanity/schema/documents/base/redirect';
 import settings from './documents/base/settings';
 import post from './documents/post';
+import { geo } from './objects/geo';
 import { internalDestination } from './objects/internalDestination';
 import { link, linkWithLabel } from './objects/link';
 import sections from './objects/sections';
@@ -14,6 +15,7 @@ const schemaTypes = [
 	link,
 	linkWithLabel,
 	internalDestination,
+	geo,
 	post,
 ];
 

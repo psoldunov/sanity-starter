@@ -3,7 +3,7 @@
  *
  * **This module must never import anything.** Section fragments used to live
  * beside their schema definitions, which meant `src/sanity/lib/queries` — and
- * so `robots.ts`, `sitemap.ts` and every page — transitively imported
+ * so `robots.txt`, `sitemap.ts` and every page — transitively imported
  * `defineSection`, and through it the entire `sanity` Studio runtime. That
  * pulled the whole Studio into the public server and client bundles, and under
  * Next 16's `react-server` condition it failed the build outright (`sanity`

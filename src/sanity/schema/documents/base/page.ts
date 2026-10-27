@@ -22,6 +22,10 @@ const page = defineType({
 			name: 'seo',
 			title: 'SEO & Metadata',
 		},
+		{
+			name: 'geo',
+			title: 'AI & LLMs',
+		},
 	],
 	fields: [
 		{
@@ -98,6 +102,15 @@ const page = defineType({
 			description: 'Prevent search engines from indexing this page',
 			initialValue: false,
 			validation: (rule) => rule.required(),
+		},
+		{
+			name: 'geo',
+			title: 'AI & LLM visibility',
+			type: 'geo',
+			group: 'geo',
+			description:
+				'How AI agents see this page. Hidden while the page is hidden from search engines, since that keeps it from agents too.',
+			hidden: ({ document }) => Boolean(document?.noIndex),
 		},
 		orderRankField({ type: 'page' }),
 	],
