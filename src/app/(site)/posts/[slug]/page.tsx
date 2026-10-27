@@ -3,9 +3,12 @@ import { notFound } from 'next/navigation';
 import PostBody from '@/components/blog/PostBody';
 import PostCard from '@/components/blog/PostCard';
 import Container from '@/components/layout/Container';
+import JsonLd from '@/components/utility/JsonLd';
 import SmartImage from '@/components/utility/SmartImage';
 import { formatPostDate } from '@/lib/date';
 import { documentPath } from '@/lib/links';
+import { htmlPathToMarkdownPath } from '@/lib/markdown/paths';
+import { postNodes, siteFacts } from '@/lib/structuredData';
 import { getSiteUrl } from '@/lib/url';
 import {
 	getPost,
@@ -44,14 +47,22 @@ export async function generateMetadata({
 		return { title: 'Not found' };
 	}
 
-	const canonicalUrl = `${getSiteUrl()}${documentPath('post', slug)}`;
+	const siteUrl = getSiteUrl();
+	const path = documentPath('post', slug);
+	const canonicalUrl = `${siteUrl}${path}`;
 	const ogImage = post.ogImage ?? post.coverImage ?? settings?.siteOgImage;
 
 	return {
 		title: post.metaTitle || post.title || undefined,
 		description: post.metaDescription || post.excerpt || undefined,
 		robots: post.noIndex ? { index: false, follow: false } : undefined,
-		alternates: { canonical: canonicalUrl },
+		alternates: {
+			canonical: canonicalUrl,
+			// Points agents at the post's markdown. A `noIndex` post has none.
+			types: post.noIndex
+				? undefined
+				: { 'text/markdown': `${siteUrl}${htmlPathToMarkdownPath(path)}` },
+		},
 		openGraph: {
 			type: 'article',
 			url: canonicalUrl,
@@ -76,7 +87,13 @@ export default async function PostPage({
 	params: Promise<{ slug: string }>;
 }) {
 	const { slug } = await params;
-	const post = await getPost(slug);
+	// The JSON-LD reads the stega-free copies, which `generateMetadata` has
+	// already fetched for this request.
+	const [post, metadataPost, settings] = await Promise.all([
+		getPost(slug),
+		getPostForMetadata(slug),
+		getSettingsForMetadata(),
+	]);
 
 	if (!post) {
 		notFound();
@@ -87,8 +104,11 @@ export default async function PostPage({
 		params: { slug },
 	});
 
+	const site = siteFacts(getSiteUrl(), settings);
+
 	return (
 		<main id='main'>
+			{site && metadataPost && <JsonLd nodes={postNodes(site, metadataPost)} />}
 			<article>
 				<Container className='max-w-3xl py-16'>
 					<header className='mb-10'>

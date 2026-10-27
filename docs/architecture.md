@@ -24,7 +24,9 @@ src/app/
 │   ├── layout.tsx               minimal html/body + Sanity bridge script
 │   └── admin/[[...index]]/page.tsx   embedded Studio ('use client')
 ├── api/draft-mode/enable/route.ts
-├── robots.ts
+├── api/markdown/[...path]/route.ts   every page and post as markdown (docs/llm.md)
+├── llms.txt/  llms-full.txt/  sitemap.md/  .well-known/api-catalog/
+├── robots.txt/route.ts          robots.txt with Content-Signal
 └── sitemap.ts
 ```
 
@@ -72,7 +74,7 @@ Two registries have to agree, both keyed on the schema `_type`:
 | Component | [`src/lib/sections.ts`](../src/lib/sections.ts) | `_type` → React component |
 
 Fragments live apart from the schema deliberately. When they sat beside their
-schema definitions, `src/sanity/lib/queries` — and through it `robots.ts`,
+schema definitions, `src/sanity/lib/queries` — and through it `robots.txt`,
 `sitemap.ts` and every page — transitively imported `defineSection` and the
 whole `sanity` Studio runtime. That put the Studio in the public bundles, and
 under Next 16's `react-server` condition it failed the build outright.

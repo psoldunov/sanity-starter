@@ -26,6 +26,7 @@
 		"analyze": "bunx react-doctor@0.9.18 . && bunx fallow@3.36.0 audit"
 	},
 	"dependencies": {
+		"@portabletext/markdown": "^2.7.1",
 		"@portabletext/react": "^8.0.1",
 		"@sanity/asset-utils": "^2.3.0",
 		"@sanity/icons": "^5.2.3",

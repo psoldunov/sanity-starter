@@ -21,6 +21,9 @@ templated blog, and generated TypeScript types for every query.
   that is not builder-driven.
 - **SEO built in** — per-document metadata, canonical URLs, Open Graph images,
   `sitemap.xml`, `robots.txt`, and a `noIndex` flag that sets a real meta tag.
+- **Readable by AI agents** — every page and post as markdown at its `.md` URL,
+  `/llms.txt` and `/llms-full.txt`, schema.org JSON-LD, and per-page controls
+  for how agents see each document.
 - **Editor-managed redirects**, validated against existing page routes.
 - **Server Components by default** — the only client boundaries are the ones
   that need the browser.
@@ -60,6 +63,7 @@ Prerequisites: Bun 1.4.2+, Node 22.12+, and a free
 | [Content model](./docs/content-model.md) | `page`, `post`, `settings`, `redirect` — field by field. |
 | [Links](./docs/links.md) | `internalDestination`, `LINKABLE_DOCUMENTS`, `STATIC_ROUTES`, `SmartLink`. |
 | [Templated pages](./docs/templated-pages.md) | The blog routes, and how to add another non-builder route. |
+| [LLM layer (GEO)](./docs/llm.md) | Markdown for AI agents, `/llms.txt`, JSON-LD, and how to extend them. |
 | [Performance](./docs/performance.md) | Projected queries, cached fetchers, image hints, the `cacheComponents` decision. |
 | [Deployment](./docs/deployment.md) | Vercel, production env vars, the postinstall schema deploy, other hosts. |
 | [Upgrading](./docs/upgrading.md) | Safe upgrades, the breaking changes already hit, the deliberate version pins. |
@@ -97,14 +101,16 @@ src/
 ├── app/
 │   ├── (site)/          public site: catch-all page, blog, error/loading/404
 │   ├── (studio)/        embedded Sanity Studio at /admin
-│   ├── api/             draft-mode route handler
-│   ├── robots.ts
+│   ├── api/             draft-mode and markdown route handlers
+│   ├── llms.txt/ llms-full.txt/ sitemap.md/ .well-known/   files for AI agents
+│   ├── robots.txt/
 │   └── sitemap.ts
 ├── components/          sections/ layout/ utility/ elements/ blog/
 ├── config/              padding, protected routes, linkables, dynamic sections
 ├── fonts/               Geist Sans + Mono
 ├── hooks/               client-side, SSR-safe
-├── lib/                 slug, url, links, image, date, section registry
+├── lib/                 slug, url, links, image, date, section registry, JSON-LD,
+│                        markdown/ (the LLM layer)
 ├── sanity/              schema, queries, fetchers, client, Studio inputs
 ├── styles/              design tokens + Tailwind entry
 └── types/               shared types, incl. SectionProps<T>

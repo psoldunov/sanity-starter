@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
 import { notFound, permanentRedirect, redirect } from 'next/navigation';
+import JsonLd from '@/components/utility/JsonLd';
 import { SectionRenderer } from '@/components/utility/SectionRenderer';
+import { htmlPathToMarkdownPath } from '@/lib/markdown/paths';
 import { resolveRedirect } from '@/lib/redirects';
 import { hasDynamicParams, normalizeSlug, splitSlug } from '@/lib/slug';
+import { pageNodes, siteFacts } from '@/lib/structuredData';
 import { getSiteUrl } from '@/lib/url';
 import {
 	getPage,
@@ -58,6 +61,12 @@ export async function generateMetadata({
 		robots: page.noIndex ? { index: false, follow: false } : undefined,
 		alternates: {
 			canonical: canonicalUrl,
+			// Points agents at the page's markdown. A `noIndex` page has none.
+			types: page.noIndex
+				? undefined
+				: {
+						'text/markdown': `${siteUrl}${htmlPathToMarkdownPath(currentPath)}`,
+					},
 		},
 		openGraph: {
 			images: ogImage ? [getCachedOGImageUrl(ogImage)] : [],
@@ -79,7 +88,14 @@ export default async function PageComponent({
 	const { slug } = await params;
 	const normalizedSlug = normalizeSlug(slug);
 
-	const page = await getPage(normalizedSlug);
+	// The JSON-LD reads the stega-free copies: stega characters in a JSON-LD
+	// string would reach search engines and agents verbatim. Both are the same
+	// cached reads `generateMetadata` already made.
+	const [page, metadataPage, settings] = await Promise.all([
+		getPage(normalizedSlug),
+		getPageForMetadata(normalizedSlug),
+		getSettingsForMetadata(),
+	]);
 
 	if (!page) {
 		const { data: redirectData } = await sanityFetch({
@@ -117,8 +133,11 @@ export default async function PageComponent({
 		? await searchParams
 		: undefined;
 
+	const site = siteFacts(getSiteUrl(), settings);
+
 	return (
 		<main id='main'>
+			{site && metadataPage && <JsonLd nodes={pageNodes(site, metadataPage)} />}
 			{page.sections.map((section, index) => (
 				<SectionRenderer
 					key={section._key}

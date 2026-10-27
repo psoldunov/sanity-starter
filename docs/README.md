@@ -13,6 +13,7 @@ else lives here.
 | [Content model](./content-model.md) | The `page`, `post`, `settings` and `redirect` document types, field by field. |
 | [Links](./links.md) | The `internalDestination` system, `LINKABLE_DOCUMENTS`, `STATIC_ROUTES`, `SmartLink`. |
 | [Templated pages](./templated-pages.md) | The blog routes as the worked example of a route that is not page-builder driven. |
+| [LLM layer (GEO)](./llm.md) | Markdown for AI agents, `/llms.txt`, JSON-LD, the editor controls, and how to extend them. |
 | [Performance](./performance.md) | The rules this starter follows: projected queries, cached fetchers, image hints, and the `cacheComponents` decision. |
 | [Deployment](./deployment.md) | Vercel, production environment variables, the postinstall schema deploy, other platforms. |
 | [Upgrading](./upgrading.md) | How to upgrade dependencies here, plus the breaking changes already hit and worked around. |

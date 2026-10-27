@@ -17,6 +17,8 @@ before you touch it:
 - @.agents/rules/testing.md — testing is deliberately minimal: no TDD, no coverage target, no tests
   for anything visual. Read it before writing a test, or before acting on a global instruction that
   mandates one.
+- @.agents/rules/llm.md — the LLM layer (GEO): every page and post as markdown, `/llms.txt`,
+  JSON-LD. A new section, document type or route is not finished until agents can read it.
 
 Agent skills live in `.agents/skills/` (symlinked into `.claude/skills/`) and are verbatim upstream
 copies — see [`.agents/skills/README.md`](.agents/skills/README.md) before editing one.
@@ -66,6 +68,7 @@ Core pattern is a **section registry system**. To add a new section:
    **The fragment goes in `src/sanity/lib/fragments.ts`, never in the section schema file, and that module must import nothing.** Fragments used to live beside their schema, which made `src/sanity/lib/queries` import `defineSection` and through it the whole `sanity` Studio runtime — pulling the entire Studio into the bundle of every public route that runs a query, and breaking `next build` outright under the `react-server` condition. The same rule is why `DYNAMIC_SECTION_TYPES` lives in `src/config/sections.ts` rather than in `src/lib/sections.ts`.
 6. **Regenerate types**: `bun run typegen` (also runs via `predev` / `prebuild`). Types land in `src/sanity/types/sanity.types.ts` (gitignored). The generated `PAGE_QUERY_RESULT.sections` tagged union picks the new section up automatically.
 7. If section needs `searchParams`, add `_type` to `DYNAMIC_SECTION_TYPES` in `src/config/sections.ts` (config, not `src/lib/sections.ts` — that module imports every section component, and `src/lib/slug.ts` must not pull the component graph in)
+8. **Markdown serializer**: add an entry to `SECTION_SERIALIZERS` in `src/lib/markdown/sections.ts`, writing what the page shows in the order it shows it. The map is a mapped type over the section `_type` union, so typecheck fails until it exists. Rules in `.agents/rules/llm.md`
 
 Keep schema and queries in sync; types are derived, not hand-maintained. `SectionRenderer` maps sections to components automatically.
 
@@ -112,7 +115,8 @@ Schema rules:
 - Use `sanityFetch()` from `src/sanity/lib/live.ts` for live preview support
 - Access via `const { data } = await sanityFetch({ query, params })`
 - Prefer the cached helpers in `src/sanity/lib/fetchers.ts` (`getSettings`, `getPage`, `getPost`) — they wrap `sanityFetch` in `React.cache()` so a value read by both `generateMetadata` and the component costs one round trip
-- **Always pass `stega: false` for anything feeding `<head>`** (metadata, sitemap, robots, `generateStaticParams`). Stega encodes invisible characters into strings; in a `<title>` or `og:description` that corrupts search results
+- The LLM layer (markdown, `/llms.txt`) reads through the `getPublished*` / `getIndexable*` fetchers — `stega: false` plus `perspective: 'published'`, which keeps those route handlers static
+- **Always pass `stega: false` for anything feeding `<head>`** (metadata, JSON-LD, sitemap, robots, `generateStaticParams`). Stega encodes invisible characters into strings; in a `<title>` or `og:description` that corrupts search results
 - `sanityFetch` returns **stega-branded** types. Plain strings still flow through, but a *literal union* field (`rel`, `padding.top`) is not assignable once branded — derive component props through the `Fetched<T>` helper in `src/types/index.ts`
 - Implement draft mode for preview
 - Access sibling fields via `useFormValue` with parent path
@@ -203,7 +207,7 @@ across 9 files, all pure functions — and the default for new code is no test a
 ## File Layout
 
 - Components: `src/components/` organized by purpose — `layout/`, `sections/`, `utility/`, `elements/`
-- Utilities: `src/lib/` — split by concern: `utils.ts` (cn), `image.ts`, `slug.ts`, `url.ts`, `links.ts`, `date.ts`, `sections.ts`, `actions.ts`
+- Utilities: `src/lib/` — split by concern: `utils.ts` (cn), `image.ts`, `slug.ts`, `url.ts`, `links.ts`, `date.ts`, `sections.ts`, `actions.ts`, `structuredData.ts` (JSON-LD), `markdown/` (the LLM layer's serializers)
 - Types: `src/types/` — app-level types (component props, shared types). Constructor-specific types live in `src/sanity/schema/constructors/types.ts`
 - Config: `src/config/` — `index.ts` (padding, reserved routes), `linkables.ts`, `sections.ts` (`DYNAMIC_SECTION_TYPES`)
 - Fonts: `src/fonts/index.ts`
@@ -272,6 +276,7 @@ export default function HeroSection(props: SectionProps<'heroSection'>) {
 - **Draft mode**: `src/app/api/draft-mode/enable/route.ts`
 - **Vercel**: postinstall deploys schema when `VERCEL_ENV=production`
 - **Presentation tool**: live preview with `locations` for page/post navigation
+- **AI agents**: `.md` URLs, `/llms.txt`, `/llms-full.txt`, `/sitemap.md`, `/.well-known/api-catalog`, `Content-Signal` in `robots.txt` — see `docs/llm.md`
 
 ## Critical Files
 
@@ -295,6 +300,11 @@ export default function HeroSection(props: SectionProps<'heroSection'>) {
 - `src/config/linkables.ts` — `LINKABLE_DOCUMENTS` + `STATIC_ROUTES` registry (drives link picker, URL resolution, redirect targets)
 - `src/fonts/index.ts` — font definitions (Geist Sans / Mono)
 - `src/types/index.ts` — shared types including the `SectionProps<T>` helper and `NavLinkItem`
+- `src/lib/markdown/sections.ts` — `SECTION_SERIALIZERS`, one markdown serializer per section `_type` (typecheck fails without one)
+- `src/lib/markdown/document.ts` — `pageToMarkdown` / `postToMarkdown`; `indexFiles.ts` beside it builds `/llms.txt`
+- `src/lib/structuredData.ts` — JSON-LD node builders; render them only through `src/components/utility/JsonLd.tsx`
+- `src/config/llm.ts` — `CONTENT_SIGNALS` for `robots.txt` (a client decision) and `PAGE_SCHEMA_TYPES`
+- `src/sanity/schema/objects/geo.ts` — per-page/post AI controls: listing in `/llms.txt`, AI summary, schema.org page type
 
 ## Do
 
@@ -319,8 +329,8 @@ export default function HeroSection(props: SectionProps<'heroSection'>) {
 
 ## When Adding Features
 
-1. **New section**: follow 7-step registry pattern above
-2. **New document type**: add schema, update queries, add to Studio desk structure if needed
+1. **New section**: follow 8-step registry pattern above
+2. **New document type**: add schema, update queries, add to Studio desk structure if needed; with a public URL, also give it markdown, an index group and JSON-LD (checklist in `.agents/rules/llm.md`)
 3. **New link destination**: add a document type to `LINKABLE_DOCUMENTS` or a Next route to `STATIC_ROUTES` in `src/config/linkables.ts` — the Studio picker, `internalDestination` reference targets, and `resolveDestinationUrl` pick it up automatically. For a wholly new link *shape* (beyond destination/URL/file), extend `src/sanity/schema/objects/link.ts` and the `SmartLink` resolver.
 4. **Environment changes**: update README and `.env.local` template
 

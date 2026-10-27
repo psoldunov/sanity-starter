@@ -50,16 +50,21 @@ export const PAGES_SITEMAP_QUERY = defineQuery(
 }`,
 );
 
-/** A single page with its section tree, for the catch-all route. */
+/**
+ * A single page with its section tree, for the catch-all route and for the
+ * page's markdown, which reads `_updatedAt` for its front matter.
+ */
 export const PAGE_QUERY =
 	defineQuery(`*[_type == "page" && route.current == $slug][0]{
   _id,
+  _updatedAt,
   title,
   "route": route.current,
   metaTitle,
   metaDescription,
   noIndex,
   ogImage,
+  geo,
   sections[] {
     ...,
     ${HERO_SECTION_FRAGMENT},
@@ -87,6 +92,24 @@ export const REDIRECT_QUERY = defineQuery(`*[_type == "redirect" && (
   destination ${INTERNAL_DESTINATION_PROJECTION}
 }`);
 
+/**
+ * Indexable pages for the LLM layer: the `.md` routes' static params and the
+ * index files (`/llms.txt`, `/llms-full.txt`, `/sitemap.md`). The same
+ * `noIndex` filter as `PAGES_SITEMAP_QUERY`, plus what an index entry reads.
+ * `llmsListing` is filtered in code, because an unlisted page still gets its
+ * markdown.
+ */
+export const LLM_PAGES_QUERY = defineQuery(
+	`*[_type == "page" && defined(route.current) && noIndex != true] | order(route.current asc){
+  "route": route.current,
+  title,
+  metaTitle,
+  metaDescription,
+  "llmsSummary": geo.llmsSummary,
+  "llmsListing": geo.llmsListing
+}`,
+);
+
 /** Slugs of every post, for `generateStaticParams`. */
 export const POST_SLUGS_QUERY = defineQuery(
 	`*[_type == "post" && defined(slug.current)]{ "slug": slug.current }`,
@@ -97,6 +120,19 @@ export const POSTS_SITEMAP_QUERY = defineQuery(
 	`*[_type == "post" && defined(slug.current) && noIndex != true] | order(coalesce(publishedAt, _createdAt) desc){
   "slug": slug.current,
   _updatedAt
+}`,
+);
+
+/** Indexable posts for the LLM layer, newest first, as `LLM_PAGES_QUERY`. */
+export const LLM_POSTS_QUERY = defineQuery(
+	`*[_type == "post" && defined(slug.current) && noIndex != true] | order(coalesce(publishedAt, _createdAt) desc){
+  "slug": slug.current,
+  title,
+  metaTitle,
+  metaDescription,
+  excerpt,
+  "llmsSummary": geo.llmsSummary,
+  "llmsListing": geo.llmsListing
 }`,
 );
 
@@ -122,10 +158,11 @@ export const POSTS_COUNT_QUERY = defineQuery(
 	`count(*[_type == "post" && defined(slug.current)])`,
 );
 
-/** A single post with its body, for the article template. */
+/** A single post with its body, for the article template and its markdown. */
 export const POST_QUERY =
 	defineQuery(`*[_type == "post" && slug.current == $slug][0]{
   _id,
+  _updatedAt,
   title,
   "slug": slug.current,
   excerpt,
@@ -134,6 +171,7 @@ export const POST_QUERY =
   metaDescription,
   noIndex,
   ogImage,
+  geo,
   coverImage {
     ...,
     asset->

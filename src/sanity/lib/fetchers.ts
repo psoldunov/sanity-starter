@@ -1,8 +1,11 @@
 import { cache } from 'react';
 import { sanityFetch } from '@/sanity/lib/live';
 import {
+	LLM_PAGES_QUERY,
+	LLM_POSTS_QUERY,
 	PAGE_QUERY,
 	POST_QUERY,
+	REDIRECT_QUERY,
 	SITE_SETTINGS_QUERY,
 } from '@/sanity/lib/queries';
 
@@ -88,6 +91,109 @@ export const getPostForMetadata = cache(async (slug: string) => {
 		query: POST_QUERY,
 		params: { slug },
 		stega: false,
+	});
+	return data;
+});
+
+/*
+ * Published reads, for the LLM layer: a document's markdown and the index files
+ * built from it.
+ *
+ * Passing both `stega: false` and `perspective: 'published'` is what keeps
+ * `sanityFetch` from reading the draft-mode cookie, so the route handlers that
+ * call these stay static. Drafts never reach an agent: the markdown describes
+ * the site as it is published.
+ */
+
+/**
+ * A published page and its section tree, for its markdown.
+ *
+ * @param slug - Normalised route, e.g. `/about`.
+ * @returns The page, or `null` when no page owns that route.
+ */
+export const getPublishedPage = cache(async (slug: string) => {
+	const { data } = await sanityFetch({
+		query: PAGE_QUERY,
+		params: { slug },
+		stega: false,
+		perspective: 'published',
+	});
+	return data;
+});
+
+/**
+ * A published post and its body, for its markdown.
+ *
+ * @param slug - Post slug, without the `/posts` prefix.
+ * @returns The post, or `null` when no post owns that slug.
+ */
+export const getPublishedPost = cache(async (slug: string) => {
+	const { data } = await sanityFetch({
+		query: POST_QUERY,
+		params: { slug },
+		stega: false,
+		perspective: 'published',
+	});
+	return data;
+});
+
+/**
+ * Published site settings, for the markdown and the index files.
+ *
+ * @returns The settings, or `null` before the singleton is published.
+ */
+export const getPublishedSettings = cache(async () => {
+	const { data } = await sanityFetch({
+		query: SITE_SETTINGS_QUERY,
+		stega: false,
+		perspective: 'published',
+	});
+	return data;
+});
+
+/**
+ * Every published page search engines may index, for the markdown's static
+ * params and the index files.
+ *
+ * @returns The pages, ordered by route.
+ */
+export const getIndexablePages = cache(async () => {
+	const { data } = await sanityFetch({
+		query: LLM_PAGES_QUERY,
+		stega: false,
+		perspective: 'published',
+	});
+	return data;
+});
+
+/**
+ * Every published post search engines may index, for the markdown's static
+ * params and the index files.
+ *
+ * @returns The posts, newest first.
+ */
+export const getIndexablePosts = cache(async () => {
+	const { data } = await sanityFetch({
+		query: LLM_POSTS_QUERY,
+		stega: false,
+		perspective: 'published',
+	});
+	return data;
+});
+
+/**
+ * The published redirect rules that could handle a route, so a markdown
+ * request for a moved page follows it as the HTML request does.
+ *
+ * @param slug - Normalised route, e.g. `/about`.
+ * @returns The candidate rules; `resolveRedirect` picks the winner.
+ */
+export const getPublishedRedirects = cache(async (slug: string) => {
+	const { data } = await sanityFetch({
+		query: REDIRECT_QUERY,
+		params: { slug },
+		stega: false,
+		perspective: 'published',
 	});
 	return data;
 });

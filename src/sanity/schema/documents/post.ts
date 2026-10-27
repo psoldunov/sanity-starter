@@ -19,6 +19,7 @@ const post = defineType({
 		{ name: 'general', title: 'General', default: true },
 		{ name: 'content', title: 'Content' },
 		{ name: 'seo', title: 'SEO & Metadata' },
+		{ name: 'geo', title: 'AI & LLMs' },
 	],
 	fields: [
 		defineField({
@@ -120,6 +121,15 @@ const post = defineType({
 			group: 'seo',
 			description: 'Prevent search engines from indexing this post',
 			initialValue: false,
+		}),
+		defineField({
+			name: 'geo',
+			title: 'AI & LLM visibility',
+			type: 'geo',
+			group: 'geo',
+			description:
+				'How AI agents see this post. Hidden while the post is hidden from search engines, since that keeps it from agents too.',
+			hidden: ({ document }) => Boolean(document?.noIndex),
 		}),
 		orderRankField({ type: 'post' }),
 	],

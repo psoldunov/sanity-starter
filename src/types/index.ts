@@ -1,6 +1,7 @@
 import type { StegaBranded } from 'next-sanity';
 import type {
 	PAGE_QUERY_RESULT,
+	POST_QUERY_RESULT,
 	POSTS_PAGE_QUERY_RESULT,
 	REDIRECT_QUERY_RESULT,
 	SanityFileAssetReference,
@@ -48,6 +49,29 @@ export type SectionBaseProps = Pick<
 	SectionUnion,
 	'_type' | 'id' | 'hidden' | 'padding'
 >;
+
+/**
+ * A page as `PAGE_QUERY` returns it read with `stega: false`, which
+ * `sanityFetch` types without the stega brand. A page's markdown is built from
+ * this, never from the branded data a component renders.
+ */
+export type PublishedPage = NonNullable<PAGE_QUERY_RESULT>;
+
+/** One section of a `PublishedPage`. */
+export type PublishedSectionData = PublishedPage['sections'][number];
+
+/**
+ * One section of a `PublishedPage` by its `_type` literal.
+ *
+ * @template T Section `_type` from the `PAGE_QUERY_RESULT` union.
+ */
+export type PublishedSection<T extends PublishedSectionData['_type']> = Extract<
+	PublishedSectionData,
+	{ _type: T }
+>;
+
+/** A post as `POST_QUERY` returns it read with `stega: false`. */
+export type PublishedPost = NonNullable<POST_QUERY_RESULT>;
 
 /**
  * Document types re-exported as a stable import path.
