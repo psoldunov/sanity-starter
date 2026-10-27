@@ -62,7 +62,7 @@ export default function Pagination({
 				<span className={disabledClass}>← Newer</span>
 			)}
 
-			<p aria-current='page' className='text-muted text-sm'>
+			<p aria-current='page' className='text-sm text-muted'>
 				Page {currentPage} of {totalPages}
 			</p>
 

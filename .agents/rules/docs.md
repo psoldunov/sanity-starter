@@ -64,8 +64,8 @@ answer for the wrong major is worse than no answer.
 rg '"(next|react|sanity|next-sanity|tailwindcss|@biomejs/biome)"' package.json
 ```
 
-At the time of writing: `next@16.3.8`, `react@19.3`, `sanity@6.17`, `next-sanity@13.3`,
-`tailwindcss@4.3`, `@biomejs/biome@2.5.15`, `bun@1.4.2`. Re-read them rather than trusting this
+At the time of writing: `next@16.4.3`, `react@19.3`, `sanity@6.20`, `next-sanity@13.4`,
+`tailwindcss@4.3`, `@biomejs/biome@2.6.3`, `bun@1.4.4`. Re-read them rather than trusting this
 line — it goes stale too.
 
 Then:

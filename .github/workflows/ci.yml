@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
 
 concurrency:
@@ -36,7 +36,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: '1.4.2'
+          bun-version: '1.4.4'
 
       - name: Install dependencies
         # Nothing in this job reads the generated Sanity types.
@@ -62,7 +62,7 @@ jobs:
         # ONE SCAN, TWO GATES. Do not swap `--json` for `--score`.
         #
         # `--score` suppresses react-doctor's own exit code. Verified against
-        # 0.9.13, and again against 0.9.17, on a scratch project with
+        # 0.9.13, and again against 0.9.17 and 0.9.18, on a scratch project with
         # error-level findings: the bare run and the `--json` run both exit 1,
         # the identical run with `--score` exits 0 while printing the same
         # score. Gating on `--score` would therefore
@@ -78,7 +78,7 @@ jobs:
           REPORT="$RUNNER_TEMP/react-doctor.json"
           rm -f "$REPORT"
           STATUS=0
-          bunx react-doctor@0.9.17 . --json --json-out "$REPORT" || STATUS=$?
+          bunx react-doctor@0.9.18 . --json --json-out "$REPORT" || STATUS=$?
           # Fail closed: a run that died before writing its report has not
           # passed, whatever its exit code says.
           if [ ! -s "$REPORT" ]; then
@@ -118,8 +118,8 @@ jobs:
         # `gate: new-only`, so only findings this changeset introduces fail —
         # a fork's first PR does not inherit the repository's backlog.
         #
-        # A pull request audits against its own base branch. A push to `main`
-        # has no base ref, and `origin/main` would then be HEAD itself and diff
+        # A pull request audits against its own base branch. A push to `master`
+        # has no base ref, and `origin/master` would then be HEAD itself and diff
         # to nothing — every finding would read as pre-existing and the gate
         # would pass vacuously. So a push audits against the parent commit,
         # falling back to HEAD on a repository's very first commit, which has
@@ -128,7 +128,7 @@ jobs:
           if [ -z "$FALLOW_BASE" ]; then
             FALLOW_BASE="$(git rev-parse --verify --quiet 'HEAD^' || echo HEAD)"
           fi
-          bunx fallow@3.31.0 audit --base "$FALLOW_BASE"
+          bunx fallow@3.36.0 audit --base "$FALLOW_BASE"
         env:
           FALLOW_BASE: ${{ github.event.pull_request.base.ref && format('origin/{0}', github.event.pull_request.base.ref) || '' }}
 
@@ -140,7 +140,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: '1.4.2'
+          bun-version: '1.4.4'
 
       - name: Install dependencies
         # postinstall runs typegen best-effort and swallows a failure, which is
@@ -196,7 +196,7 @@ jobs:
       # `next build` type-checks the whole project itself: it runs
       # `tsc --project tsconfig.json --noEmit` over everything tsconfig.json
       # selects, tests included (`runTypeCheckCli` in
-      # node_modules/next/dist/lib/typescript/, next@16.3.8). Running
+      # node_modules/next/dist/lib/typescript/, next@16.4.3). Running
       # `bun run typecheck` before it would check the same program twice, so the
       # standalone typecheck runs only when the build does not.
       - name: Typecheck
@@ -211,11 +211,11 @@ jobs:
       # `fetch-cache` is left out: restoring it could let the build answer
       # Sanity queries from an earlier run instead of the live dataset.
       #
-      # Restored on every build, saved only from `main`. A pull request's cache
+      # Restored on every build, saved only from `master`. A pull request's cache
       # is visible to that pull request alone, so saving one per PR run would
       # upload hundreds of megabytes nothing else reads — and code from a pull
-      # request never writes a cache that `main` later restores. The key ends
-      # in the commit sha so every push to `main` refreshes it; `restore-keys`
+      # request never writes a cache that `master` later restores. The key ends
+      # in the commit sha so every push to `master` refreshes it; `restore-keys`
       # picks the newest one built from the same lockfile, so a dependency bump
       # starts cold rather than from another version's cache.
       - name: Restore Next.js build cache

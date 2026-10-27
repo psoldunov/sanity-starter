@@ -33,7 +33,7 @@ export default function Footer({ nav, siteName }: FooterProps) {
 	const columnClass = COLUMN_GRID[Math.min(Math.max(columns.length, 1), 4)];
 
 	return (
-		<footer className='mt-24 border-border border-t'>
+		<footer className='mt-24 border-t border-border'>
 			<Container>
 				<div className='py-12'>
 					{columns.length > 0 && (
@@ -43,7 +43,7 @@ export default function Footer({ nav, siteName }: FooterProps) {
 						>
 							{columns.map((column) => (
 								<div key={column._key}>
-									<h2 className='mb-4 font-semibold text-base text-foreground'>
+									<h2 className='mb-4 text-base font-semibold text-foreground'>
 										{column.heading}
 									</h2>
 									<ul className='flex flex-col gap-2'>
@@ -51,7 +51,7 @@ export default function Footer({ nav, siteName }: FooterProps) {
 											<li key={link._key}>
 												<SmartLink
 													link={link}
-													className='text-muted text-sm transition-colors hover:text-foreground'
+													className='text-sm text-muted transition-colors hover:text-foreground'
 												/>
 											</li>
 										))}
@@ -60,7 +60,7 @@ export default function Footer({ nav, siteName }: FooterProps) {
 							))}
 						</nav>
 					)}
-					<div className='mt-8 border-border border-t pt-8 text-center text-muted text-sm'>
+					<div className='mt-8 border-t border-border pt-8 text-center text-sm text-muted'>
 						<p>
 							&copy; {new Date().getFullYear()} {siteName || 'Company Name'}.
 							All rights reserved.

@@ -95,12 +95,12 @@ export default async function PostPage({
 						{post.publishedAt && (
 							<time
 								dateTime={post.publishedAt}
-								className='text-muted text-xs uppercase tracking-wide'
+								className='text-xs tracking-wide text-muted uppercase'
 							>
 								{formatPostDate(post.publishedAt)}
 							</time>
 						)}
-						<h1 className='mt-3 text-balance font-semibold text-4xl text-foreground tracking-tight'>
+						<h1 className='mt-3 text-4xl font-semibold tracking-tight text-balance text-foreground'>
 							{post.title}
 						</h1>
 						{post.excerpt && (
@@ -124,12 +124,12 @@ export default async function PostPage({
 			{relatedPosts.length > 0 && (
 				<section
 					aria-labelledby='related-heading'
-					className='border-border border-t'
+					className='border-t border-border'
 				>
 					<Container className='py-16'>
 						<h2
 							id='related-heading'
-							className='mb-8 font-semibold text-2xl text-foreground tracking-tight'
+							className='mb-8 text-2xl font-semibold tracking-tight text-foreground'
 						>
 							More posts
 						</h2>

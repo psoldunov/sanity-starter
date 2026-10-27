@@ -44,13 +44,13 @@ export default function PostCard({ post, preload }: PostCardProps) {
 				{post.publishedAt && (
 					<time
 						dateTime={post.publishedAt}
-						className='text-muted text-xs uppercase tracking-wide'
+						className='text-xs tracking-wide text-muted uppercase'
 					>
 						{formatPostDate(post.publishedAt)}
 					</time>
 				)}
 
-				<h2 className='font-semibold text-foreground text-lg tracking-tight'>
+				<h2 className='text-lg font-semibold tracking-tight text-foreground'>
 					{/* Stretched link: the card is the hit area, the heading is the name. */}
 					{/* The slug is encoded — it is API-writable, so it can hold a
 					    character that would otherwise break the URL. */}
@@ -63,7 +63,7 @@ export default function PostCard({ post, preload }: PostCardProps) {
 				</h2>
 
 				{post.excerpt && (
-					<p className='line-clamp-3 text-muted text-sm/6'>{post.excerpt}</p>
+					<p className='line-clamp-3 text-sm/6 text-muted'>{post.excerpt}</p>
 				)}
 			</div>
 		</article>

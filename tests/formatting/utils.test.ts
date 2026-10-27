@@ -16,7 +16,7 @@ describe('cn', () => {
 
 	test('lets a later Tailwind utility win over an earlier conflicting one', () => {
 		expect(cn('p-2', 'p-4')).toBe('p-4');
-		expect(cn('text-muted text-sm', 'text-foreground')).toBe(
+		expect(cn('text-sm text-muted', 'text-foreground')).toBe(
 			'text-sm text-foreground',
 		);
 	});
