@@ -68,7 +68,7 @@ sitemap URL if it reaches them.
 
 Every fetcher has a metadata twin that passes `stega: false`:
 `getSettingsForMetadata`, `getPageForMetadata`, `getPostForMetadata`. The same
-applies to `robots.ts`, `sitemap.ts`, `generateStaticParams` and any count.
+applies to `robots.txt`, `sitemap.ts`, `generateStaticParams` and any count.
 
 Stega is only ever active in draft mode anyway (`sanityFetch` decides), so
 published traffic is unaffected — but the metadata path must be explicit,
@@ -154,7 +154,7 @@ edge:
 
 - **[`src/sanity/lib/fragments.ts`](../src/sanity/lib/fragments.ts) imports
   nothing.** Section GROQ fragments used to live beside their schema
-  definitions, so `src/sanity/lib/queries` — and through it `robots.ts`,
+  definitions, so `src/sanity/lib/queries` — and through it `robots.txt`,
   `sitemap.ts` and every page — transitively imported `defineSection`, and
   through that the whole Studio. It bloated the public server and client bundles,
   and under Next 16's `react-server` condition it broke the production build

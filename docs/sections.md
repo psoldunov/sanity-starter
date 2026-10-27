@@ -1,13 +1,13 @@
 # Adding a section
 
 A page is an ordered array of sections, each one a Sanity object type with a
-matching React component. Adding a new one is seven mechanical steps. Miss one
+matching React component. Adding a new one is eight mechanical steps. Miss one
 and the failure is quiet: the section saves in the Studio but renders nothing.
 
 The worked example below builds a **CTA Section** — a heading, a paragraph and
 a link — end to end.
 
-## The seven steps
+## The eight steps
 
 1. Schema in `src/sanity/schema/objects/sections/<name>Section.ts`, built with
    `defineSection()`.
@@ -19,8 +19,10 @@ a link — end to end.
    PascalCase filename matching `_type`.
 6. Register the component in `src/lib/sections.ts`.
 7. `bun run typegen`.
+8. Add a markdown serializer to `SECTION_SERIALIZERS` in
+   `src/lib/markdown/sections.ts`, so AI agents can read the section.
 
-Step 8, only if the section reads `searchParams`: add its `_type` to
+Step 9, only if the section reads `searchParams`: add its `_type` to
 `DYNAMIC_SECTION_TYPES` in [`src/config/sections.ts`](../src/config/sections.ts).
 
 ## 1. Schema
@@ -123,7 +125,7 @@ Two rules govern that file, and both are load-bearing:
 
 - **It must never import anything.** Fragments used to sit beside their schema
   definitions, which meant `src/sanity/lib/queries` — and through it
-  `robots.ts`, `sitemap.ts` and every page — transitively imported
+  `robots.txt`, `sitemap.ts` and every page — transitively imported
   `defineSection`, and through *that* the entire `sanity` Studio runtime. The
   whole Studio ended up in the public server and client bundles, and under Next
   16's `react-server` condition it failed the build outright: `sanity` reaches
@@ -267,6 +269,17 @@ bun run typegen
 is equivalent. After it runs, `PAGE_QUERY_RESULT.sections` carries a
 `ctaSection` variant and `SectionProps<'ctaSection'>` resolves.
 
+## 8. Markdown serializer
+
+Every page is also served to AI agents as markdown (see [the LLM layer](./llm.md)), and each
+section type needs a function that writes its content. Typecheck fails until `SECTION_SERIALIZERS`
+in [`src/lib/markdown/sections.ts`](../src/lib/markdown/sections.ts) has an entry for
+`ctaSection`. The serializer for this section, and the habits that make one useful to a model, are
+in [the LLM layer guide](./llm.md#a-new-section).
+
+Check the result by opening the markdown of a page that uses the section, such as
+`http://localhost:3000/about.md`.
+
 ## Sections that read search params
 
 A section needing `searchParams` (a filter, a paginated list) must declare
@@ -298,6 +311,7 @@ ones receive a populated object.
 - [ ] Component created, props spread into `<Section>`
 - [ ] Registered in `src/lib/sections.ts` under the exact `_type`
 - [ ] `bun run typegen` run, `bun run check` passes
+- [ ] Serializer added to `SECTION_SERIALIZERS`, and the page's `.md` URL reads well
 - [ ] Added to `DYNAMIC_SECTION_TYPES` if it reads `searchParams`
 
 Related: [architecture](./architecture.md) · [links](./links.md) ·

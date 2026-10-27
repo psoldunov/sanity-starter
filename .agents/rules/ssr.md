@@ -53,7 +53,7 @@ data layer rather than a page.
 - **Read through `src/sanity/lib/fetchers.ts`.** Those helpers are `React.cache()`-wrapped, so the
   value `generateMetadata` and the component both need costs one round trip. Adding a document type
   means adding its fetchers there, not calling `sanityFetch` twice.
-- **`stega: false` for anything feeding `<head>`** — metadata, `sitemap.ts`, `robots.ts`,
+- **`stega: false` for anything feeding `<head>`** — metadata, `sitemap.ts`, `robots.txt`,
   `generateStaticParams`. Stega encodes invisible characters into strings; in a `<title>` or an
   `og:description` that corrupts search results.
 - **Project every GROQ query.** An unprojected `*[_type == "page"]` hands a sitemap the entire
@@ -86,9 +86,11 @@ what it showed. Cache Components is off here, so the legend is three symbols, no
 ƒ  (Dynamic)  server-rendered on demand
 ```
 
-The baseline, on an unmodified checkout: CMS pages and posts are `●`, `robots.txt` / `sitemap.xml` /
-`/_not-found` are `○`, and exactly three routes are legitimately `ƒ` — `/admin/[[...index]]`,
-`/api/draft-mode/enable`, and `/posts`. The blog index is dynamic because it awaits `searchParams`
+The baseline, on an unmodified checkout: CMS pages and posts are `●`, and so are their markdown
+copies under `/api/markdown/*.md`; `robots.txt` / `sitemap.xml` / `/_not-found` and the LLM index
+files (`/llms.txt`, `/llms-full.txt`, `/sitemap.md`, `/.well-known/api-catalog`) are `○`; and exactly
+three routes are legitimately `ƒ` — `/admin/[[...index]]`, `/api/draft-mode/enable`, and `/posts`.
+Verified on `next@16.4.3`. The blog index is dynamic because it awaits `searchParams`
 for its `?page=` pagination. Anything else arriving at `ƒ` is a regression until proven otherwise.
 
 A route that reads a search param must **bound** what it accepts. `/posts` parses `?page=` with a

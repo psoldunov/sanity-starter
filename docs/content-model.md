@@ -51,6 +51,7 @@ A page-builder page. Everything the catch-all route `/[[...slug]]` serves is a
 | `metaDescription` | SEO | text | No | Overrides the site description. |
 | `ogImage` | SEO | image | No | Overrides `settings.siteOgImage`. |
 | `noIndex` | SEO | boolean | Yes | Keeps the page out of search indexes. Defaults to `false`. |
+| `geo` | AI & LLMs | `geo` object | No | How AI agents see the page: its listing in `/llms.txt`, a summary for agents, and its schema.org page type. Hidden while `noIndex` is on. See [the LLM layer](./llm.md#controls-for-editors). |
 | `orderRank` | — | hidden | — | Drag-to-order position in the Studio list. |
 
 **Route rules**, enforced by `validatePageRoute` in
@@ -65,15 +66,16 @@ A page-builder page. Everything the catch-all route `/[[...slug]]` serves is a
   document base path such as `/posts`. The message names the prefix that
   clashed.
 
-**`noIndex` does two things.** `robots.ts` adds the route to `Disallow`, and
-`generateMetadata` emits `robots: { index: false, follow: false }`. The meta tag
-is the one that actually keeps a page out of an index — a robots.txt `Disallow`
-only asks crawlers not to fetch it. `noIndex` pages are also excluded from
-`sitemap.xml`.
+**`noIndex` keeps a page out of search and away from AI agents.**
+`generateMetadata` emits `robots: { index: false, follow: false }`, the tag that
+actually keeps a page out of an index. `robots.txt` deliberately does not list
+the page: a `Disallow` would stop crawlers fetching it, so they would never read
+that tag. `noIndex` pages are also left out of `sitemap.xml`, and get no
+markdown and no `/llms.txt` entry.
 
 **Developer notes.** `PAGE_QUERY` fetches one page plus its section tree;
-`PAGE_ROUTES_QUERY` feeds `generateStaticParams`; `PAGES_SITEMAP_QUERY` and
-`PAGES_NOINDEX_QUERY` feed the sitemap and robots routes. Sections are rendered
+`PAGE_ROUTES_QUERY` feeds `generateStaticParams`; `PAGES_SITEMAP_QUERY` feeds
+the sitemap; `LLM_PAGES_QUERY` feeds the markdown routes and `/llms.txt`. Sections are rendered
 by `SectionRenderer` — see [sections](./sections.md).
 
 ## Post
@@ -96,6 +98,7 @@ builder — the deliberate counterpart to `page`. See
 | `metaDescription` | SEO | text | No | Overrides `excerpt`. |
 | `ogImage` | SEO | image | No | Overrides `coverImage` for social previews. |
 | `noIndex` | SEO | boolean | No | Keeps the post out of search indexes. |
+| `geo` | AI & LLMs | `geo` object | No | Listing in `/llms.txt` and a summary for agents. Hidden while `noIndex` is on. |
 | `orderRank` | — | hidden | — | Drag-to-order position in the Studio list. |
 
 Everything beyond title, slug and content is optional on purpose, so an existing
@@ -103,7 +106,8 @@ dataset keeps validating after an upgrade and the templates degrade gracefully.
 
 **Developer notes.** Queries: `POSTS_PAGE_QUERY` (paged index, sliced in GROQ),
 `POSTS_COUNT_QUERY`, `POST_QUERY` (single article with body), `POST_SLUGS_QUERY`
-(`generateStaticParams`), `POSTS_SITEMAP_QUERY`, `RELATED_POSTS_QUERY`.
+(`generateStaticParams`), `POSTS_SITEMAP_QUERY`, `RELATED_POSTS_QUERY`,
+`LLM_POSTS_QUERY` (the markdown routes and `/llms.txt`).
 Ordering everywhere is `coalesce(publishedAt, _createdAt) desc`, so a post with
 no date still lands sensibly. Body rendering happens in
 [`src/components/blog/PostBody.tsx`](../src/components/blog/PostBody.tsx) via
@@ -197,6 +201,7 @@ render pass but do not need a deploy.
 | `link` | [`objects/link.ts`](../src/sanity/schema/objects/link.ts) | A link with no label. |
 | `linkWithLabel` | same file | The same fields plus `label`. |
 | `internalDestination` | [`objects/internalDestination.ts`](../src/sanity/schema/objects/internalDestination.ts) | Document reference **or** static path. |
+| `geo` | [`objects/geo.ts`](../src/sanity/schema/objects/geo.ts) | Per-document AI controls: `llmsListing`, `llmsSummary`, `schemaType`. |
 | Section objects | [`objects/sections/`](../src/sanity/schema/objects/sections) | `heroSection`, `cardsSection`, `imageTextSection`. |
 
 Links are covered in [links](./links.md).
@@ -230,4 +235,6 @@ Option types live in
    [`src/sanity/lib/resolve.ts`](../src/sanity/lib/resolve.ts).
 5. Add projected queries in `src/sanity/lib/queries/index.ts`, a route under
    `src/app/(site)/`, and sitemap entries.
-6. `bun run typegen`.
+6. If it has a public URL, give it markdown, a group in `/llms.txt` and JSON-LD
+   ([the LLM layer](./llm.md#a-new-document-type)).
+7. `bun run typegen`.
