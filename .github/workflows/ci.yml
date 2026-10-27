@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
 
 concurrency:
@@ -118,8 +118,8 @@ jobs:
         # `gate: new-only`, so only findings this changeset introduces fail —
         # a fork's first PR does not inherit the repository's backlog.
         #
-        # A pull request audits against its own base branch. A push to `main`
-        # has no base ref, and `origin/main` would then be HEAD itself and diff
+        # A pull request audits against its own base branch. A push to `master`
+        # has no base ref, and `origin/master` would then be HEAD itself and diff
         # to nothing — every finding would read as pre-existing and the gate
         # would pass vacuously. So a push audits against the parent commit,
         # falling back to HEAD on a repository's very first commit, which has
@@ -211,11 +211,11 @@ jobs:
       # `fetch-cache` is left out: restoring it could let the build answer
       # Sanity queries from an earlier run instead of the live dataset.
       #
-      # Restored on every build, saved only from `main`. A pull request's cache
+      # Restored on every build, saved only from `master`. A pull request's cache
       # is visible to that pull request alone, so saving one per PR run would
       # upload hundreds of megabytes nothing else reads — and code from a pull
-      # request never writes a cache that `main` later restores. The key ends
-      # in the commit sha so every push to `main` refreshes it; `restore-keys`
+      # request never writes a cache that `master` later restores. The key ends
+      # in the commit sha so every push to `master` refreshes it; `restore-keys`
       # picks the newest one built from the same lockfile, so a dependency bump
       # starts cold rather than from another version's cache.
       - name: Restore Next.js build cache
