@@ -89,6 +89,14 @@ const SECTION_SERIALIZERS: { [T in SectionType]: SectionSerializer<T> } = {
 			prose(section.paragraph),
 			sectionImage(section.image),
 		),
+
+	faqSection: (section) =>
+		blocks(
+			heading(2, section.heading),
+			(section.items ?? []).map((item) =>
+				blocks(heading(3, item.question), prose(item.answer)),
+			),
+		),
 };
 
 /**

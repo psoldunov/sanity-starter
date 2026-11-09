@@ -1,22 +1,19 @@
-import { serializeJsonLd } from '@/lib/structuredData';
+import { type JsonLdGraph, serializeJsonLd } from '@/lib/structuredData';
 
 /**
  * A JSON-LD graph as a `<script>` tag, the way Next's JSON-LD guide renders
- * it. Build the nodes with `src/lib/structuredData.ts`.
+ * it. Build the graph with `src/lib/structuredData.ts`.
  *
- * @param props.nodes - The graph's nodes.
+ * @param props.data - The graph, from `buildSiteJsonLd`, `buildPageJsonLd` or
+ *   `buildPostJsonLd`.
  * @returns The script tag.
  */
-export default function JsonLd({
-	nodes,
-}: {
-	nodes: Record<string, unknown>[];
-}) {
+export default function JsonLd({ data }: { data: JsonLdGraph }) {
 	return (
 		<script
 			type='application/ld+json'
 			// biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD has to be the script's raw text; `serializeJsonLd` escapes `<` so CMS copy cannot close the tag.
-			dangerouslySetInnerHTML={{ __html: serializeJsonLd(nodes) }}
+			dangerouslySetInnerHTML={{ __html: serializeJsonLd(data) }}
 		/>
 	);
 }

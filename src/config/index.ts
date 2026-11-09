@@ -76,3 +76,13 @@ export const PROTECTED_ROUTE_PATTERNS: readonly string[] = [
  * against CMS pages but is public content that should absolutely be indexed.
  */
 export const CRAWLER_DISALLOWED_PATHS: readonly string[] = ['/api/', '/admin/'];
+
+/**
+ * The language the site is written in, spelled for each place that asks: the
+ * `<html lang>` attribute and JSON-LD `inLanguage` take a BCP 47 tag, Open
+ * Graph takes a POSIX-style locale. Set both for each project.
+ */
+export const SITE_LOCALE = {
+	language: 'en-US',
+	openGraph: 'en_US',
+} as const;

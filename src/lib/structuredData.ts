@@ -1,277 +1,354 @@
-import type { PAGE_SCHEMA_TYPES } from '@/config/llm';
-import { isDereferencedAsset } from '@/lib/image';
-import { documentPath } from '@/lib/links';
+import type { PageSchemaType } from '@/config/llm';
+import { toAbsoluteUrl } from '@/lib/url';
 
 /*
- * schema.org JSON-LD for search engines and AI agents, following Next's guide
+ * schema.org structured data, rendered as JSON-LD by `JsonLd`
+ * (`src/components/utility/JsonLd.tsx`), following Next's guide
  * (`node_modules/next/dist/docs/01-app/02-guides/json-ld.md`).
  *
- * Every page declares itself as a `WebPage` (or the subtype an editor picked),
- * part of the `WebSite`. The home page also carries the `Organization` and the
- * `WebSite` in full, linked by `@id`, so a reader of any one page can join the
- * graph up. A post is a `BlogPosting` published by that organization.
+ * The site graph (the organisation and the website) is emitted once, by the
+ * `(site)` layout, so it is on every page. Each page and post adds its own
+ * graph that points back at it by `@id`. Node ids are URLs with a fragment,
+ * which is how separate `<script>` blocks on one page join into one graph.
  *
  * Pure functions with no React and no Sanity client, so they stay testable.
+ * Nothing here invents facts the CMS does not hold.
  */
 
-/** A schema.org page type, as `geo.schemaType` stores it. */
-type PageSchemaType = (typeof PAGE_SCHEMA_TYPES)[number];
+/** One schema.org node. */
+export type JsonLdNode = {
+	'@type': string | readonly string[];
+	'@id'?: string;
+	[property: string]: unknown;
+};
 
-/** The site-wide facts every node hangs off. */
-export type SiteFacts = {
-	/** The site origin, without a trailing slash. */
+/** A JSON-LD document holding a graph of nodes. */
+export type JsonLdGraph = {
+	'@context': 'https://schema.org';
+	'@graph': JsonLdNode[];
+};
+
+/** One question and its answer, as the FAQ section stores them. */
+type FaqEntry = {
+	question?: string | null;
+	answer?: string | null;
+};
+
+type SiteJsonLdInput = {
+	/** Origin with no trailing slash, from `getSiteUrl()`. */
 	siteUrl: string;
-	/** The site name from settings. */
 	name: string;
-	/** The site description from settings. */
 	description?: string | null;
-	/** The logo's CDN URL from settings. */
+	/** Absolute URL of the logo, when settings have one. */
 	logoUrl?: string | null;
+	/** The organisation's profiles on other sites. */
+	sameAs?: readonly (string | null | undefined)[] | null;
+	/** BCP 47 language tag, `SITE_LOCALE.language`. */
+	language: string;
 };
 
-/** One node of a JSON-LD graph. */
-type Node = Record<string, unknown>;
-
-/** Site settings as `SITE_SETTINGS_QUERY` returns them, read without stega. */
-type SettingsFields = {
-	siteName?: string | null;
-	siteDescription?: string | null;
-	logo?: { asset?: { url?: string | null } | null } | null;
-} | null;
-
-/** Page fields as `PAGE_QUERY` returns them, read without stega. */
-type PageFields = {
-	route?: string | null;
-	title?: string | null;
-	metaTitle?: string | null;
-	metaDescription?: string | null;
-	_updatedAt?: string | null;
-	geo?: { schemaType?: PageSchemaType | null } | null;
+type PageJsonLdInput = {
+	siteUrl: string;
+	/** Normalised route, e.g. `/` or `/about`. */
+	path: string;
+	/** The page's own name, without the site-name suffix of its `<title>`. */
+	name: string;
+	description?: string | null;
+	/** Absolute URL of the page's share image. */
+	imageUrl?: string;
+	language: string;
+	/** Label of the first breadcrumb, the home page. */
+	homeName: string;
+	/** Questions answered on the page; any complete one makes it an `FAQPage`. */
+	faqs?: readonly FaqEntry[];
+	/** The page type an editor picked (`geo.schemaType`); `WebPage` when unset. */
+	type?: PageSchemaType | null;
+	/** The document's `_updatedAt`. */
+	dateModified?: string | null;
 };
 
-/** Post fields as `POST_QUERY` returns them, read without stega. */
-type PostFields = {
-	slug?: string | null;
-	title?: string | null;
-	metaTitle?: string | null;
-	metaDescription?: string | null;
-	excerpt?: string | null;
-	publishedAt?: string | null;
-	_updatedAt?: string | null;
-	coverImage?: { asset?: unknown } | null;
+type PostJsonLdInput = {
+	siteUrl: string;
+	/** The post's route, e.g. `/posts/hello`. */
+	path: string;
+	headline: string;
+	description?: string | null;
+	/** Absolute URL of the cover image. */
+	imageUrl?: string | null;
+	datePublished?: string | null;
+	dateModified?: string | null;
+	language: string;
+	/** The site name: the home breadcrumb, and the post's author and publisher. */
+	siteName: string;
+	logoUrl?: string | null;
+	/** The listing the post sits in, as the middle breadcrumb. */
+	index?: { name: string; path: string };
 };
+
+const CONTEXT = 'https://schema.org';
 
 /**
- * Serializes a JSON-LD graph for a `<script>` tag.
+ * The `@id` of the organisation node, for other nodes to reference.
+ *
+ * @param siteUrl - Origin with no trailing slash.
+ * @returns The node id.
+ */
+function organizationId(siteUrl: string): string {
+	return `${siteUrl}/#organization`;
+}
+
+/**
+ * The `@id` of the website node, for other nodes to reference.
+ *
+ * @param siteUrl - Origin with no trailing slash.
+ * @returns The node id.
+ */
+function websiteId(siteUrl: string): string {
+	return `${siteUrl}/#website`;
+}
+
+/**
+ * The base a document's fragment ids hang off. The home URL is the bare
+ * origin, but its ids still need the slash the site nodes' have, or they read
+ * `https://example.com#webpage`.
+ *
+ * @param siteUrl - Origin with no trailing slash.
+ * @param path - Normalised route.
+ * @returns The id base.
+ */
+function idBase(siteUrl: string, path: string): string {
+	return path === '/' ? `${siteUrl}/` : toAbsoluteUrl(siteUrl, path);
+}
+
+/**
+ * An image as a schema.org `ImageObject`.
+ *
+ * @param url - The image URL.
+ * @returns The node, or `undefined` without a URL.
+ */
+function imageObject(url: string | null | undefined): JsonLdNode | undefined {
+	return url ? { '@type': 'ImageObject', url } : undefined;
+}
+
+/**
+ * Serialises a JSON-LD document for an inline `<script>`.
  *
  * SECURITY: the graph carries CMS copy, and `JSON.stringify` does not escape
  * `<`, so a `</script>` in a title would end the tag early and run whatever
- * follows it. Writing `<` as `<` — which JSON parsers read back as the
+ * follows it. Writing `<` as `\u003c` — which JSON parsers read back as the
  * same character — closes that hole. `JsonLd` renders this through
  * `dangerouslySetInnerHTML`, so this escape is the only thing between an
  * editor's text and the page's script context.
  *
- * @param nodes - The graph's nodes.
- * @returns The payload, safe to put inside a `<script>` tag.
+ * @param data - The document to serialise.
+ * @returns JSON safe to place inside `<script type="application/ld+json">`.
  */
-export function serializeJsonLd(nodes: Node[]): string {
-	const graph = { '@context': 'https://schema.org', '@graph': nodes };
-	return JSON.stringify(graph).replace(/</g, '\\u003c');
+export function serializeJsonLd(data: JsonLdGraph): string {
+	return JSON.stringify(data).replace(/</g, '\\u003c');
 }
 
 /**
- * The stable `@id`s the graph links by.
+ * The site-wide graph: the organisation behind the site and the website itself.
  *
- * @param siteUrl - The site origin, without a trailing slash.
- * @returns The organization's and the website's ids.
+ * @param input - Site settings and resolved URLs.
+ * @returns The `Organization` and `WebSite` nodes.
  */
-function siteIds(siteUrl: string) {
-	return {
-		organization: `${siteUrl}/#organization`,
-		website: `${siteUrl}/#website`,
-	};
-}
-
-/**
- * The organization behind the site and the site itself, for the home page.
- *
- * @param site - The site facts.
- * @returns The two nodes.
- */
-function siteNodes(site: SiteFacts): Node[] {
-	const ids = siteIds(site.siteUrl);
-	const url = `${site.siteUrl}/`;
-
-	return [
-		{
-			'@type': 'Organization',
-			'@id': ids.organization,
-			name: site.name,
-			url,
-			logo: site.logoUrl || undefined,
-			description: site.description || undefined,
-		},
-		{
-			'@type': 'WebSite',
-			'@id': ids.website,
-			name: site.name,
-			url,
-			description: site.description || undefined,
-			publisher: { '@id': ids.organization },
-			inLanguage: 'en',
-		},
-	];
-}
-
-/**
- * One page, as the type its editor picked.
- *
- * @param site - The site facts.
- * @param page.url - The page's canonical URL.
- * @param page.name - Its title.
- * @param page.description - Its description.
- * @param page.type - `geo.schemaType`; `WebPage` when unset.
- * @param page.dateModified - Its `_updatedAt`.
- * @returns The node.
- */
-function webPageNode(
-	site: SiteFacts,
-	page: {
-		url: string;
-		name?: string | null;
-		description?: string | null;
-		type?: PageSchemaType | null;
-		dateModified?: string | null;
-	},
-): Node {
-	return {
-		'@type': page.type || 'WebPage',
-		'@id': `${page.url}#webpage`,
-		url: page.url,
-		name: page.name || undefined,
-		description: page.description || undefined,
-		dateModified: page.dateModified || undefined,
-		isPartOf: {
-			'@type': 'WebSite',
-			'@id': siteIds(site.siteUrl).website,
-			name: site.name,
-			url: `${site.siteUrl}/`,
-		},
-		inLanguage: 'en',
-	};
-}
-
-/**
- * One post. The organization stands as author too: the post schema has no
- * author field, and schema.org accepts an `Organization` there.
- *
- * @param site - The site facts.
- * @param post.url - The post's canonical URL.
- * @param post.headline - Its title.
- * @param post.description - Its description.
- * @param post.imageUrl - Its cover image's CDN URL.
- * @param post.datePublished - Its publish date.
- * @param post.dateModified - Its `_updatedAt`.
- * @returns The node.
- */
-function blogPostingNode(
-	site: SiteFacts,
-	post: {
-		url: string;
-		headline?: string | null;
-		description?: string | null;
-		imageUrl?: string | null;
-		datePublished?: string | null;
-		dateModified?: string | null;
-	},
-): Node {
-	const organization = {
-		'@type': 'Organization',
-		'@id': siteIds(site.siteUrl).organization,
-		name: site.name,
-		url: `${site.siteUrl}/`,
-		logo: site.logoUrl || undefined,
-	};
+export function buildSiteJsonLd({
+	siteUrl,
+	name,
+	description,
+	logoUrl,
+	sameAs,
+	language,
+}: SiteJsonLdInput): JsonLdGraph {
+	const profiles = (sameAs ?? []).filter((url): url is string => Boolean(url));
 
 	return {
-		'@type': 'BlogPosting',
-		'@id': `${post.url}#article`,
-		mainEntityOfPage: post.url,
-		url: post.url,
-		headline: post.headline || undefined,
-		description: post.description || undefined,
-		image: post.imageUrl || undefined,
-		datePublished: post.datePublished || undefined,
-		dateModified: post.dateModified || undefined,
-		author: organization,
-		publisher: organization,
-		inLanguage: 'en',
+		'@context': CONTEXT,
+		'@graph': [
+			{
+				'@type': 'Organization',
+				'@id': organizationId(siteUrl),
+				name,
+				url: siteUrl,
+				description: description || undefined,
+				logo: imageObject(logoUrl),
+				sameAs: profiles.length ? profiles : undefined,
+			},
+			{
+				'@type': 'WebSite',
+				'@id': websiteId(siteUrl),
+				name,
+				url: siteUrl,
+				description: description || undefined,
+				inLanguage: language,
+				publisher: { '@id': organizationId(siteUrl) },
+			},
+		],
 	};
 }
 
 /**
- * The site facts from settings. Without a site name there is no entity to
- * describe yet, so a route renders no JSON-LD.
+ * FAQ entries as schema.org `Question` nodes. An entry missing its question or
+ * its answer is dropped: a `Question` without an `acceptedAnswer` is invalid.
  *
- * @param siteUrl - The site origin, without a trailing slash.
- * @param settings - The stega-free site settings.
- * @returns The facts, or `undefined` when the site has no name.
+ * @param faqs - The entries, as the FAQ section stores them.
+ * @returns The complete questions.
  */
-export function siteFacts(
+function toQuestions(faqs: readonly FaqEntry[]): JsonLdNode[] {
+	return faqs.flatMap(({ question, answer }) =>
+		question?.trim() && answer?.trim()
+			? [
+					{
+						'@type': 'Question',
+						name: question.trim(),
+						acceptedAnswer: { '@type': 'Answer', text: answer.trim() },
+					},
+				]
+			: [],
+	);
+}
+
+/**
+ * A breadcrumb trail that starts at the home page.
+ *
+ * @param id - The node's `@id`.
+ * @param siteUrl - Origin with no trailing slash.
+ * @param homeName - Label of the home crumb.
+ * @param crumbs - The crumbs after home, in order, ending at the current page.
+ * @returns The `BreadcrumbList` node.
+ */
+function breadcrumbList(
+	id: string,
 	siteUrl: string,
-	settings: SettingsFields,
-): SiteFacts | undefined {
-	if (!settings?.siteName) return undefined;
-
+	homeName: string,
+	crumbs: readonly { name: string; url: string }[],
+): JsonLdNode {
 	return {
-		siteUrl,
-		name: settings.siteName,
-		description: settings.siteDescription,
-		logoUrl: settings.logo?.asset?.url,
+		'@type': 'BreadcrumbList',
+		'@id': id,
+		itemListElement: [{ name: homeName, url: siteUrl }, ...crumbs].map(
+			({ name, url }, index) => ({
+				'@type': 'ListItem',
+				position: index + 1,
+				name,
+				item: url,
+			}),
+		),
 	};
 }
 
 /**
- * A page's graph: its own node, plus the organization and the website on the
- * home page. Title and description follow the same chain as its `<head>`.
+ * One page's graph: the page itself, as the type its editor picked — an
+ * `FAQPage` as well when it answers questions — and, below the home page, its
+ * breadcrumb trail.
  *
- * @param site - The site facts.
- * @param page - The stega-free page.
- * @returns The nodes.
+ * @param input - The page's fields and resolved URLs.
+ * @returns The page's nodes.
  */
-export function pageNodes(site: SiteFacts, page: PageFields): Node[] {
-	const route = page.route || '/';
-	const isHome = route === '/';
+export function buildPageJsonLd({
+	siteUrl,
+	path,
+	name,
+	description,
+	imageUrl,
+	language,
+	homeName,
+	faqs = [],
+	type,
+	dateModified,
+}: PageJsonLdInput): JsonLdGraph {
+	const url = toAbsoluteUrl(siteUrl, path);
+	const isHome = path === '/';
+	const base = idBase(siteUrl, path);
+	const questions = toQuestions(faqs);
+	const breadcrumbId = `${base}#breadcrumb`;
 
-	const node = webPageNode(site, {
-		url: isHome ? `${site.siteUrl}/` : `${site.siteUrl}${route}`,
-		name: page.metaTitle || page.title,
-		description: page.metaDescription || site.description,
-		type: page.geo?.schemaType,
-		dateModified: page._updatedAt,
-	});
+	const page: JsonLdNode = {
+		'@type': questions.length
+			? [type || 'WebPage', 'FAQPage']
+			: type || 'WebPage',
+		'@id': `${base}#webpage`,
+		url,
+		name,
+		description: description || undefined,
+		inLanguage: language,
+		dateModified: dateModified || undefined,
+		isPartOf: { '@id': websiteId(siteUrl) },
+		about: isHome ? { '@id': organizationId(siteUrl) } : undefined,
+		primaryImageOfPage: imageObject(imageUrl),
+		breadcrumb: isHome ? undefined : { '@id': breadcrumbId },
+		mainEntity: questions.length ? questions : undefined,
+	};
 
-	return isHome ? [...siteNodes(site), node] : [node];
+	return {
+		'@context': CONTEXT,
+		'@graph': isHome
+			? [page]
+			: [
+					page,
+					breadcrumbList(breadcrumbId, siteUrl, homeName, [{ name, url }]),
+				],
+	};
 }
 
 /**
- * A post's graph. Title and description follow the same chain as its `<head>`.
+ * One post's graph: the `BlogPosting` and its breadcrumb trail. The
+ * organisation stands as author too: the post schema has no author field, and
+ * schema.org accepts an `Organization` there. It is spelled out rather than
+ * only referenced, so the article reads whole on its own.
  *
- * @param site - The site facts.
- * @param post - The stega-free post.
- * @returns The nodes.
+ * @param input - The post's fields and resolved URLs.
+ * @returns The post's nodes.
  */
-export function postNodes(site: SiteFacts, post: PostFields): Node[] {
-	const cover = post.coverImage?.asset;
-
-	return [
-		blogPostingNode(site, {
-			url: `${site.siteUrl}${documentPath('post', post.slug || undefined)}`,
-			headline: post.metaTitle || post.title,
-			description: post.metaDescription || post.excerpt,
-			imageUrl: isDereferencedAsset(cover) ? cover.url : undefined,
-			datePublished: post.publishedAt,
-			dateModified: post._updatedAt,
-		}),
+export function buildPostJsonLd({
+	siteUrl,
+	path,
+	headline,
+	description,
+	imageUrl,
+	datePublished,
+	dateModified,
+	language,
+	siteName,
+	logoUrl,
+	index,
+}: PostJsonLdInput): JsonLdGraph {
+	const url = toAbsoluteUrl(siteUrl, path);
+	const breadcrumbId = `${url}#breadcrumb`;
+	const organization: JsonLdNode = {
+		'@type': 'Organization',
+		'@id': organizationId(siteUrl),
+		name: siteName,
+		url: siteUrl,
+		logo: imageObject(logoUrl),
+	};
+	const crumbs = [
+		...(index
+			? [{ name: index.name, url: toAbsoluteUrl(siteUrl, index.path) }]
+			: []),
+		{ name: headline, url },
 	];
+
+	return {
+		'@context': CONTEXT,
+		'@graph': [
+			{
+				'@type': 'BlogPosting',
+				'@id': `${url}#article`,
+				mainEntityOfPage: url,
+				url,
+				headline,
+				description: description || undefined,
+				image: imageUrl || undefined,
+				datePublished: datePublished || undefined,
+				dateModified: dateModified || undefined,
+				inLanguage: language,
+				isPartOf: { '@id': websiteId(siteUrl) },
+				author: organization,
+				publisher: organization,
+			},
+			breadcrumbList(breadcrumbId, siteUrl, siteName, crumbs),
+		],
+	};
 }

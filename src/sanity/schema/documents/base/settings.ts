@@ -46,6 +46,20 @@ const settings = defineType({
 			description:
 				'Shown in the header. Falls back to the site name when not set.',
 		}),
+		defineField({
+			name: 'socialLinks',
+			title: 'Social Profiles',
+			type: 'array',
+			group: 'general',
+			description:
+				'Full URLs of the organisation’s profiles elsewhere (LinkedIn, Instagram, X…). Not shown on the page: they tell search engines and AI agents which accounts belong to this site.',
+			of: [
+				defineArrayMember({
+					type: 'url',
+					validation: (rule) => rule.uri({ scheme: ['https', 'http'] }),
+				}),
+			],
+		}),
 		{
 			name: 'headerMenu',
 			title: 'Header Menu',

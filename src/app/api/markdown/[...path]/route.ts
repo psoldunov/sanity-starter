@@ -1,3 +1,4 @@
+import { API_CATALOG_LINK } from '@/config/llm';
 import { documentPath } from '@/lib/links';
 import { pageToMarkdown, postToMarkdown } from '@/lib/markdown/document';
 import {
@@ -7,7 +8,7 @@ import {
 import { llmResponse } from '@/lib/markdown/response';
 import { resolveRedirect } from '@/lib/redirects';
 import { splitSlug } from '@/lib/slug';
-import { getSiteUrl } from '@/lib/url';
+import { getSiteUrl, toAbsoluteUrl } from '@/lib/url';
 import {
 	getIndexablePages,
 	getIndexablePosts,
@@ -30,8 +31,10 @@ import {
  * the handler reads no request data, and the fetchers it calls never touch the
  * draft-mode cookie.
  *
- * The canonical `Link` header is set in `next.config.ts`, not here; that file
- * says why.
+ * The `Link` header is set here, not in `next.config.ts` (that file says
+ * why): every response points at the API catalog, and a document's markdown
+ * also names its HTML page as canonical, so search engines credit the page. A
+ * 404 or a redirect names no canonical: there is no page to credit.
  */
 export const dynamic = 'force-static';
 
@@ -86,7 +89,10 @@ async function markdownRedirect(
 
 	return new Response(null, {
 		status: match.statusCode,
-		headers: { Location: htmlPathToMarkdownPath(target || '/') },
+		headers: {
+			Location: htmlPathToMarkdownPath(target || '/'),
+			Link: API_CATALOG_LINK,
+		},
 	});
 }
 
@@ -104,12 +110,12 @@ async function postMarkdown(slug: string): Promise<Response> {
 	]);
 	if (!post || post.noIndex) return notFound();
 
-	return llmResponse(
+	return documentResponse(
 		postToMarkdown(post, {
 			siteUrl: getSiteUrl(),
 			siteDescription: settings?.siteDescription,
 		}),
-		{ format: 'markdown' },
+		documentPath('post', slug),
 	);
 }
 
@@ -142,20 +148,40 @@ export async function GET(
 	if (!page) return (await markdownRedirect(htmlPath)) ?? notFound();
 	if (page.noIndex || !page.sections?.length) return notFound();
 
-	return llmResponse(
+	return documentResponse(
 		pageToMarkdown(page, {
 			siteUrl: getSiteUrl(),
 			siteDescription: settings?.siteDescription,
 		}),
-		{ format: 'markdown' },
+		htmlPath,
 	);
 }
 
 /**
- * The 404 for a path with no markdown.
+ * A document's markdown, naming its HTML page as canonical.
+ *
+ * @param markdown - The document.
+ * @param htmlPath - The HTML page's path, e.g. `/about`.
+ * @returns The response.
+ */
+function documentResponse(markdown: string, htmlPath: string): Response {
+	const canonical = toAbsoluteUrl(getSiteUrl(), htmlPath);
+
+	return llmResponse(markdown, {
+		format: 'markdown',
+		link: `${API_CATALOG_LINK}, <${canonical}>; rel="canonical"`,
+	});
+}
+
+/**
+ * The 404 for a path with no markdown. No canonical: no page stands behind it.
  *
  * @returns The response.
  */
 function notFound(): Response {
-	return llmResponse('# Not found\n', { format: 'markdown', status: 404 });
+	return llmResponse('# Not found\n', {
+		format: 'markdown',
+		status: 404,
+		link: API_CATALOG_LINK,
+	});
 }

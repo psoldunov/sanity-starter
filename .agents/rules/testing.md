@@ -8,7 +8,7 @@ a coverage percentage. There is no coverage target in this repository and `bun r
 is a diagnostic, not a gate. An agent arriving with a standing "80% coverage, write tests first"
 instruction should follow this file instead, and say in its summary that it did.
 
-The suite is ~108 tests across 9 files. Every one of them asserts on a return value; not one
+The suite is ~133 tests across 12 files. Every one of them asserts on a return value; not one
 renders a component, and there is no `.tsx` under `tests/`. That size is a decision, not neglect.
 
 **Scope:** this governs the starter's own code — presentation plus the pure helpers in `src/lib/`.

@@ -37,7 +37,7 @@ data layer rather than a page.
 
    `draftMode()` is the exception that does *not* cost you the route: `src/app/(site)/layout.tsx`
    and `Section` — the wrapper every section renders through — both read it, and CMS pages still
-   build as `●`. Verified against the route table on `next@16.3.4`; re-check it if that changes.
+   build as `●`. Verified against the route table on `next@16.4.5`; re-check it if that changes.
 5. **`SmartImage` and `next/font` only.** No raw `<img>`, no bare `next/image` for a Sanity asset,
    no `<link>` to a font CDN — fonts are declared in `src/fonts/index.ts`. Set `width`/`height` (or
    `fill` plus a sized parent) so nothing shifts, and pass `sizes` on every image that is not
@@ -53,7 +53,7 @@ data layer rather than a page.
 - **Read through `src/sanity/lib/fetchers.ts`.** Those helpers are `React.cache()`-wrapped, so the
   value `generateMetadata` and the component both need costs one round trip. Adding a document type
   means adding its fetchers there, not calling `sanityFetch` twice.
-- **`stega: false` for anything feeding `<head>`** — metadata, `sitemap.ts`, `robots.txt`,
+- **`stega: false` for anything feeding `<head>`** — metadata, `sitemap.ts`, `robots.ts`,
   `generateStaticParams`. Stega encodes invisible characters into strings; in a `<title>` or an
   `og:description` that corrupts search results.
 - **Project every GROQ query.** An unprojected `*[_type == "page"]` hands a sitemap the entire
@@ -90,7 +90,7 @@ The baseline, on an unmodified checkout: CMS pages and posts are `●`, and so a
 copies under `/api/markdown/*.md`; `robots.txt` / `sitemap.xml` / `/_not-found` and the LLM index
 files (`/llms.txt`, `/llms-full.txt`, `/sitemap.md`, `/.well-known/api-catalog`) are `○`; and exactly
 three routes are legitimately `ƒ` — `/admin/[[...index]]`, `/api/draft-mode/enable`, and `/posts`.
-Verified on `next@16.4.3`. The blog index is dynamic because it awaits `searchParams`
+Verified on `next@16.4.5`. The blog index is dynamic because it awaits `searchParams`
 for its `?page=` pagination. Anything else arriving at `ƒ` is a regression until proven otherwise.
 
 A route that reads a search param must **bound** what it accepts. `/posts` parses `?page=` with a

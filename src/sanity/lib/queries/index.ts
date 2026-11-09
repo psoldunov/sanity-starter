@@ -1,6 +1,7 @@
 import { defineQuery } from 'next-sanity';
 import {
 	CARDS_SECTION_FRAGMENT,
+	FAQ_SECTION_FRAGMENT,
 	HERO_SECTION_FRAGMENT,
 	IMAGE_TEXT_SECTION_FRAGMENT,
 	INTERNAL_DESTINATION_PROJECTION,
@@ -20,6 +21,7 @@ export const SITE_SETTINGS_QUERY = defineQuery(`*[_type == "settings"][0]{
   siteName,
   siteDescription,
   siteOgImage,
+  socialLinks,
   logo {
     ...,
     asset->
@@ -69,7 +71,8 @@ export const PAGE_QUERY =
     ...,
     ${HERO_SECTION_FRAGMENT},
     ${CARDS_SECTION_FRAGMENT},
-    ${IMAGE_TEXT_SECTION_FRAGMENT}
+    ${IMAGE_TEXT_SECTION_FRAGMENT},
+    ${FAQ_SECTION_FRAGMENT}
   }
 }`);
 

@@ -78,7 +78,7 @@ jobs:
           REPORT="$RUNNER_TEMP/react-doctor.json"
           rm -f "$REPORT"
           STATUS=0
-          bunx react-doctor@0.9.18 . --json --json-out "$REPORT" || STATUS=$?
+          bunx react-doctor@0.9.22 . --json --json-out "$REPORT" || STATUS=$?
           # Fail closed: a run that died before writing its report has not
           # passed, whatever its exit code says.
           if [ ! -s "$REPORT" ]; then
@@ -128,7 +128,7 @@ jobs:
           if [ -z "$FALLOW_BASE" ]; then
             FALLOW_BASE="$(git rev-parse --verify --quiet 'HEAD^' || echo HEAD)"
           fi
-          bunx fallow@3.36.0 audit --base "$FALLOW_BASE"
+          bunx fallow@3.41.0 audit --base "$FALLOW_BASE"
         env:
           FALLOW_BASE: ${{ github.event.pull_request.base.ref && format('origin/{0}', github.event.pull_request.base.ref) || '' }}
 

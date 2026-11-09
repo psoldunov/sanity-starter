@@ -20,6 +20,19 @@ export function getSiteUrl(): string {
 }
 
 /**
+ * The absolute URL of one of the site's own routes. The home page is the bare
+ * origin, with no trailing slash, so the canonical tag, the markdown's
+ * canonical `Link` and the structured data all spell every URL the same way.
+ *
+ * @param siteUrl - Origin with no trailing slash, from `getSiteUrl()`.
+ * @param path - Normalised route, e.g. `/` or `/about`.
+ * @returns The absolute URL.
+ */
+export function toAbsoluteUrl(siteUrl: string, path: string): string {
+	return path === '/' ? siteUrl : `${siteUrl}${path}`;
+}
+
+/**
  * Whether a URL points somewhere outside this site.
  *
  * Checked by scheme rather than by prefix: `startsWith('http')` also matches a

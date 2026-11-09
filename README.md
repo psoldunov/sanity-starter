@@ -103,7 +103,7 @@ src/
 │   ├── (studio)/        embedded Sanity Studio at /admin
 │   ├── api/             draft-mode and markdown route handlers
 │   ├── llms.txt/ llms-full.txt/ sitemap.md/ .well-known/   files for AI agents
-│   ├── robots.txt/
+│   ├── robots.ts
 │   └── sitemap.ts
 ├── components/          sections/ layout/ utility/ elements/ blog/
 ├── config/              padding, protected routes, linkables, dynamic sections

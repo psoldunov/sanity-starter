@@ -15,10 +15,10 @@ change here.
 | `/<route>.md`, `/index.md`, `/posts/<slug>.md` | `src/app/api/markdown/[...path]/route.ts`, reached by an `afterFiles` rewrite | `●` |
 | `Accept: text/markdown` on a page or post URL | `redirects()` in `next.config.ts` → 307 to its `.md` URL | — |
 | `/llms.txt`, `/llms-full.txt`, `/sitemap.md` | `src/app/<file>/route.ts`, built by `src/lib/markdown/indexFiles.ts` | `○` |
-| `/robots.txt` with `Content-Signal` | `src/app/robots.txt/route.ts`, values in `src/config/llm.ts` | `○` |
-| `/.well-known/api-catalog` (RFC 9727) + `Link` header on every response | `src/app/.well-known/api-catalog/route.ts`, `headers()` in `next.config.ts` | `○` |
+| `/robots.txt` with `Content-Signal` | `src/app/robots.ts` (the rule's `other` field), values in `src/config/llm.ts` | `○` |
+| `/.well-known/api-catalog` (RFC 9727) + `Link` header on every response | `src/app/.well-known/api-catalog/route.ts`; the header from `headers()` in `next.config.ts`, except on a document's markdown, where the route handler sets it | `○` |
 | `<link rel="alternate" type="text/markdown">` | `alternates.types` in both `generateMetadata`s | — |
-| JSON-LD: Organization + WebSite (home), WebPage subtype (every page), BlogPosting (posts) | `src/lib/structuredData.ts`, rendered by `src/components/utility/JsonLd.tsx` | — |
+| JSON-LD: Organization + WebSite (every route, from the `(site)` layout); WebPage subtype + BreadcrumbList, plus FAQPage with a visible FAQ section (pages); BlogPosting + BreadcrumbList (posts) | `buildSiteJsonLd` / `buildPageJsonLd` / `buildPostJsonLd` in `src/lib/structuredData.ts`, rendered by `src/components/utility/JsonLd.tsx` | — |
 | Per-document editor controls | `geo` object (`src/sanity/schema/objects/geo.ts`) on `page` and `post` | — |
 
 ## Non-negotiables
@@ -41,7 +41,8 @@ change here.
 5. **A page URL never answers with markdown.** Negotiation is a **307** to the `.md` URL. Do not
    turn it into an in-place rewrite, a 308, or a proxy, and do not add `Cache-Control` or `Vary`
    machinery to it. One body per URL is what keeps the layer safe behind a CDN that ignores `Vary`;
-   a 307 without freshness headers is never stored by a shared cache (RFC 9111 §4.2.2).
+   a 307 without freshness headers is never stored by any cache (RFC 9111 §3: 307 is not
+   heuristically cacheable per RFC 9110 §15.1).
 6. **`noIndex` beats everything.** A `noIndex` page or post gets no markdown (404), no index entry,
    no `alternate` link. `geo.llmsListing` only decides *listing*: `unlisted` documents keep their
    markdown and their `alternate` link.
@@ -52,12 +53,17 @@ change here.
    `JSON.stringify` into a `<script>` yourself: `serializeJsonLd` escapes `<`, and that escape is
    the only thing between CMS copy and the page's script context. JSON-LD reads the stega-free
    (`*ForMetadata`) copies of the data.
-9. **`robots.txt` keeps one `User-agent: *` group.** A per-bot group (`User-agent: GPTBot`)
-   replaces the `*` group for that bot and silently drops its `Disallow` lines. Content-signal
-   values live in `CONTENT_SIGNALS` and are a client decision — change them only when told to.
-10. **The markdown is `noindex`.** `llmResponse` sets `X-Robots-Tag: noindex` on every response it
-    builds, and `next.config.ts` gives each `.md` URL a canonical `Link` to its HTML page. Do not
-    add `.md` URLs to `sitemap.xml`.
+9. **`robots.txt` keeps one `User-agent: *` group.** It is `src/app/robots.ts`, not a route
+   handler: `Content-Signal` goes through the rule's `other` field (Next 16.3+). A per-bot rule
+   (`userAgent: 'GPTBot'`) replaces the `*` group for that bot and silently drops its `Disallow`
+   lines. Content-signal values live in `CONTENT_SIGNALS` and are a client decision — change them
+   only when told to.
+10. **The markdown is `noindex`, and only a found document names a canonical.** `llmResponse` sets
+    `X-Robots-Tag: noindex` on every response it builds. The markdown route handler sets the whole
+    `Link` header on a document's markdown — the api-catalog link, plus `rel="canonical"` to the
+    HTML page on a 200 only — and `next.config.ts` leaves those URLs out of its own `Link` rule
+    (`NOT_MARKDOWN_PATH`). Keep exactly one owner per URL: when both set a header, `next start`
+    and Vercel disagree on which wins. Do not add `.md` URLs to `sitemap.xml`.
 
 ## Checklists
 
@@ -67,8 +73,11 @@ The steps in `AGENTS.md` (step 8 is the serializer), plus:
 
 - [ ] A serializer in `SECTION_SERIALIZERS`, written to rule 3. Reuse the helpers in
       `src/lib/markdown/format.ts`; add one there only when a second serializer will need it
-- [ ] Links resolved with `resolveLinkHref` (`src/lib/links.ts`) and made absolute with
-      `absoluteUrl` (`src/lib/markdown/links.ts`); in-page actions dropped
+- [ ] Links resolved and made absolute with `linkUrl` (`src/lib/markdown/links.ts`); a link that
+      can carry a file goes through `resolveLinkHref` with the file URL, then `absoluteUrl`;
+      in-page actions dropped
+- [ ] Question-and-answer content feeds `faqs` in `buildPageJsonLd`, the way `faqSection` does in
+      `src/app/(site)/[[...slug]]/page.tsx` — only when the answers are visible on the page
 - [ ] `/<route>.md` of a page using the section reads well (verification below)
 
 ### Adding a document type with a public URL
@@ -84,7 +93,8 @@ After the steps in `docs/content-model.md` → *Adding a document type*:
 - [ ] A group in `indexGroups` (`src/lib/markdown/indexFiles.ts`), and its documents in
       `/llms-full.txt`
 - [ ] `alternates.types` in its `generateMetadata`, skipped when `noIndex`
-- [ ] A JSON-LD node builder in `src/lib/structuredData.ts` and a `<JsonLd>` on its route
+- [ ] A JSON-LD graph builder in `src/lib/structuredData.ts` (with a `BreadcrumbList`, like
+      `buildPostJsonLd`) and a `<JsonLd data={...} />` on its route
 - [ ] `defineField({ name: 'geo', type: 'geo', group: 'geo', hidden: ({ document }) => Boolean(document?.noIndex) })`
       on the schema
 - [ ] `PAGE_PATH` in `next.config.ts` still matches its URLs, and excludes its index route if that
@@ -103,7 +113,8 @@ After the steps in `docs/content-model.md` → *Adding a document type*:
 ### Adding a page JSON-LD type
 
 - [ ] Add it to `PAGE_SCHEMA_TYPES` (`src/config/llm.ts`) only if it is a `WebPage` subtype that is
-      valid without extra markup. `FAQPage` is not: it needs question-and-answer content
+      valid without extra markup. `FAQPage` is not: `buildPageJsonLd` adds it by itself when a
+      visible FAQ section has answered questions
 
 ## Verification
 
@@ -114,7 +125,9 @@ B=http://localhost:3000
 curl -sI -H 'Accept: text/markdown' $B/about          # 307, location: /about.md
 curl -s  $B/about.md                                   # front matter, then the sections
 curl -sI $B/about.md | grep -iE 'x-robots|link'        # noindex; canonical → /about
+curl -sI $B/nope.md | grep -iE '^HTTP|link'            # 404; api-catalog, no canonical
 curl -s  $B/llms.txt                                   # Pages, Posts, Optional
+curl -s  $B/robots.txt                                 # Content-Signal in the * block
 curl -s  $B/ | grep -o '<script type="application/ld+json">[^<]*'
 ```
 

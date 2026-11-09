@@ -5,10 +5,13 @@ import PostCard from '@/components/blog/PostCard';
 import Container from '@/components/layout/Container';
 import JsonLd from '@/components/utility/JsonLd';
 import SmartImage from '@/components/utility/SmartImage';
+import { SITE_LOCALE } from '@/config';
+import { STATIC_ROUTES } from '@/config/linkables';
 import { formatPostDate } from '@/lib/date';
+import { isDereferencedAsset } from '@/lib/image';
 import { documentPath } from '@/lib/links';
 import { htmlPathToMarkdownPath } from '@/lib/markdown/paths';
-import { postNodes, siteFacts } from '@/lib/structuredData';
+import { buildPostJsonLd } from '@/lib/structuredData';
 import { getSiteUrl } from '@/lib/url';
 import {
 	getPost,
@@ -71,9 +74,48 @@ export async function generateMetadata({
 			publishedTime: post.publishedAt || undefined,
 			images: ogImage ? [getCachedOGImageUrl(ogImage)] : [],
 			siteName: settings?.siteName || undefined,
-			locale: 'en_US',
+			locale: SITE_LOCALE.openGraph,
 		},
 	};
+}
+
+/**
+ * The post's structured data, from the stega-free reads `generateMetadata`
+ * already made — so it costs no second fetch, and no click-to-edit characters
+ * reach the JSON-LD.
+ *
+ * @param props.slug - The post slug.
+ * @returns The post's JSON-LD, or `null` without a post or a site name.
+ */
+async function PostJsonLd({ slug }: { slug: string }) {
+	const [post, settings] = await Promise.all([
+		getPostForMetadata(slug),
+		getSettingsForMetadata(),
+	]);
+	const siteName = settings?.siteName;
+	if (!post || !siteName) return null;
+
+	const cover = post.coverImage?.asset;
+	const indexPath = documentPath('post');
+	const index = STATIC_ROUTES.find((route) => route.path === indexPath);
+
+	return (
+		<JsonLd
+			data={buildPostJsonLd({
+				siteUrl: getSiteUrl(),
+				path: documentPath('post', slug),
+				headline: post.metaTitle || post.title || siteName,
+				description: post.metaDescription || post.excerpt,
+				imageUrl: isDereferencedAsset(cover) ? cover.url : undefined,
+				datePublished: post.publishedAt,
+				dateModified: post._updatedAt,
+				language: SITE_LOCALE.language,
+				siteName,
+				logoUrl: settings.logo?.asset?.url,
+				index: index && { name: index.label, path: index.path },
+			})}
+		/>
+	);
 }
 
 /**
@@ -87,13 +129,7 @@ export default async function PostPage({
 	params: Promise<{ slug: string }>;
 }) {
 	const { slug } = await params;
-	// The JSON-LD reads the stega-free copies, which `generateMetadata` has
-	// already fetched for this request.
-	const [post, metadataPost, settings] = await Promise.all([
-		getPost(slug),
-		getPostForMetadata(slug),
-		getSettingsForMetadata(),
-	]);
+	const post = await getPost(slug);
 
 	if (!post) {
 		notFound();
@@ -104,11 +140,9 @@ export default async function PostPage({
 		params: { slug },
 	});
 
-	const site = siteFacts(getSiteUrl(), settings);
-
 	return (
 		<main id='main'>
-			{site && metadataPost && <JsonLd nodes={postNodes(site, metadataPost)} />}
+			<PostJsonLd slug={slug} />
 			<article>
 				<Container className='max-w-3xl py-16'>
 					<header className='mb-10'>

@@ -15,6 +15,8 @@ const CONTENT_TYPES = {
  * @param body - The document.
  * @param options.format - `markdown` or plain `text`.
  * @param options.status - The HTTP status, 200 unless given.
+ * @param options.link - A `Link` header, for a route `next.config.ts` leaves
+ *   it to (a document's markdown).
  * @returns The response.
  */
 export function llmResponse(
@@ -22,13 +24,15 @@ export function llmResponse(
 	{
 		format,
 		status = 200,
-	}: { format: keyof typeof CONTENT_TYPES; status?: number },
+		link,
+	}: { format: keyof typeof CONTENT_TYPES; status?: number; link?: string },
 ): Response {
 	return new Response(body, {
 		status,
 		headers: {
 			'Content-Type': CONTENT_TYPES[format],
 			'X-Robots-Tag': 'noindex',
+			...(link ? { Link: link } : {}),
 		},
 	});
 }
