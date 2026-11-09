@@ -1,4 +1,5 @@
 import cardsSection from './cardsSection';
+import faqSection from './faqSection';
 import heroSection from './heroSection';
 import imageTextSection from './imageTextSection';
 
@@ -11,6 +12,6 @@ import imageTextSection from './imageTextSection';
  * `defineSection`, and through it the whole `sanity` Studio runtime; anything
  * the public site imports must not reach it.
  */
-const sectionTypes = [heroSection, cardsSection, imageTextSection];
+const sectionTypes = [heroSection, cardsSection, imageTextSection, faqSection];
 
 export default sectionTypes;

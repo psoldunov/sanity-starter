@@ -70,6 +70,29 @@ export function bulletList(items: Text[]): string {
 }
 
 /**
+ * A GFM table. A pipe in a cell is escaped, and a row shorter than the header
+ * is padded, so an unfinished CMS row cannot break the table.
+ *
+ * @param header - The column headings.
+ * @param rows - The body rows, one cell per column.
+ * @returns The table, or an empty string when it has no rows.
+ */
+export function table(header: Text[], rows: Text[][]): string {
+	if (!rows.length) return '';
+
+	const row = (cells: Text[]) =>
+		`| ${header
+			.map((_, index) => inline(cells[index]).replace(/\|/g, '\\|'))
+			.join(' | ')} |`;
+
+	return [
+		row(header),
+		`| ${header.map(() => '---').join(' | ')} |`,
+		...rows.map(row),
+	].join('\n');
+}
+
+/**
  * A link destination as Markdown writes it: wrapped in `<…>` when a space or a
  * parenthesis would otherwise end it early.
  *

@@ -1,5 +1,5 @@
 import type { NextConfig } from 'next';
-import { getSiteUrl } from './src/lib/url';
+import { API_CATALOG_LINK } from './src/config/llm';
 
 /*
  * The markdown layer for AI agents (see `docs/llm.md`). A page's or post's
@@ -10,22 +10,30 @@ import { getSiteUrl } from './src/lib/url';
  * Redirecting rather than answering in place is what keeps this safe behind
  * any cache. Every URL has exactly one body, so a CDN that ignores `Vary` has
  * nothing to mix up. The redirect carries no caching headers (`next start`
- * sends none of the `headers()` below with a redirect), and a 307 without
- * explicit freshness is not stored by a shared cache (RFC 9111 §4.2.2), so a
- * browser is never handed one. The worst a cache can do is give an agent the
- * HTML it would have got anyway.
+ * sends none of the `headers()` below with a redirect), and no cache may
+ * store a 307 without explicit freshness: it is not heuristically cacheable
+ * (RFC 9111 §3, RFC 9110 §15.1), so a browser is never handed one. The
+ * worst a cache can do is give an agent the HTML it would have got anyway.
  */
 
 /** Where the markdown route handler lives. */
 const MARKDOWN_ROUTE = '/api/markdown';
 
 /**
- * A document's markdown URL, e.g. `/about.md`. Anything under `/api/` is an
- * app route, and `/sitemap.md` a file of its own (`src/app/sitemap.md/`), so
- * neither is a document's markdown: neither is rewritten, nor given a
- * canonical.
+ * A document's markdown path without its `.md`, e.g. `about` for `/about.md`.
+ * Anything under `/api/` is an app route, and `/sitemap.md` a file of its own
+ * (`src/app/sitemap.md/`), so neither is a document's markdown.
  */
-const MARKDOWN_PATH = '/:path((?!api/|sitemap\\.md$).+)\\.md';
+const DOCUMENT_PATH = '(?!api/|sitemap\\.md$).+';
+
+/** A document's markdown URL, e.g. `/about.md`: rewritten to the route. */
+const MARKDOWN_PATH = `/:path(${DOCUMENT_PATH})\\.md`;
+
+/**
+ * Every URL except a document's markdown, public or under the route handler's
+ * own path. The route handler writes the `Link` header of those itself.
+ */
+const NOT_MARKDOWN_PATH = `/:path((?!api/markdown/|${DOCUMENT_PATH}\\.md$).*)`;
 
 /**
  * A URL an agent may ask for as markdown: no file extension, and not one of
@@ -61,11 +69,6 @@ const ACCEPTS_MARKDOWN = [
 	},
 ];
 
-const siteUrl = getSiteUrl();
-
-/** Points every response at the RFC 9727 API catalog. */
-const API_CATALOG_LINK = '</.well-known/api-catalog>; rel="api-catalog"';
-
 const nextConfig: NextConfig = {
 	// Stable in Next 16 (no longer `experimental.typedRoutes`). Type-checks every
 	// `<Link href>` against the routes that actually exist, which matters in a
@@ -97,34 +100,17 @@ const nextConfig: NextConfig = {
 						key: 'Content-Security-Policy',
 						value: "frame-ancestors 'self' https://*.sanity.studio",
 					},
-					{ key: 'Link', value: API_CATALOG_LINK },
 				],
 			},
-			// A document's markdown names its HTML page as canonical, so search
-			// engines credit the page, and keeps the api-catalog link. Set here
-			// rather than in the route handler: a header both set is resolved
-			// differently by `next start` (config wins) and by Vercel (the handler
-			// wins), while between two config rules the last match wins everywhere.
-			// So these replace the `Link` above, which is why they repeat the
-			// api-catalog half, and `/index.md` comes last to override the rule
-			// before it.
+			// Points every response at the RFC 9727 API catalog, except a
+			// document's markdown. That route handler sets `Link` itself, because
+			// only it knows whether the document exists: a found document also
+			// names its HTML page as canonical, a 404 does not. A header both set
+			// would be resolved differently by `next start` (config wins) and by
+			// Vercel (the handler wins), so exactly one of them owns it per URL.
 			{
-				source: MARKDOWN_PATH,
-				headers: [
-					{
-						key: 'Link',
-						value: `${API_CATALOG_LINK}, <${siteUrl}/:path>; rel="canonical"`,
-					},
-				],
-			},
-			{
-				source: '/index.md',
-				headers: [
-					{
-						key: 'Link',
-						value: `${API_CATALOG_LINK}, <${siteUrl}>; rel="canonical"`,
-					},
-				],
+				source: NOT_MARKDOWN_PATH,
+				headers: [{ key: 'Link', value: API_CATALOG_LINK }],
 			},
 		];
 	},

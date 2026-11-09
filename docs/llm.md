@@ -30,12 +30,13 @@ An agent can arrive at the markdown in four ways:
 - It requests a page URL with `Accept: text/markdown`. The site answers with a 307 redirect to the
   `.md` URL.
 - It reads the `<link rel="alternate" type="text/markdown">` tag in a page's `<head>`.
-- It fetches `/llms.txt`, which agents increasingly check first.
+- It fetches `/llms.txt`, the index [llmstxt.org](https://llmstxt.org) proposes for agents.
 - It follows the `Link: </.well-known/api-catalog>; rel="api-catalog"` header that every response
   carries.
 
 Each `.md` response is sent with `X-Robots-Tag: noindex` and a `Link` header naming the HTML page
-as canonical, so search engines keep ranking the page and ignore the copy.
+as canonical, so search engines keep ranking the page and ignore the copy. A `.md` URL with no
+document behind it answers 404 and names no canonical.
 
 ## Controls for editors
 
@@ -46,10 +47,10 @@ object.
 | --- | --- |
 | Listing in llms.txt | `Listed` (the default) puts the document under `Pages` or `Posts`. `Optional` moves it under `## Optional`, which llmstxt.org defines as the part an agent may skip when it needs a shorter context. `Not listed` leaves it out of `/llms.txt`, `/llms-full.txt` and `/sitemap.md`. Its markdown is still served. |
 | Summary for AI agents | One or two sentences on what the page answers. Used in `/llms.txt` and the markdown front matter instead of the meta description. A meta description is written to earn a click; this one only has to inform. |
-| Page type | Pages only. The schema.org type the page's JSON-LD declares: `WebPage`, `AboutPage`, `ContactPage` or `CollectionPage`. Posts are always `BlogPosting`. |
+| Page type | Pages only. The schema.org type the page's JSON-LD declares: `WebPage`, `AboutPage`, `ContactPage` or `CollectionPage`. A page with a visible FAQ section is also an `FAQPage`, whatever this says. Posts are always `BlogPosting`. |
 
 "Hide from search engines" (`noIndex`) overrides all three. A hidden page or post gets no markdown,
-no index entry and no alternate link, and the Studio hides the AI tab while it is on.
+no index entry and no alternate link, and the Studio hides the AI fields while it is on.
 
 ## How a document becomes markdown
 
@@ -86,12 +87,10 @@ like this:
 
 ```ts
 // src/lib/markdown/sections.ts
-import { resolveLinkHref } from '@/lib/links';
-import { absoluteUrl } from '@/lib/markdown/links';
+import { linkUrl } from '@/lib/markdown/links';
 
 ctaSection: (section, context) => {
-	const href = section.link ? resolveLinkHref(section.link, undefined) : undefined;
-	const url = href ? absoluteUrl(href, context.siteUrl) : undefined;
+	const url = linkUrl(section.link, context.siteUrl);
 
 	return blocks(
 		heading(2, section.heading),
@@ -101,10 +100,11 @@ ctaSection: (section, context) => {
 },
 ```
 
-The second argument to `resolveLinkHref` is the URL of a file download. A section whose link can
-point at a file needs it. Build it with `getFileAsset` from `@sanity/asset-utils`, because
-`getSanityFileUrl` in `src/sanity/lib/utils.ts` imports the Sanity client, which
-`src/lib/markdown/` must not.
+`linkUrl` resolves a CMS link the way `SmartLink` does and makes it absolute. It skips file
+downloads. A section whose link can point at a file calls `resolveLinkHref` from `@/lib/links`
+with the file's URL as the second argument, then `absoluteUrl`. Build that URL with `getFileAsset`
+from `@sanity/asset-utils`, because `getSanityFileUrl` in `src/sanity/lib/utils.ts` imports the
+Sanity client, which `src/lib/markdown/` must not.
 
 A few habits keep the output useful to a model:
 
@@ -115,9 +115,9 @@ A few habits keep the output useful to a model:
   or a decorative image. The `image` helper already skips an image without alt text.
 - Make every link absolute, because the markdown is read away from the site.
 
-The helpers in `src/lib/markdown/format.ts` cover headings, paragraphs, lists, links, images and
-front matter. If a section needs a table or a code block, add a helper there. The project this
-layer was ported from has both and can be copied.
+The helpers in `src/lib/markdown/format.ts` cover headings, paragraphs, lists, tables, links,
+images and front matter. `table` writes a GFM table and escapes a `|` inside a cell. If a section
+needs something else, such as a code block, add a helper there.
 
 ### A new block type in post content
 
@@ -149,14 +149,28 @@ entries with absolute URLs. `/llms.txt` and `/sitemap.md` pick it up without fur
 
 ### Structured data
 
-The JSON-LD builders are in `src/lib/structuredData.ts`, and `JsonLd` renders them. Every node
-links to the site's `Organization` and `WebSite` by `@id`. To describe something new (a product,
-an event, a person), add a builder that returns a node and render it with `<JsonLd nodes={...} />`
-from the route. Always go through `serializeJsonLd`. It escapes `<`, so CMS copy cannot close the
-`<script>` tag.
+The JSON-LD builders are in `src/lib/structuredData.ts`, and `JsonLd` renders them. Each page
+carries two graphs:
 
-The organization's logo comes from the **Logo** field in Site Settings. Google asks for a raster
-logo of at least 112 pixels, so use a PNG or JPEG there if search features matter to the client.
+| Graph | Built by | Rendered in | Nodes |
+| --- | --- | --- | --- |
+| The site | `buildSiteJsonLd` | `src/app/(site)/layout.tsx`, so every page has it | `Organization` (name, description, logo, `sameAs`) and `WebSite` |
+| A page | `buildPageJsonLd` | `src/app/(site)/[[...slug]]/page.tsx` | The page as the type its editor picked, plus `FAQPage` when a visible FAQ section has answered questions, and a `BreadcrumbList` below the home page |
+| A post | `buildPostJsonLd` | `src/app/(site)/posts/[slug]/page.tsx` | `BlogPosting`, with the organization as author and publisher, and a `BreadcrumbList` through the blog index |
+
+The page and post graphs point at the site's `Organization` and `WebSite` by `@id`. To describe
+something new (a product, an event, a person), add a builder that returns a graph and render it
+with `<JsonLd data={...} />` from the route. Always go through `serializeJsonLd`. It escapes `<`, so
+CMS copy cannot close the `<script>` tag.
+
+Where the site-wide facts come from:
+
+- The organization's logo is the **Logo** field in Site Settings. Google wants it at least 112×112
+  pixels, crawlable, and in a format Google Images supports (SVG is one).
+- `sameAs` lists the **Social Profiles** in Site Settings. They are not shown on the page; they
+  tell search engines and agents which accounts belong to the site.
+- `inLanguage` is `SITE_LOCALE.language` in `src/config/index.ts`, which also sets `<html lang>`
+  and the Open Graph locale. Set it for each project.
 
 ### Content signals
 
@@ -165,8 +179,10 @@ starter opts in to all three signals (`search`, `ai-input`, `ai-train`), because
 GEO wants to be read and cited. Whether a client's content may be used to train models is the
 client's call, so confirm it at the start of each project.
 
-Keep a single `User-agent: *` group in `robots.txt`. A group for one bot, such as
-`User-agent: GPTBot`, replaces the `*` rules for that bot, so it would lose the `Disallow` lines.
+`src/app/robots.ts` writes the line through the rule's `other` field, which Next (16.3 and later)
+copies verbatim into that rule's `User-Agent` block. Keep the single `userAgent: '*'` rule. A rule
+for one bot, such as `GPTBot`, replaces the `*` rules for that bot, so it would lose the
+`Disallow` lines.
 
 ## Caching and hosting
 
@@ -174,8 +190,9 @@ A page URL never returns markdown. It returns HTML, or a 307 redirect for client
 markdown, so each URL has exactly one body. Many CDNs ignore the `Vary` header, and if one URL
 served both HTML and markdown, such a CDN could cache either body and serve it to everyone.
 
-The redirect carries no caching headers, and RFC 9111 does not let a shared cache store a 307
-without them, so browsers never receive it from a cache. The worst a misconfigured cache can do
+The redirect carries no caching headers, and without them no cache may store a 307 (RFC 9111
+§3; a 307 is not heuristically cacheable under RFC 9110 §15.1), so browsers never receive it
+from a cache. The worst a misconfigured cache can do
 is hand an agent the HTML page.
 
 This works the same on Vercel and on a self-hosted `next start`. Do not change the redirect to a
@@ -194,13 +211,16 @@ Run `bun run check` and `bun run build`, and read the route table. Then start th
 B=http://localhost:3000
 curl -sI -H 'Accept: text/markdown' $B/about     # 307, location: /about.md
 curl -s  $B/about.md                              # front matter, then the sections
+curl -sI $B/about.md | grep -i '^link'            # api-catalog, canonical → /about
+curl -sI $B/nope.md | grep -i '^link'             # 404: api-catalog only
 curl -s  $B/llms.txt
+curl -s  $B/robots.txt                            # Content-Signal in the * block
 curl -s  $B/ | grep -o '<script type="application/ld+json">[^<]*'
 ```
 
 Read the markdown the way a model would. If it would confuse someone who never saw the page,
-change the serializer. Tests cover the URL mapping, the listing groups and the JSON-LD escaping;
-the serializer output is checked by reading it.
+change the serializer. Tests cover the URL mapping, the listing groups, the JSON-LD escaping and
+the JSON-LD's breadcrumb and FAQ rules; the serializer output is checked by reading it.
 
 ## Known limits
 

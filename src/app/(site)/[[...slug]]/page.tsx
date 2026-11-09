@@ -2,11 +2,12 @@ import type { Metadata } from 'next';
 import { notFound, permanentRedirect, redirect } from 'next/navigation';
 import JsonLd from '@/components/utility/JsonLd';
 import { SectionRenderer } from '@/components/utility/SectionRenderer';
+import { SITE_LOCALE } from '@/config';
 import { htmlPathToMarkdownPath } from '@/lib/markdown/paths';
 import { resolveRedirect } from '@/lib/redirects';
 import { hasDynamicParams, normalizeSlug, splitSlug } from '@/lib/slug';
-import { pageNodes, siteFacts } from '@/lib/structuredData';
-import { getSiteUrl } from '@/lib/url';
+import { buildPageJsonLd } from '@/lib/structuredData';
+import { getSiteUrl, toAbsoluteUrl } from '@/lib/url';
 import {
 	getPage,
 	getPageForMetadata,
@@ -49,8 +50,7 @@ export async function generateMetadata({
 	}
 
 	const siteUrl = getSiteUrl();
-	const canonicalUrl =
-		currentPath === '/' ? siteUrl : `${siteUrl}${currentPath}`;
+	const canonicalUrl = toAbsoluteUrl(siteUrl, currentPath);
 	const ogImage = page.ogImage ?? settings?.siteOgImage;
 
 	return {
@@ -73,9 +73,55 @@ export async function generateMetadata({
 			siteName: settings?.siteName || undefined,
 			type: 'website',
 			url: canonicalUrl,
-			locale: 'en_US',
+			locale: SITE_LOCALE.openGraph,
 		},
 	};
+}
+
+/**
+ * The page's structured data, from the stega-free reads `generateMetadata`
+ * already made — so it costs no second fetch, and no click-to-edit characters
+ * reach the JSON-LD.
+ *
+ * @param props.slug - Normalised route, e.g. `/about`.
+ * @returns The page's JSON-LD, or `null` without a page or a site name.
+ */
+async function PageJsonLd({ slug }: { slug: string }) {
+	const [page, settings] = await Promise.all([
+		getPageForMetadata(slug),
+		getSettingsForMetadata(),
+	]);
+	const siteName = settings?.siteName;
+	if (!page || !siteName) return null;
+
+	const siteUrl = getSiteUrl();
+	const ogImage = page.ogImage ?? settings.siteOgImage;
+	// Only the questions a visitor can see: a hidden section is not rendered.
+	const faqs = (page.sections ?? []).flatMap((section) =>
+		section._type === 'faqSection' && !section.hidden
+			? (section.items ?? [])
+			: [],
+	);
+
+	return (
+		<JsonLd
+			data={buildPageJsonLd({
+				siteUrl,
+				path: slug,
+				name:
+					slug === '/' ? siteName : page.title || page.metaTitle || siteName,
+				description: page.metaDescription || settings.siteDescription,
+				imageUrl: ogImage
+					? `${siteUrl}${getCachedOGImageUrl(ogImage)}`
+					: undefined,
+				language: SITE_LOCALE.language,
+				homeName: siteName,
+				faqs,
+				type: page.geo?.schemaType,
+				dateModified: page._updatedAt,
+			})}
+		/>
+	);
 }
 
 export default async function PageComponent({
@@ -88,14 +134,7 @@ export default async function PageComponent({
 	const { slug } = await params;
 	const normalizedSlug = normalizeSlug(slug);
 
-	// The JSON-LD reads the stega-free copies: stega characters in a JSON-LD
-	// string would reach search engines and agents verbatim. Both are the same
-	// cached reads `generateMetadata` already made.
-	const [page, metadataPage, settings] = await Promise.all([
-		getPage(normalizedSlug),
-		getPageForMetadata(normalizedSlug),
-		getSettingsForMetadata(),
-	]);
+	const page = await getPage(normalizedSlug);
 
 	if (!page) {
 		const { data: redirectData } = await sanityFetch({
@@ -133,11 +172,9 @@ export default async function PageComponent({
 		? await searchParams
 		: undefined;
 
-	const site = siteFacts(getSiteUrl(), settings);
-
 	return (
 		<main id='main'>
-			{site && metadataPage && <JsonLd nodes={pageNodes(site, metadataPage)} />}
+			<PageJsonLd slug={normalizedSlug} />
 			{page.sections.map((section, index) => (
 				<SectionRenderer
 					key={section._key}

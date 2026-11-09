@@ -18,7 +18,8 @@ deleted, only edited and published.
 | --- | --- | --- | --- | --- |
 | `siteName` | General | string | Yes | Used in `<title>` templates, the Open Graph site name, and as the header fallback when no logo is set. |
 | `siteDescription` | General | text | Yes | Default meta description, inherited by any page that does not set its own. |
-| `logo` | General | image | No | Shown in the header. Falls back to the site name. |
+| `logo` | General | image | No | Shown in the header. Falls back to the site name. Also the organization's logo in the JSON-LD. |
+| `socialLinks` | General | array of URLs | No | The organization's profiles on other sites. Not shown on the page; the JSON-LD lists them as `sameAs`. |
 | `headerMenu` | Navigation | array of `linkWithLabel` | Yes | Main navigation. |
 | `footerNav` | Navigation | array of columns | No | Each column has a `heading` and at least one `linkWithLabel`. |
 | `siteOgImage` | SEO | image | Yes | Default social sharing image for every page and post that does not override it. |
@@ -202,7 +203,7 @@ render pass but do not need a deploy.
 | `linkWithLabel` | same file | The same fields plus `label`. |
 | `internalDestination` | [`objects/internalDestination.ts`](../src/sanity/schema/objects/internalDestination.ts) | Document reference **or** static path. |
 | `geo` | [`objects/geo.ts`](../src/sanity/schema/objects/geo.ts) | Per-document AI controls: `llmsListing`, `llmsSummary`, `schemaType`. |
-| Section objects | [`objects/sections/`](../src/sanity/schema/objects/sections) | `heroSection`, `cardsSection`, `imageTextSection`. |
+| Section objects | [`objects/sections/`](../src/sanity/schema/objects/sections) | `heroSection`, `cardsSection`, `imageTextSection`, `faqSection`. |
 
 Links are covered in [links](./links.md).
 

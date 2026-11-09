@@ -58,6 +58,17 @@
 			"exports": ["useVerticalScroll", "useViewportSize"]
 		},
 		{
+			// Serializer helpers for the sections an adopter adds: a section with a
+			// link reaches for `linkUrl`, one with tabular data for `table`
+			// (docs/llm.md). The template's own sections need neither.
+			"file": "src/lib/markdown/links.ts",
+			"exports": ["linkUrl"]
+		},
+		{
+			"file": "src/lib/markdown/format.ts",
+			"exports": ["table"]
+		},
+		{
 			// The component's own prop vocabulary. A consumer adding a variant
 			// needs these names; the template only ever passes literals.
 			"file": "src/components/elements/Button.tsx",

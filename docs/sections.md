@@ -95,10 +95,17 @@ Your own fields go into a **Content** group automatically.
 ```ts
 import cardsSection from './cardsSection';
 import ctaSection from './ctaSection';
+import faqSection from './faqSection';
 import heroSection from './heroSection';
 import imageTextSection from './imageTextSection';
 
-const sectionTypes = [heroSection, cardsSection, imageTextSection, ctaSection];
+const sectionTypes = [
+	heroSection,
+	cardsSection,
+	imageTextSection,
+	faqSection,
+	ctaSection,
+];
 
 export default sectionTypes;
 ```
@@ -125,7 +132,7 @@ Two rules govern that file, and both are load-bearing:
 
 - **It must never import anything.** Fragments used to sit beside their schema
   definitions, which meant `src/sanity/lib/queries` — and through it
-  `robots.txt`, `sitemap.ts` and every page — transitively imported
+  `robots.ts`, `sitemap.ts` and every page — transitively imported
   `defineSection`, and through *that* the entire `sanity` Studio runtime. The
   whole Studio ended up in the public server and client bundles, and under Next
   16's `react-server` condition it failed the build outright: `sanity` reaches
@@ -154,6 +161,7 @@ Two projection details:
 import {
 	CARDS_SECTION_FRAGMENT,
 	CTA_SECTION_FRAGMENT,
+	FAQ_SECTION_FRAGMENT,
 	HERO_SECTION_FRAGMENT,
 	IMAGE_TEXT_SECTION_FRAGMENT,
 	INTERNAL_DESTINATION_PROJECTION,
@@ -162,17 +170,20 @@ import {
 export const PAGE_QUERY =
 	defineQuery(`*[_type == "page" && route.current == $slug][0]{
   _id,
+  _updatedAt,
   title,
   "route": route.current,
   metaTitle,
   metaDescription,
   noIndex,
   ogImage,
+  geo,
   sections[] {
     ...,
     ${HERO_SECTION_FRAGMENT},
     ${CARDS_SECTION_FRAGMENT},
     ${IMAGE_TEXT_SECTION_FRAGMENT},
+    ${FAQ_SECTION_FRAGMENT},
     ${CTA_SECTION_FRAGMENT}
   }
 }`);
@@ -238,6 +249,7 @@ Rules that are not optional:
 ```ts
 import CardsSection from '@/components/sections/CardsSection';
 import CtaSection from '@/components/sections/CtaSection';
+import FaqSection from '@/components/sections/FaqSection';
 import HeroSection from '@/components/sections/HeroSection';
 import ImageTextSection from '@/components/sections/ImageTextSection';
 
@@ -245,6 +257,7 @@ const sections = {
 	heroSection: HeroSection,
 	cardsSection: CardsSection,
 	imageTextSection: ImageTextSection,
+	faqSection: FaqSection,
 	ctaSection: CtaSection,
 };
 

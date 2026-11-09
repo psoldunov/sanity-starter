@@ -71,6 +71,13 @@ Optional. The canonical origin, used for `metadataBase`, canonical URLs,
 `sitemap.xml` and `robots.txt`. Write it without a trailing slash
 (`https://example.com`); a trailing slash is stripped anyway.
 
+The files for AI agents are built from it too (see [the LLM layer](./llm.md)):
+every URL in `/llms.txt`, `/llms-full.txt` and `/sitemap.md`, the links and
+front matter in each page's markdown, the canonical `Link` header on that
+markdown, and the `@id`s and URLs in the JSON-LD. All of these are written at
+build time, so a site built with the wrong origin serves the wrong one until
+the next build.
+
 Resolution order in [`src/lib/url.ts`](../src/lib/url.ts):
 
 1. `NEXT_PUBLIC_SITE_URL` if set.

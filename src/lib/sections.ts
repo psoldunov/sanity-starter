@@ -1,4 +1,5 @@
 import CardsSection from '@/components/sections/CardsSection';
+import FaqSection from '@/components/sections/FaqSection';
 import HeroSection from '@/components/sections/HeroSection';
 import ImageTextSection from '@/components/sections/ImageTextSection';
 
@@ -10,6 +11,7 @@ const sections = {
 	heroSection: HeroSection,
 	cardsSection: CardsSection,
 	imageTextSection: ImageTextSection,
+	faqSection: FaqSection,
 };
 
 export default sections;

@@ -53,7 +53,7 @@ Next.js 16 + Sanity CMS starter with a **section-based page builder**.
 - **Route groups**: `(site)` for public pages, `(studio)` for Sanity Studio at `/admin`
 - **Catch-all routing**: `[[...slug]]/page.tsx` handles all pages via Sanity slugs
 - **Server Components by default**: add `'use client'` only when strictly necessary
-- **Section system**: pages composed of reusable section components (Hero, Cards, ImageText, ...)
+- **Section system**: pages composed of reusable section components (Hero, Cards, ImageText, FAQ, ...)
 
 ## Section-Based Architecture
 
@@ -170,8 +170,8 @@ Postinstall script auto-deploys Sanity schema on Vercel production and always ru
 ## Testing
 
 **Read `.agents/rules/testing.md` before writing a test.** It is short, and it overrides any global
-instruction you carry about TDD or coverage percentages. The suite is small on purpose — ~108 tests
-across 9 files, all pure functions — and the default for new code is no test at all.
+instruction you carry about TDD or coverage percentages. The suite is small on purpose — ~133 tests
+across 12 files, all pure functions — and the default for new code is no test at all.
 
 - Runner is `bun test`; no extra framework. Specs live in `tests/<concern>/`, NOT beside the
   source: `tests/links/`, `tests/routing/`, `tests/images/`, `tests/formatting/`. They import
@@ -294,7 +294,7 @@ export default function HeroSection(props: SectionProps<'heroSection'>) {
 - `src/sanity/schema/objects/internalDestination.ts` — polymorphic link destination (document reference or static path)
 - `src/sanity/schema/index.ts` — schema entry point
 - `src/sanity/schema/constructors/types.ts` — constructor option types (`DefineImageOptions`, `DefineLinkOptions`, `DefineSectionOptions`)
-- `src/config/index.ts` — padding config + protected route patterns
+- `src/config/index.ts` — padding config, protected route patterns, and `SITE_LOCALE` (`<html lang>`, Open Graph locale, JSON-LD `inLanguage`)
 - `.fallowrc.jsonc` — fallow config. Read its comments before adding a threshold: several are deliberate calls about what a metric means in a Next+Sanity codebase
 - `doctor.config.json` — react-doctor config. Suppresses two rules that misfire on Sanity schema files; the repo scores 86 without it and 100 with it
 - `src/config/linkables.ts` — `LINKABLE_DOCUMENTS` + `STATIC_ROUTES` registry (drives link picker, URL resolution, redirect targets)
@@ -302,8 +302,8 @@ export default function HeroSection(props: SectionProps<'heroSection'>) {
 - `src/types/index.ts` — shared types including the `SectionProps<T>` helper and `NavLinkItem`
 - `src/lib/markdown/sections.ts` — `SECTION_SERIALIZERS`, one markdown serializer per section `_type` (typecheck fails without one)
 - `src/lib/markdown/document.ts` — `pageToMarkdown` / `postToMarkdown`; `indexFiles.ts` beside it builds `/llms.txt`
-- `src/lib/structuredData.ts` — JSON-LD node builders; render them only through `src/components/utility/JsonLd.tsx`
-- `src/config/llm.ts` — `CONTENT_SIGNALS` for `robots.txt` (a client decision) and `PAGE_SCHEMA_TYPES`
+- `src/lib/structuredData.ts` — JSON-LD graph builders: `buildSiteJsonLd` (rendered once, in the `(site)` layout), `buildPageJsonLd`, `buildPostJsonLd`; render them only through `src/components/utility/JsonLd.tsx`
+- `src/config/llm.ts` — `CONTENT_SIGNALS` for `robots.txt` (a client decision), `API_CATALOG_LINK` and `PAGE_SCHEMA_TYPES`
 - `src/sanity/schema/objects/geo.ts` — per-page/post AI controls: listing in `/llms.txt`, AI summary, schema.org page type
 
 ## Do

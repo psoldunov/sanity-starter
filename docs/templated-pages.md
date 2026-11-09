@@ -62,7 +62,10 @@ src/app/(site)/posts/
   pay for a second round trip within the same render.
 - Open Graph type is `article`, with `publishedTime`. The OG image falls back
   `post.ogImage → post.coverImage → settings.siteOgImage`.
-- The cover image is `priority` with an explicit `sizes`.
+- `alternates.types` points agents at the post's markdown, and `PostJsonLd`
+  renders a `BlogPosting` with a breadcrumb through the blog index (see
+  [the LLM layer](./llm.md)).
+- The cover image is `preload` with an explicit `sizes`.
 - Body rendering goes through
   [`PostBody`](../src/components/blog/PostBody.tsx), which maps Portable Text to
   elements — only images and links are overridden; block typography lives in the
@@ -147,7 +150,29 @@ Adding `/events`, backed by an `event` document:
 8. **Static route** — optionally add `{ label: 'Events', path: '/events' }` to
    `STATIC_ROUTES` so editors can link to the index page.
 
-9. `bun run typegen`, then `bun run check`.
+9. **AI agents** — give each event the same treatment posts get, so agents can
+   read it. The full checklist is in
+   [the LLM spec](../.agents/rules/llm.md#adding-a-document-type-with-a-public-url);
+   the parts specific to a templated route:
+
+   - **Markdown.** Add an `eventToMarkdown` in `src/lib/markdown/document.ts`,
+     dispatch `/events/` to it in
+     [`src/app/api/markdown/[...path]/route.ts`](../src/app/api/markdown/[...path]/route.ts),
+     and list every event in that file's `generateStaticParams`. The
+     `alternates.types` link in the event's `generateMetadata` points agents at
+     it.
+   - **`llms.txt`.** Add an `Events` group to `indexGroups` in
+     [`src/lib/markdown/indexFiles.ts`](../src/lib/markdown/indexFiles.ts), and
+     the events' markdown to `/llms-full.txt`.
+   - **Markdown requests for the index.** `PAGE_PATH` in
+     [`next.config.ts`](../next.config.ts) redirects a page URL requested with
+     `Accept: text/markdown` to its `.md` URL. The paginated `/events` index has
+     no markdown, so add `(?!events$)` beside the `(?!posts$)` already there.
+     Otherwise an agent asking for it is redirected to a 404.
+   - **JSON-LD.** Add a builder like `buildPostJsonLd` (an `Event`, with a
+     breadcrumb through `/events`) and render it with `<JsonLd>` on the route.
+
+10. `bun run typegen`, then `bun run check`.
 
 ## Mixing the two
 
