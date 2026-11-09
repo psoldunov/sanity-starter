@@ -26,7 +26,7 @@
 		"analyze": "bunx react-doctor@0.9.18 . && bunx fallow@3.36.0 audit"
 	},
 	"dependencies": {
-		"@portabletext/markdown": "^2.7.1",
+		"@portabletext/markdown": "^2.9.2",
 		"@portabletext/react": "^8.0.1",
 		"@sanity/asset-utils": "^2.3.0",
 		"@sanity/icons": "^5.2.3",
@@ -39,15 +39,15 @@
 		"next-sanity": "^13.4.0",
 		"react": "^19.3.1",
 		"react-dom": "^19.3.1",
-		"sanity": "^6.20.0",
-		"sanity-plugin-media": "^6.6.0",
+		"sanity": "^6.22.0",
+		"sanity-plugin-media": "^6.6.2",
 		"server-only": "^0.0.1",
 		"styled-components": "^6.6.0",
 		"tailwind-merge": "^3.7.0"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.6.3",
-		"@sanity/cli": "^8.24.0",
+		"@sanity/cli": "^8.27.0",
 		"@tailwindcss/postcss": "^4.3.3",
 		"@types/bun": "^1.4.4",
 		"@types/node": "^26.6.5",
