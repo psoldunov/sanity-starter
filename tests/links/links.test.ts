@@ -38,6 +38,16 @@ describe('isSafeInternalPath', () => {
 		expect(isSafeInternalPath('/\\evil.com')).toBe(false);
 	});
 
+	test('rejects paths carrying tab, LF or CR', () => {
+		// Security: browsers strip these characters from a Location URL, so
+		// '/\t/evil.com' is followed as '//evil.com'. Guards the redirect()
+		// call in the catch-all route's redirect handling.
+		expect(isSafeInternalPath('/\t/evil.com')).toBe(false);
+		expect(isSafeInternalPath('/\n/evil.com')).toBe(false);
+		expect(isSafeInternalPath('/\r/evil.com')).toBe(false);
+		expect(isSafeInternalPath('/about\t')).toBe(false);
+	});
+
 	test('rejects absolute URLs and relative paths', () => {
 		expect(isSafeInternalPath('https://evil.com')).toBe(false);
 		expect(isSafeInternalPath('about')).toBe(false);

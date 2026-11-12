@@ -288,7 +288,7 @@ export default function HeroSection(props: SectionProps<'heroSection'>) {
 - `src/lib/slug.ts` — slug normalization and dynamic section detection
 - `src/lib/url.ts` — site URL resolution and link target detection (`getTarget`)
 - `src/lib/links.ts` — internal destination URL resolution (`resolveDestinationUrl`, `hasDestination`) and `documentPath(type, slug?)` for the site's own URLs (canonicals, sitemap, Presentation), read from `LINKABLE_DOCUMENTS`
-- `src/lib/image.ts` — Sanity CDN image URL builder, plus `resolveImageSource` (SVG/GIF pass-through) and `resolveImagePlaceholder`
+- `src/lib/image.ts` — Sanity CDN image URL builder, plus `isPassThroughUrl` (SVG/GIF pass-through), `resolveImageDimensions` and `resolveImagePlaceholder`
 - `src/sanity/lib/fragments.ts` — ALL GROQ projections, including every section fragment. Imports nothing, on purpose
 - `src/sanity/schema/objects/link.ts` — `link` / `linkWithLabel` registered types
 - `src/sanity/schema/objects/internalDestination.ts` — polymorphic link destination (document reference or static path)

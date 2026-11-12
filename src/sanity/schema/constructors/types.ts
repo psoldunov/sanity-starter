@@ -11,12 +11,13 @@ export type DefineImageOptions = {
 	hotspot?: boolean;
 };
 
+/**
+ * Options for `defineLink`. It returns a bare `{ type }` member, so field
+ * properties (`name`, `title`, `group`, …) belong on the surrounding field.
+ */
 export type DefineLinkOptions = {
+	/** Use the `linkWithLabel` variant, which adds a label field. */
 	withLabel?: boolean;
-	name?: string;
-	title?: string;
-	description?: string;
-	group?: string;
 };
 
 export type DefineSectionOptions = {

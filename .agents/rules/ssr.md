@@ -58,7 +58,11 @@ data layer rather than a page.
   `og:description` that corrupts search results.
 - **Project every GROQ query.** An unprojected `*[_type == "page"]` hands a sitemap the entire
   section tree of every page.
-- **Stream slow subtrees** with `loading.tsx` / `<Suspense>` rather than blocking the whole route.
+- **Stream slow subtrees** with `<Suspense>` around the slow part rather than blocking the whole
+  route. **Do not add a route-level `loading.tsx` to a route that can call `notFound()`:** on a
+  dynamic route (`/posts`) the skeleton streams a `200` before `notFound()` runs, so a missing page
+  is a soft 404 (`node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/loading.md`,
+  "Status codes"). `src/app/(site)/loading.tsx` was removed for that reason.
 - **Third-party scripts go through `next/script`** with a deliberate strategy. Each one is an INP
   risk.
 - **Prefer zero client JS.** A component that only renders markup has no reason to be a Client

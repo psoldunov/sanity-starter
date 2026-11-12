@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import {
 	isDereferencedAsset,
+	isPassThroughUrl,
 	resolveAltText,
 	resolveImageDimensions,
 	resolveImagePlaceholder,
 	resolveImageSizes,
-	resolveImageSource,
 } from '@/lib/image';
 
 describe('isDereferencedAsset', () => {
@@ -89,6 +89,38 @@ describe('resolveImageDimensions', () => {
 		).toEqual({ width: 2000, height: 1000 });
 	});
 
+	test('one explicit side derives the other from the aspect ratio', () => {
+		// The bug this guards: the header passes only `height={32}`, and a
+		// 1200×400 logo reserved a 1200×32 box until it loaded (layout shift).
+		const dimensions = { width: 1200, height: 400 };
+		expect(resolveImageDimensions({ height: 32, dimensions })).toEqual({
+			width: 96,
+			height: 32,
+		});
+		expect(resolveImageDimensions({ width: 100, dimensions })).toEqual({
+			width: 100,
+			height: 33,
+		});
+	});
+
+	test('the ratio comes from the cropped image that is served', () => {
+		// `urlFor` serves only the crop rect, so a 2000×1000 asset cropped by
+		// half its width is a square on the page.
+		expect(
+			resolveImageDimensions({
+				height: 64,
+				dimensions: { width: 2000, height: 1000 },
+				crop: { left: 0.25, right: 0.25, top: 0, bottom: 0 },
+			}),
+		).toEqual({ width: 64, height: 64 });
+		expect(
+			resolveImageDimensions({
+				dimensions: { width: 2000, height: 1000 },
+				crop: { left: 0.25, right: 0.25, top: 0, bottom: 0 },
+			}),
+		).toEqual({ width: 1000, height: 1000 });
+	});
+
 	test('tolerates missing metadata', () => {
 		expect(resolveImageDimensions({})).toEqual({
 			width: undefined,
@@ -147,40 +179,21 @@ describe('resolveImagePlaceholder', () => {
 	});
 });
 
-describe('resolveImageSource', () => {
-	test('a raster image gets CDN transformation parameters', () => {
-		const { src, unoptimized } = resolveImageSource(
-			'https://cdn.sanity.io/images/p/d/photo.jpg',
-			{ width: 640, quality: 80 },
+describe('isPassThroughUrl', () => {
+	test('SVG and GIF pass through, raster images do not', () => {
+		// Sanity cannot transform an SVG, and resizing an animated GIF can drop
+		// its animation. The check reads the path, so a crop `rect` query and an
+		// upper-case extension are both still recognised.
+		expect(
+			isPassThroughUrl(
+				'https://cdn.sanity.io/images/p/d/logo.svg?rect=0,0,10,10',
+			),
+		).toBe(true);
+		expect(isPassThroughUrl('https://cdn.sanity.io/images/p/d/loop.GIF')).toBe(
+			true,
 		);
-
-		expect(unoptimized).toBe(false);
-		expect(src).toContain('w=640');
-		expect(src).toContain('q=80');
-	});
-
-	test('an SVG is passed through unoptimised', () => {
-		// Next's optimiser refuses SVG outright unless `dangerouslyAllowSVG` is
-		// set, and it only skips optimisation by itself when `src` ends in
-		// `.svg` — which a transformed Sanity URL does not.
-		const { src, unoptimized } = resolveImageSource(
-			'https://cdn.sanity.io/images/p/d/logo.svg?w=320',
-			{ width: 640 },
+		expect(isPassThroughUrl('https://cdn.sanity.io/images/p/d/photo.jpg')).toBe(
+			false,
 		);
-
-		expect(unoptimized).toBe(true);
-		expect(src).toBe('https://cdn.sanity.io/images/p/d/logo.svg?w=320');
-	});
-
-	test('a GIF is passed through unoptimised', () => {
-		// The optimiser serves an animated GIF unchanged and warns about it, so
-		// the round trip buys nothing and costs a transform.
-		const { src, unoptimized } = resolveImageSource(
-			'https://cdn.sanity.io/images/p/d/loop.GIF',
-			{ width: 640 },
-		);
-
-		expect(unoptimized).toBe(true);
-		expect(src).toBe('https://cdn.sanity.io/images/p/d/loop.GIF');
 	});
 });

@@ -138,9 +138,11 @@ Adding `/events`, backed by an `event` document:
    `generateStaticParams`, `generateMetadata` with a canonical URL, and
    `notFound()` when the document is missing.
 
-6. **Sitemap** — add an `EVENTS_SITEMAP_QUERY` and fold its entries into
+6. **Sitemap** — fold the events from `getIndexableEvents` (the fetcher the
+   LLM checklist in step 9 adds, with `_updatedAt` in its query) into
    [`src/app/sitemap.ts`](../src/app/sitemap.ts), inside the existing
-   `Promise.all`.
+   `Promise.all`. The sitemap and `/llms.txt` read the same query, so they
+   list the same documents.
 
 7. **Presentation** — add a location resolver in
    [`src/sanity/lib/resolve.ts`](../src/sanity/lib/resolve.ts) and, if the route

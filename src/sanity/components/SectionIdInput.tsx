@@ -1,6 +1,6 @@
 'use client';
 
-import { Select, Stack, Text } from '@sanity/ui';
+import { Card, Select, Stack, Text } from '@sanity/ui';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
 	FormField,
@@ -115,12 +115,9 @@ export default function SectionIdInput(props: StringInputProps) {
 							: [];
 					setSectionIds(ids);
 					setLoading(false);
-
-					// Drop a stale anchor when the destination is no longer a page or
-					// the chosen section no longer exists.
-					if (valueRef.current && !ids.includes(valueRef.current)) {
-						clearSectionId();
-					}
+					// No clear here: this fires whenever anyone edits the target page,
+					// so clearing would write into this document just for viewing it
+					// mid-edit. A missing anchor is flagged in the render instead.
 				},
 				error: (error: unknown) => {
 					console.error('Error fetching section IDs:', error);
@@ -134,12 +131,16 @@ export default function SectionIdInput(props: StringInputProps) {
 		};
 	}, [currentPageRef, clearSectionId, documentStore]);
 
+	const isMissing = !loading && !!value && !sectionIds.includes(value);
+
 	const options = useMemo(
 		() => [
 			{ value: '', title: 'No anchor' },
 			...sectionIds.map((id) => ({ value: id, title: id })),
+			// Keep a stale anchor selectable so the select shows what is stored.
+			...(isMissing && value ? [{ value, title: `${value} (missing)` }] : []),
 		],
-		[sectionIds],
+		[sectionIds, isMissing, value],
 	);
 
 	if (!pageRef?._ref || !isPage) {
@@ -173,6 +174,14 @@ export default function SectionIdInput(props: StringInputProps) {
 					<Text size={1} muted>
 						Loading section IDs...
 					</Text>
+				)}
+				{isMissing && (
+					<Card tone='caution' padding={3} radius={2} border>
+						<Text size={1}>
+							Section “{value}” no longer exists on the linked page. Pick
+							another anchor or choose “No anchor”.
+						</Text>
+					</Card>
 				)}
 				{!loading && sectionIds.length === 0 && (
 					<Text size={1} muted>

@@ -1,29 +1,21 @@
 import type { MetadataRoute } from 'next';
 import { documentPath } from '@/lib/links';
 import { getSiteUrl } from '@/lib/url';
-import { sanityFetch } from '@/sanity/lib/live';
-import { PAGES_SITEMAP_QUERY, POSTS_SITEMAP_QUERY } from '@/sanity/lib/queries';
+import { getIndexablePages, getIndexablePosts } from '@/sanity/lib/fetchers';
 
 /**
  * sitemap.xml.
  *
- * Both queries project two fields each and already exclude `noIndex` documents,
- * and they are issued together — they do not depend on each other.
+ * Reads the same stega-free, published, indexable lists as the LLM index
+ * files, so the two can never disagree about which documents exist. The reads
+ * are issued together — they do not depend on each other.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	const baseUrl = getSiteUrl();
 
-	const [{ data: pages }, { data: posts }] = await Promise.all([
-		sanityFetch({
-			query: PAGES_SITEMAP_QUERY,
-			stega: false,
-			perspective: 'published',
-		}),
-		sanityFetch({
-			query: POSTS_SITEMAP_QUERY,
-			stega: false,
-			perspective: 'published',
-		}),
+	const [pages, posts] = await Promise.all([
+		getIndexablePages(),
+		getIndexablePosts(),
 	]);
 
 	const pageEntries: MetadataRoute.Sitemap = pages.flatMap(

@@ -105,6 +105,12 @@ to `defineLive` in [`src/sanity/lib/live.ts`](../src/sanity/lib/live.ts) as both
 Create it at **sanity.io/manage → Project → API → Tokens** with the **Viewer**
 role. Give it nothing more — it only ever reads drafts.
 
+`next build` does not need it: the draft-mode route checks for it per request,
+and the published content the build reads is public. CI passes the
+`SANITY_API_READ_TOKEN` secret to the build when it is set, which a private
+dataset needs. Pull requests from forks receive no secrets, so on a private
+dataset their build runs without read access to it.
+
 Missing it throws:
 
 ```

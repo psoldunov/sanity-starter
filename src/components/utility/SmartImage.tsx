@@ -1,12 +1,13 @@
 import { getImage, type SanityImageSource } from '@sanity/asset-utils';
 import Image from 'next/image';
+import { Image as SanityImage } from 'next-sanity/image';
 import {
 	isDereferencedAsset,
+	isPassThroughUrl,
 	resolveAltText,
 	resolveImageDimensions,
 	resolveImagePlaceholder,
 	resolveImageSizes,
-	resolveImageSource,
 } from '@/lib/image';
 import { dataset, projectId } from '@/sanity/env';
 import urlFor from '@/sanity/lib/utils';
@@ -41,10 +42,15 @@ function warnOnMissingAlt(
  * referenced assets. Dereferenced assets carry Sanity's LQIP — a base64 data
  * URI usable as-is — which becomes the blur placeholder.
  *
- * The resolution rules — alt text, dimensions, `sizes`, whether the optimiser
- * should be skipped — live in `src/lib/image.ts` so they are unit-testable
- * without rendering, and so this component stays a thin mapping onto
- * `next/image`.
+ * Raster images render through `next-sanity/image`, whose loader asks the
+ * Sanity CDN for each srcset width directly. Given both `width` and `height`,
+ * that loader sends `fit=min`, so the CDN crops to that aspect ratio — what
+ * `object-cover` would show in that box anyway, without shipping the rest.
+ *
+ * The resolution rules — alt text, dimensions, `sizes`, whether an image is
+ * passed through untouched — live in `src/lib/image.ts` so they are
+ * unit-testable without rendering, and so this component stays a thin mapping
+ * onto `next/image`.
  *
  * @param props - Sanity image object plus `next/image` options.
  * @returns A `next/image` element pointing at the Sanity CDN, or `null` when
@@ -99,25 +105,29 @@ export default function SmartImage({
 
 	warnOnMissingAlt(resolvedAlt, decorative, resolvedUrl);
 
+	// Vector art and GIFs go to the browser as-is: Sanity cannot transform an
+	// SVG, and resizing an animated GIF can cost it its animation.
+	const unoptimized = isPassThroughUrl(resolvedUrl);
+
 	const dimensions = resolveImageDimensions({
 		width,
 		height,
 		fill,
 		dimensions: imageAsset.metadata?.dimensions,
+		// The crop only reaches the served file through `urlFor`'s `rect`, which
+		// Sanity applies to raster images alone.
+		crop: unoptimized ? undefined : image.crop,
 	});
 
-	// Vector art and GIFs go to the browser as-is: there is nothing to resize
-	// or re-encode in an SVG, which Next's optimiser rejects anyway, and an
-	// animated GIF it would only pass through.
-	const { src, unoptimized } = resolveImageSource(resolvedUrl, {
-		width,
-		height,
-		quality,
-	});
+	// Raster images are resized by the Sanity CDN, once per srcset candidate,
+	// through next-sanity's loader — not by Next's optimiser, which never
+	// enlarges a source, so a URL pre-shrunk to the 1x size served 1x pixels to
+	// a 2x screen.
+	const ImageComponent = unoptimized ? Image : SanityImage;
 
 	return (
-		<Image
-			src={src}
+		<ImageComponent
+			src={resolvedUrl}
 			unoptimized={unoptimized}
 			alt={resolvedAlt}
 			width={dimensions.width}

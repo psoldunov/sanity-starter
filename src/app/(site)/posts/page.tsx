@@ -11,24 +11,44 @@ import { POSTS_COUNT_QUERY, POSTS_PAGE_QUERY } from '@/sanity/lib/queries';
 /** Posts shown per page of the index. */
 const PAGE_SIZE = 9;
 
-export async function generateMetadata(): Promise<Metadata> {
-	const settings = await getSettingsForMetadata();
+/**
+ * Metadata for the blog index. Page 1 is canonical to `/posts`; page N > 1 to
+ * `/posts?page=N`, so each page is its own indexable URL. An invalid `page`
+ * param falls back to `/posts` — the page itself 404s, so nothing is indexed.
+ *
+ * @param props.searchParams - The request's search params.
+ * @returns The page metadata.
+ */
+export async function generateMetadata({
+	searchParams,
+}: {
+	searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}): Promise<Metadata> {
+	const [settings, { page: pageParam }] = await Promise.all([
+		getSettingsForMetadata(),
+		searchParams,
+	]);
+	const page = parsePageParam(pageParam);
+	const base = documentPath('post');
+	const canonical = page !== null && page > 1 ? `${base}?page=${page}` : base;
 
 	return {
 		title: 'Blog',
 		description:
 			settings?.siteDescription || 'Writing, updates and announcements.',
-		alternates: { canonical: documentPath('post') },
+		alternates: { canonical },
 	};
 }
 
 /**
  * Parses the `page` search param into a 1-based page number.
  *
- * Digits only, deliberately. `Number.parseInt` reads `'1e10'` as `1` and stops
- * at the first non-digit, so a lenient parse serves page-one content at an
- * unbounded number of distinct URLs. Anything that is not a plain positive
- * integer is not a page, and the caller turns it into a 404.
+ * Canonical digits only, deliberately: no sign, no exponent, no leading zero.
+ * `Number.parseInt` reads `'1e10'` as `1` and stops at the first non-digit, and
+ * `'01'` is the same page as `'1'`, so a lenient parse serves page-one content
+ * at an unbounded number of distinct URLs. Anything that is not the canonical
+ * spelling of a positive integer is not a page, and the caller turns it into a
+ * 404.
  *
  * @param value - Raw search param value.
  * @returns A page number of at least 1, or `null` when the param is not one.
@@ -37,7 +57,7 @@ function parsePageParam(value: string | string[] | undefined): number | null {
 	const raw = Array.isArray(value) ? value[0] : value;
 	if (raw === undefined) return 1;
 
-	if (!/^\d+$/.test(raw)) return null;
+	if (!/^[1-9]\d*$/.test(raw)) return null;
 
 	const parsed = Number(raw);
 	return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;

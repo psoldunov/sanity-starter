@@ -129,11 +129,6 @@ The section component is not spreading its props into `<Section>`:
 - **The query did not dereference the asset.** Add `asset->` inside the image
   projection in the fragment; without it there is no URL, no dimensions and no
   LQIP placeholder.
-- **The host is not allowed.** `cdn.sanity.io` is configured in
-  [`next.config.ts`](../next.config.ts). Another host needs its own
-  `remotePatterns` entry.
-- **The quality is not allowed.** `qualities` is restricted to 75, 85 and 100.
-  Passing anything else to `SmartImage` fails Next's image optimiser.
 - **The asset is missing.** `SmartImage` returns `null` rather than rendering a
   broken image.
 

@@ -44,8 +44,10 @@ change here.
    a 307 without freshness headers is never stored by any cache (RFC 9111 §3: 307 is not
    heuristically cacheable per RFC 9110 §15.1).
 6. **`noIndex` beats everything.** A `noIndex` page or post gets no markdown (404), no index entry,
-   no `alternate` link. `geo.llmsListing` only decides *listing*: `unlisted` documents keep their
-   markdown and their `alternate` link.
+   no `alternate` link. A page with no sections is likewise a 404 and is left out of the index
+   queries (`count(sections) > 0`); `sitemap.xml` reads those same queries.
+   `geo.llmsListing` only decides *listing*: `unlisted` documents keep their markdown and their
+   `alternate` link.
 7. **Every new route stays static.** Route handlers export `dynamic = 'force-static'`; documents
    get `generateStaticParams`. A build that shows any LLM route as `ƒ` is a regression (see
    [`ssr.md`](./ssr.md)).
