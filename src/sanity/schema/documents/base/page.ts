@@ -40,7 +40,9 @@ const page = defineType({
 			description: 'The URL of the page (e.g. /about)',
 			type: 'slug',
 			group: 'general',
-			validation: (rule) => rule.custom(validatePageRoute),
+			// Required: a page without a route has no URL, and every link to it
+			// would render as `#`. The home page is `/`, not an empty route.
+			validation: (rule) => rule.required().custom(validatePageRoute),
 		},
 		{
 			name: 'sections',

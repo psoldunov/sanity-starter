@@ -20,8 +20,8 @@ needs two strings.
 Every query in
 [`src/sanity/lib/queries/index.ts`](../src/sanity/lib/queries/index.ts) is
 projected down to what its call site reads. `PAGE_ROUTES_QUERY` returns one
-field. `PAGES_SITEMAP_QUERY` returns two and filters `noIndex` in the query
-rather than in the app.
+field. `LLM_PAGES_QUERY` drops `noIndex` pages and pages with no sections in
+the query rather than in the app.
 
 Dereference deliberately, too. `asset->` on an image is what supplies the LQIP
 placeholder and dimensions to `SmartImage`, but only project it where the image
@@ -89,10 +89,21 @@ const [page, settings] = await Promise.all([
 Used in the catch-all page's `generateMetadata`, the site layout (settings and
 `draftMode()` together), the article page, the blog index, and `sitemap.ts`.
 
-## 6. Images: `preload`, `sizes` and the optimiser
+## 6. Images: `preload`, `sizes` and the Sanity loader
 
-[`SmartImage`](../src/components/utility/SmartImage.tsx) wraps `next/image` and
-adds blur placeholders from dereferenced assets. The placeholder is Sanity's
+[`SmartImage`](../src/components/utility/SmartImage.tsx) renders raster images
+through `next-sanity/image`, a `next/image` wrapper whose loader asks the Sanity
+CDN for each srcset width directly (`w`, `auto=format`), so a 2x screen gets 2x
+pixels and each image is compressed once. Do not pre-size the URL and hand it to
+Next's optimiser instead: the optimiser never enlarges its source, so every
+candidate above the pre-sized width comes back at 1x.
+
+Given both `width` and `height`, the loader sends `fit=min` and the CDN crops to
+that aspect ratio. Given one side, `SmartImage` derives the other from the
+ratio of the image actually served, after the Studio crop, so the box reserved
+before load has the right shape.
+
+Dereferenced assets also get a blur placeholder. It is Sanity's
 **LQIP** — a base64 data URI usable as `blurDataURL` as-is, so no decoder ships
 to the browser. `defineImage()` requests `metadata: ['lqip']`; metadata is
 written at upload time, so assets uploaded under a different setting keep what
@@ -108,18 +119,20 @@ they had and simply render without a placeholder.
   image has it; the blog index gives it to the first card on page 1 only.
   Marking several images removes the prioritisation, and Next documents
   `preload` as the wrong tool once more than one is a candidate.
-- **SVG and GIF bypass the optimiser.** `resolveImageSource()` sets
-  `unoptimized` for both: Next refuses SVG without `dangerouslyAllowSVG`, and
-  passes an animated GIF through unchanged while warning about it. It only
-  detects this itself when `src` ends in `.svg`, which a transformed Sanity URL
-  does not — so the check reads the URL path. SVGs also get no blur
-  placeholder, which would otherwise show through their transparency.
+- **SVG and GIF pass through untouched.** `isPassThroughUrl()` renders both
+  with plain `next/image` and `unoptimized`: Sanity cannot transform an SVG,
+  and resizing an animated GIF can reduce it to its first frame. The check
+  reads the URL path, so a crop `rect` query does not hide the extension. SVGs
+  also get no blur placeholder, which would otherwise show through their
+  transparency.
 - **Alt text.** `SmartImage` resolves `alt` prop → media library `altText` →
   `image.caption`, and logs in development when all three are empty. Pass
   `decorative` for genuinely presentational images — that is the only case where
   an empty `alt` is right.
-- **Formats and hosts** are configured in [`next.config.ts`](../next.config.ts):
-  AVIF and WebP, `cdn.sanity.io` only, qualities restricted to 75/85/100.
+- **Formats and hosts** in [`next.config.ts`](../next.config.ts) — AVIF and
+  WebP, `cdn.sanity.io` only, qualities 75/85/100 — apply to the OG images
+  below. `SmartImage` bypasses the optimiser and gets its format from the CDN's
+  `auto=format`.
 - **OG images** go through `getCachedOGImageUrl()`, which builds a 1200×630 JPEG
   on the Sanity CDN and routes it through `/_next/image` so Next caches it.
 

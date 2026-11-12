@@ -32,10 +32,11 @@ const sharedFields = [
 			field: SectionIdField,
 			input: SectionIdInput,
 		},
-		// Only document references can have section anchors; static routes and
-		// empty destinations never do. The input further hides itself (chrome
-		// included) for non-page references (e.g. posts).
-		hidden: ({ parent }) => !parent?.page?.reference?._ref,
+		// Only page references can have section anchors. Hidden for URL and file
+		// links only: with no page reference the input renders nothing (chrome
+		// included) but stays mounted, so clearing the destination still clears
+		// a stale anchor. Hiding it here would unmount the input first.
+		hidden: ({ parent }) => !!parent?.href || !!parent?.file,
 	}),
 	defineField({
 		name: 'href',

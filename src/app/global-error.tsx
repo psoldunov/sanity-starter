@@ -15,15 +15,16 @@ import { useEffect } from 'react';
  * The visitor-facing copy stays generic, like the segment boundary's.
  *
  * @param props.error - The thrown error, with a `digest` in production.
- * @param props.reset - Re-renders the failed tree.
+ * @param props.retry - Re-fetches and re-renders the failed tree (Next 16.3+;
+ * `reset` would only re-render, reusing the data that just failed).
  * @returns The fallback document.
  */
 export default function GlobalError({
 	error,
-	reset,
+	retry,
 }: {
 	error: Error & { digest?: string };
-	reset: () => void;
+	retry: () => void;
 }) {
 	useEffect(() => {
 		// Runs in the browser. In production React ships only `message` and
@@ -77,7 +78,7 @@ export default function GlobalError({
 					)}
 					<button
 						type='button'
-						onClick={reset}
+						onClick={() => retry()}
 						style={{
 							marginTop: '2rem',
 							height: '2.5rem',

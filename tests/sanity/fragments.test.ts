@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import { SECTION_SERIALIZERS } from '@/lib/markdown/sections';
 import * as fragments from '@/sanity/lib/fragments';
 import { PAGE_QUERY } from '@/sanity/lib/queries';
 
@@ -33,6 +34,21 @@ describe('PAGE_QUERY', () => {
 			([, fragment]) =>
 				typeof fragment !== 'string' || !PAGE_QUERY.includes(fragment),
 		).map(([name]) => name);
+
+		expect(missing).toEqual([]);
+	});
+
+	test('has a fragment, interpolated, for every section type', () => {
+		// The checks above only see fragments that exist. A section type with a
+		// serializer but no fragment is never projected at all: the section
+		// renders from raw `_ref`s and no test fails. `SECTION_SERIALIZERS`
+		// (a mapped type over every section `_type`) is the complete list.
+		const missing = Object.keys(SECTION_SERIALIZERS).filter((type) => {
+			// `heroSection` -> `HERO_SECTION_FRAGMENT`
+			const name = `${type.replace(/([A-Z])/g, '_$1').toUpperCase()}_FRAGMENT`;
+			const fragment = (fragments as Record<string, unknown>)[name];
+			return typeof fragment !== 'string' || !PAGE_QUERY.includes(fragment);
+		});
 
 		expect(missing).toEqual([]);
 	});

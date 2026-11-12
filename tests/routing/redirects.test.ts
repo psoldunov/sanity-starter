@@ -74,6 +74,18 @@ describe('appendPreservedSlug', () => {
 		);
 	});
 
+	test('rejects a remainder carrying tab, LF or CR', () => {
+		// SECURITY: browsers strip tab/LF/CR from a Location URL, so `/\t/evil.com`
+		// is followed as `//evil.com`. A `/en` -> `/` prefix redirect turns the
+		// request `/en/%09/evil.com` into exactly that, and the result feeds Next's
+		// `redirect()` in `src/app/(site)/[[...slug]]/page.tsx`. Do not drop the
+		// control-character check in `isSafeInternalPath`.
+		expect(appendPreservedSlug('/', '/en', '/en/\t/evil.com')).toBe(undefined);
+		expect(appendPreservedSlug('/', '/en', '/en/\n/evil.com')).toBe(undefined);
+		expect(appendPreservedSlug('/', '/en', '/en/\r/evil.com')).toBe(undefined);
+		expect(appendPreservedSlug('/x', '/en', '/en/\t/evil.com')).toBe(undefined);
+	});
+
 	test('rejects a path that does not sit beneath the route', () => {
 		expect(appendPreservedSlug('/projects', '/work', '/workshops')).toBe(
 			undefined,

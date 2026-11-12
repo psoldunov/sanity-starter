@@ -6,6 +6,9 @@ import type { DefineLinkOptions } from './types';
  * `LinkWithLabel` for these, so consumers can derive types without coupling
  * to any specific query.
  *
+ * It sets the type only. Give `name`, `title`, `group` and `description` on
+ * the field that spreads it.
+ *
  * @param options - Configuration options
  * @param options.withLabel - Use the `linkWithLabel` variant with a label field (default: false)
  * @returns An object `{ type }` suitable for `array.of[]` or `defineField` spreads

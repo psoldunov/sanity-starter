@@ -1,4 +1,3 @@
-import { orderRankField } from '@sanity/orderable-document-list';
 import { NewspaperIcon } from 'lucide-react';
 import { defineField, defineType } from 'sanity';
 import defineImage from '@/sanity/schema/constructors/defineImage';
@@ -131,7 +130,6 @@ const post = defineType({
 				'How AI agents see this post. Hidden while the post is hidden from search engines, since that keeps it from agents too.',
 			hidden: ({ document }) => Boolean(document?.noIndex),
 		}),
-		orderRankField({ type: 'post' }),
 	],
 	preview: {
 		select: {

@@ -65,12 +65,20 @@ export function hasDestination(
  * a page route and a document `basePath + slug` alike. Studio validation is
  * advisory and is not enforced on API writes, so this is the check that holds.
  *
+ * Tab, LF and CR are rejected anywhere in the path too: the URL parser strips
+ * them, so `/\t/evil.com` becomes `//evil.com` in the browser even though it
+ * passes the prefix checks (a `/en` → `/` prefix redirect can produce it from
+ * `/en/%09/evil.com`).
+ *
  * @param path - The candidate path from an `internalDestination`.
  * @returns `true` when the path is a same-origin absolute path.
  */
 export function isSafeInternalPath(path: string): boolean {
 	return (
-		path.startsWith('/') && !path.startsWith('//') && !path.startsWith('/\\')
+		path.startsWith('/') &&
+		!path.startsWith('//') &&
+		!path.startsWith('/\\') &&
+		!/[\t\n\r]/.test(path)
 	);
 }
 

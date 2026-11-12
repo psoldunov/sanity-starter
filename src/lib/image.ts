@@ -50,16 +50,51 @@ export function resolveAltText({
 	return alt ?? altText ?? caption ?? '';
 }
 
+type ImageCrop = {
+	top?: number;
+	bottom?: number;
+	left?: number;
+	right?: number;
+};
+
 /**
- * Resolves the intrinsic dimensions to hand `next/image`.
+ * Size of the image actually served: the asset's dimensions minus the Studio
+ * crop, rounded exactly as `@sanity/image-url` rounds its `rect` parameter.
+ *
+ * @param dimensions - Intrinsic dimensions from the asset metadata.
+ * @param crop - The image's crop, as fractions of each side.
+ * @returns The served size, or `undefined` when the dimensions are unknown.
+ */
+function servedDimensions(
+	dimensions: { width?: number; height?: number } | null | undefined,
+	crop: ImageCrop | null | undefined,
+): { width: number; height: number } | undefined {
+	const { width, height } = dimensions ?? {};
+	if (!width || !height) return undefined;
+
+	const { top = 0, bottom = 0, left = 0, right = 0 } = crop ?? {};
+	const cropLeft = Math.round(left * width);
+	const cropTop = Math.round(top * height);
+	return {
+		width: Math.round(width - right * width - cropLeft),
+		height: Math.round(height - bottom * height - cropTop),
+	};
+}
+
+/**
+ * Resolves the dimensions to hand `next/image`, which also reserve the image's
+ * box before it loads.
  *
  * A filled image must not receive them — `fill` and `width`/`height` are
- * mutually exclusive — and an explicit prop always beats the asset's own size.
+ * mutually exclusive. An explicit prop always beats the asset's own size, and
+ * when only one side is given the other follows the served image's aspect
+ * ratio, so the reserved box has the right shape and nothing shifts on load.
  *
  * @param options.width - Explicit width prop.
  * @param options.height - Explicit height prop.
  * @param options.fill - Whether the image is rendered with `fill`.
  * @param options.dimensions - Intrinsic dimensions from the asset metadata.
+ * @param options.crop - The Studio crop applied to the served image, if any.
  * @returns The width and height to pass through, each possibly `undefined`.
  */
 export function resolveImageDimensions({
@@ -67,19 +102,39 @@ export function resolveImageDimensions({
 	height,
 	fill,
 	dimensions,
+	crop,
 }: {
 	width?: number;
 	height?: number;
 	fill?: boolean;
 	dimensions?: { width?: number; height?: number } | null;
+	crop?: ImageCrop | null;
 }): { width: number | undefined; height: number | undefined } {
 	if (fill) {
 		return { width: undefined, height: undefined };
 	}
 
+	const served = servedDimensions(dimensions, crop);
+	if (!served) {
+		return { width, height };
+	}
+
+	if (width !== undefined && height === undefined) {
+		return {
+			width,
+			height: Math.round((width * served.height) / served.width),
+		};
+	}
+	if (height !== undefined && width === undefined) {
+		return {
+			width: Math.round((height * served.width) / served.height),
+			height,
+		};
+	}
+
 	return {
-		width: width ?? dimensions?.width,
-		height: height ?? dimensions?.height,
+		width: width ?? served.width,
+		height: height ?? served.height,
 	};
 }
 
@@ -147,92 +202,17 @@ export function resolveImagePlaceholder(
 }
 
 /**
- * Whether an image URL points at a file Next's optimiser should not touch: an
- * SVG or a GIF.
+ * Whether an image URL points at a file that must reach the browser untouched:
+ * an SVG or a GIF.
  *
- * SVG is vector, so there is nothing to resize or re-encode, and Next refuses
- * it outright unless `dangerouslyAllowSVG` is set. A GIF is here for its
- * animation, which the optimiser passes through unchanged while warning about
- * it — so the round trip buys nothing.
- *
- * Next already forces `unoptimized` for SVG on its own (`get-img-props`
- * strips the query before testing the extension, so a transformed Sanity URL
- * is still recognised). GIF is the case it does not cover. SVG stays listed
- * here so the decision is explicit and testable in one place, and so the CDN
- * transformation parameters are not appended to a URL that ignores them.
+ * Sanity's image pipeline does not transform SVG at all, and Next's optimiser
+ * refuses it unless `dangerouslyAllowSVG` is set. A GIF is here for its
+ * animation, which a resize can reduce to the first frame — so neither gets
+ * the CDN loader's `w`/`h` parameters, and both render `unoptimized`.
  *
  * @param url - An absolute image URL.
  * @returns `true` when the URL's path ends in `.svg` or `.gif`.
  */
-function isPassThroughUrl(url: string): boolean {
+export function isPassThroughUrl(url: string): boolean {
 	return isSvgUrl(url) || getImagePath(url).endsWith('.gif');
-}
-
-/**
- * Chooses what `next/image` is handed for a Sanity image URL: raster images get
- * the CDN transformation parameters, vector art and GIFs go through untouched
- * and unoptimised (see `isPassThroughUrl`).
- *
- * @param url - The resolved Sanity image URL.
- * @param options - Width, height and quality for raster transformations.
- * @returns The `src` to render and whether to skip Next's optimiser.
- */
-export function resolveImageSource(
-	url: string,
-	options: { width?: number; height?: number; quality?: number },
-): { src: string; unoptimized: boolean } {
-	if (isPassThroughUrl(url)) {
-		return { src: url, unoptimized: true };
-	}
-
-	return { src: buildOptimizedImageUrl(url, options), unoptimized: false };
-}
-
-/**
- * Builds an optimized Sanity CDN image URL with transformation query parameters.
- *
- * Adds width (`w`), height (`h`), and quality (`q`) query parameters to a Sanity image URL
- * for on-the-fly image transformations via Sanity's CDN.
- *
- * @param url - The base Sanity image URL to optimize (typically from `image.asset.url`)
- * @param options - Configuration options for the optimized URL
- * @param options.width - Optional width in pixels (adds `w` query parameter)
- * @param options.height - Optional height in pixels (adds `h` query parameter)
- * @param options.quality - Image quality from 1-100 (adds `q` query parameter, defaults to 75)
- * @returns The optimized Sanity CDN URL string with transformation query parameters appended
- * @throws {TypeError} When `url` is not an absolute URL.
- */
-export function buildOptimizedImageUrl(
-	url: string,
-	{
-		width,
-		height,
-		quality = 75,
-	}: {
-		width?: number;
-		height?: number;
-		quality?: number;
-	},
-): string {
-	let urlObject: URL;
-
-	// `new URL` throws a bare "Invalid URL" that names nothing. Which asset is
-	// the only thing worth knowing when this fires from inside a page render.
-	try {
-		urlObject = new URL(url);
-	} catch (error) {
-		throw new TypeError(`Invalid image URL: ${url}`, { cause: error });
-	}
-
-	if (width) {
-		urlObject.searchParams.set('w', width.toString());
-	}
-	if (height) {
-		urlObject.searchParams.set('h', height.toString());
-	}
-	if (quality !== undefined) {
-		urlObject.searchParams.set('q', quality.toString());
-	}
-
-	return urlObject.toString();
 }

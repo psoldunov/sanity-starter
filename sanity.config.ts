@@ -99,13 +99,18 @@ export default defineConfig({
 							context,
 						}),
 						S.divider(),
-						orderableDocumentListDeskItem({
-							title: 'Posts',
-							type: 'post',
-							icon: NewspaperIcon,
-							S,
-							context,
-						}),
+						// Not orderable: every site listing sorts posts by `publishedAt`,
+						// so a drag order here would be ignored. The list matches it.
+						S.documentTypeListItem('post')
+							.title('Posts')
+							.icon(NewspaperIcon)
+							.child(
+								S.documentTypeList('post')
+									.title('Posts')
+									.defaultOrdering([
+										{ field: 'publishedAt', direction: 'desc' },
+									]),
+							),
 					]);
 			},
 		}),

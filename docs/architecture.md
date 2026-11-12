@@ -13,7 +13,6 @@ separate root layouts:
 src/app/
 ├── (site)/                      public site
 │   ├── layout.tsx               html/body, header, footer, SanityLive, draft-mode chrome
-│   ├── loading.tsx              route-level skeleton
 │   ├── error.tsx                error boundary ('use client')
 │   ├── not-found.tsx            404
 │   ├── [[...slug]]/page.tsx     catch-all: every CMS page
@@ -160,8 +159,9 @@ fetcher when the same read happens in both `generateMetadata` and the component.
 [`sanity.config.ts`](../sanity.config.ts) at the repo root, mounted at
 `/admin`:
 
-- **Structure**: Settings (singleton) · Pages · Redirects · Posts, the last three
-  as orderable lists from `@sanity/orderable-document-list`.
+- **Structure**: Settings (singleton) · Pages · Redirects · Posts. Pages and
+  Redirects are orderable lists from `@sanity/orderable-document-list`; Posts is
+  a plain list sorted newest `publishedAt` first, the order the site uses.
 - **Singletons**: `settings` cannot be created, deleted or duplicated — only
   publish, discard and restore survive.
 - **Read-only types**: add a `_type` to `readOnlyTypes` to strip delete,

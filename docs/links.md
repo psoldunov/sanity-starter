@@ -19,7 +19,9 @@ produce an ambiguous link. Two extra fields:
 
 - `sectionId` — an anchor appended to a **page** reference (`/about#pricing`).
   Hidden unless the destination is a document reference; the custom input hides
-  itself entirely for non-page references such as posts.
+  itself entirely for non-page references such as posts. Choosing a different
+  destination clears it. If the linked page drops that section, the input keeps
+  the stored anchor and shows a warning, so the editor decides what replaces it.
 - `rel` — `noopener` or `noopener noreferrer`, offered only for `http(s)` URLs.
 
 Source: [`src/sanity/schema/objects/link.ts`](../src/sanity/schema/objects/link.ts).
@@ -41,6 +43,13 @@ selectable without touching this file. The Studio picker
 ([`DestinationReferenceInput`](../src/sanity/components/DestinationReferenceInput.tsx),
 [`DestinationField`](../src/sanity/components/DestinationField.tsx)) writes one or
 the other, never both.
+
+The picker can link to a document that has never been published. It then writes
+the reference the way Studio's own reference input does: weak, with
+`_strengthenOnPublish`, so the linking document's draft never holds a strong
+reference to a document that does not exist yet. Publishing the linking
+document turns it into a strong reference, so publish the target first. A target
+that already has a published version gets a plain strong reference.
 
 The single source of truth for "this holds a destination" is `hasDestination()`
 in [`src/lib/links.ts`](../src/lib/links.ts). Schema `hidden` predicates and

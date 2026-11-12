@@ -65,39 +65,41 @@ function sectionImage(field: ImageField | undefined): string {
  * The serializer for every section `_type`. A mapped type over the union, so
  * a section added to `PAGE_QUERY` without an entry here fails typecheck —
  * which is the point: a section with no serializer is a section agents never
- * see.
+ * see. Exported so `tests/sanity/fragments.test.ts` can check that each key has
+ * a GROQ fragment.
  */
-const SECTION_SERIALIZERS: { [T in SectionType]: SectionSerializer<T> } = {
-	heroSection: (section) =>
-		blocks(
-			heading(1, section.heading),
-			prose(section.paragraph),
-			sectionImage(section.image),
-		),
-
-	cardsSection: (section) =>
-		blocks(
-			heading(2, section.heading),
-			(section.cards ?? []).map((card) =>
-				blocks(heading(3, card.heading), prose(card.paragraph)),
+export const SECTION_SERIALIZERS: { [T in SectionType]: SectionSerializer<T> } =
+	{
+		heroSection: (section) =>
+			blocks(
+				heading(1, section.heading),
+				prose(section.paragraph),
+				sectionImage(section.image),
 			),
-		),
 
-	imageTextSection: (section) =>
-		blocks(
-			heading(2, section.heading),
-			prose(section.paragraph),
-			sectionImage(section.image),
-		),
-
-	faqSection: (section) =>
-		blocks(
-			heading(2, section.heading),
-			(section.items ?? []).map((item) =>
-				blocks(heading(3, item.question), prose(item.answer)),
+		cardsSection: (section) =>
+			blocks(
+				heading(2, section.heading),
+				(section.cards ?? []).map((card) =>
+					blocks(heading(3, card.heading), prose(card.paragraph)),
+				),
 			),
-		),
-};
+
+		imageTextSection: (section) =>
+			blocks(
+				heading(2, section.heading),
+				prose(section.paragraph),
+				sectionImage(section.image),
+			),
+
+		faqSection: (section) =>
+			blocks(
+				heading(2, section.heading),
+				(section.items ?? []).map((item) =>
+					blocks(heading(3, item.question), prose(item.answer)),
+				),
+			),
+	};
 
 /**
  * One section as markdown.

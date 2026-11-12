@@ -51,7 +51,7 @@ export async function GET() {
 	};
 	const documents = [
 		...fullPages.flatMap((page) =>
-			page?.sections?.length ? [pageToMarkdown(page, context)] : [],
+			page ? [pageToMarkdown(page, context)] : [],
 		),
 		...fullPosts.flatMap((post) =>
 			post?.slug ? [postToMarkdown(post, context)] : [],

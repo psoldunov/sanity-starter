@@ -46,7 +46,7 @@ A page-builder page. Everything the catch-all route `/[[...slug]]` serves is a
 | Field | Group | Type | Required | Purpose |
 | --- | --- | --- | --- | --- |
 | `title` | General | string | No | Internal label and metadata fallback. |
-| `route` | General | slug | Validated | The URL, written with a leading slash: `/`, `/about`, `/about/team`. |
+| `route` | General | slug | Yes, validated | The URL, written with a leading slash: `/`, `/about`, `/about/team`. A page without one has no URL, so links to it would render as `#`. |
 | `sections` | Content | array of section objects | Yes, min 1 | The page body. Every registered section type is offered here. |
 | `metaTitle` | SEO | string | No | Overrides `title` in search results. |
 | `metaDescription` | SEO | text | No | Overrides the site description. |
@@ -75,8 +75,8 @@ that tag. `noIndex` pages are also left out of `sitemap.xml`, and get no
 markdown and no `/llms.txt` entry.
 
 **Developer notes.** `PAGE_QUERY` fetches one page plus its section tree;
-`PAGE_ROUTES_QUERY` feeds `generateStaticParams`; `PAGES_SITEMAP_QUERY` feeds
-the sitemap; `LLM_PAGES_QUERY` feeds the markdown routes and `/llms.txt`. Sections are rendered
+`PAGE_ROUTES_QUERY` feeds `generateStaticParams`; `LLM_PAGES_QUERY` feeds the
+sitemap, the markdown routes and `/llms.txt`. Sections are rendered
 by `SectionRenderer` — see [sections](./sections.md).
 
 ## Post
@@ -100,15 +100,17 @@ builder — the deliberate counterpart to `page`. See
 | `ogImage` | SEO | image | No | Overrides `coverImage` for social previews. |
 | `noIndex` | SEO | boolean | No | Keeps the post out of search indexes. |
 | `geo` | AI & LLMs | `geo` object | No | Listing in `/llms.txt` and a summary for agents. Hidden while `noIndex` is on. |
-| `orderRank` | — | hidden | — | Drag-to-order position in the Studio list. |
+
+Posts have no drag order. The Studio lists them newest `publishedAt` first, the
+order the site uses.
 
 Everything beyond title, slug and content is optional on purpose, so an existing
 dataset keeps validating after an upgrade and the templates degrade gracefully.
 
 **Developer notes.** Queries: `POSTS_PAGE_QUERY` (paged index, sliced in GROQ),
 `POSTS_COUNT_QUERY`, `POST_QUERY` (single article with body), `POST_SLUGS_QUERY`
-(`generateStaticParams`), `POSTS_SITEMAP_QUERY`, `RELATED_POSTS_QUERY`,
-`LLM_POSTS_QUERY` (the markdown routes and `/llms.txt`).
+(`generateStaticParams`), `RELATED_POSTS_QUERY`, `LLM_POSTS_QUERY` (the
+sitemap, the markdown routes and `/llms.txt`).
 Ordering everywhere is `coalesce(publishedAt, _createdAt) desc`, so a post with
 no date still lands sensibly. Body rendering happens in
 [`src/components/blog/PostBody.tsx`](../src/components/blog/PostBody.tsx) via

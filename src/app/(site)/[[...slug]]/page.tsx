@@ -172,6 +172,12 @@ export default async function PageComponent({
 		? await searchParams
 		: undefined;
 
+	// A hidden section renders as null outside draft mode, so it must not take
+	// the first-section slot (and its LCP preload) from the first visible one.
+	const firstVisibleIndex = page.sections.findIndex(
+		(section) => !section.hidden,
+	);
+
 	return (
 		<main id='main'>
 			<PageJsonLd slug={normalizedSlug} />
@@ -180,7 +186,7 @@ export default async function PageComponent({
 					key={section._key}
 					section={section}
 					searchParams={searchParamsObj}
-					isFirstSection={index === 0}
+					isFirstSection={index === firstVisibleIndex}
 				/>
 			))}
 		</main>

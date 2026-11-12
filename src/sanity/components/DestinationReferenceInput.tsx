@@ -20,6 +20,8 @@ type DestinationOption = {
 	title: string;
 	subtitle: string;
 	typeLabel: string;
+	/** Document `_type`; needed for `_strengthenOnPublish`. Unset for static routes. */
+	type?: string;
 };
 
 const LINKABLE_TYPE_PARAMS = [
@@ -59,19 +61,27 @@ const typeLabelSelect = [
 	),
 ].join(',\n');
 
-// `orderRank` is the drag order of the orderable types (pages). A type that is
-// not orderable — `post` — has no rank, so every one of its documents ties and
-// the picker lists them in whatever order the Content Lake returns. Falling
-// through to `_createdAt desc` puts the newest first, which is the order the
-// Studio list and the blog queries already use. A type with neither field
-// still sorts deterministically by `_id`.
-const DESTINATION_QUERY = `*[_type in $types]|order(_type asc, orderRank asc, _createdAt desc, _id asc){
+// `orderRank` is the drag order of pages, the one orderable linkable type. It
+// is read for pages only: posts written before post ordering was removed still
+// store a stale rank. For every other type the key is null and the next one
+// decides: `coalesce(publishedAt, _createdAt) desc`, newest first, the order
+// of the blog queries. `_id` keeps any remaining tie deterministic.
+const DESTINATION_QUERY = `*[_type in $types]|order(_type asc, select(_type == "page" => orderRank) asc, coalesce(publishedAt, _createdAt) desc, _id asc){
 	"value": _id,
 	"kind": "document",
+	"type": _type,
 	"title": select(${titleSelect}),
 	"subtitle": select(${subtitleSelect}),
 	"typeLabel": select(${typeLabelSelect})
 }[0...${MAX_DESTINATION_OPTIONS}]`;
+
+/**
+ * Ids of the linkable documents that have a published version. Read through
+ * the `published` perspective because the `drafts` perspective returns a
+ * draft-only document "as if published": neither `_id` nor `_originalId`
+ * there tells a never-published document from an edited published one.
+ */
+const PUBLISHED_IDS_QUERY = '*[_type in $types]._id';
 
 /**
  * Static-route options derived from config. Constant — they never change at
@@ -132,6 +142,8 @@ export default function DestinationReferenceInput(
 		[],
 	);
 	const [loading, setLoading] = useState(true);
+	// `undefined` until the first result arrives; `null` if the query failed.
+	const [publishedIds, setPublishedIds] = useState<Set<string> | null>();
 
 	useEffect(() => {
 		// `listenQuery` re-emits the full result whenever a matching document
@@ -155,8 +167,27 @@ export default function DestinationReferenceInput(
 				},
 			});
 
+		const publishedSubscription = documentStore
+			.listenQuery(
+				PUBLISHED_IDS_QUERY,
+				{ types: LINKABLE_TYPE_PARAMS },
+				{ perspective: 'published', apiVersion },
+			)
+			.subscribe({
+				next: (result: string[]) => {
+					setPublishedIds(new Set(result ?? []));
+				},
+				error: (error: unknown) => {
+					console.error('Error watching published destinations:', error);
+					// Publish state unknown: fall back to the strong reference the
+					// picker has always written.
+					setPublishedIds(null);
+				},
+			});
+
 		return () => {
 			subscription.unsubscribe();
+			publishedSubscription.unsubscribe();
 		};
 	}, [documentStore]);
 
@@ -203,14 +234,23 @@ export default function DestinationReferenceInput(
 				return;
 			}
 
-			onChange(
-				set({
-					_type: 'internalDestination',
-					reference: { _type: 'reference', _ref: option.value },
-				}),
-			);
+			// Mirror Studio's own reference input: a target with no published
+			// version gets a weak reference that Sanity's publish action turns
+			// strong (`_strengthenOnPublish`), so the draft never holds a strong
+			// reference to a document that does not exist yet.
+			const isPublished = publishedIds?.has(option.value) ?? true;
+			const reference = isPublished
+				? { _type: 'reference', _ref: option.value }
+				: {
+						_type: 'reference',
+						_ref: option.value,
+						_weak: true,
+						_strengthenOnPublish: { type: option.type },
+					};
+
+			onChange(set({ _type: 'internalDestination', reference }));
 		},
-		[options, onChange],
+		[options, onChange, publishedIds],
 	);
 
 	const handleClear = useCallback(() => {
@@ -269,7 +309,7 @@ export default function DestinationReferenceInput(
 			id={id || 'internal-destination'}
 			options={options}
 			value=''
-			loading={loading}
+			loading={loading || publishedIds === undefined}
 			openButton
 			openOnFocus
 			placeholder='Search pages, posts and routes…'

@@ -1,3 +1,4 @@
+import { STATIC_ROUTES } from '@/config/linkables';
 import { API_CATALOG_LINK } from '@/config/llm';
 import { documentPath } from '@/lib/links';
 import { pageToMarkdown, postToMarkdown } from '@/lib/markdown/document';
@@ -85,12 +86,16 @@ async function markdownRedirect(
 	if (!match) return undefined;
 
 	// A section anchor or query string has no meaning in the markdown.
-	const [target] = match.url.split(/[?#]/);
+	const [target = ''] = match.url.split(/[?#]/);
+
+	// A static route (`/posts`) has no markdown, so its `.md` URL is a 404:
+	// send the agent to the HTML page instead.
+	const isStaticRoute = STATIC_ROUTES.some(({ path }) => path === target);
 
 	return new Response(null, {
 		status: match.statusCode,
 		headers: {
-			Location: htmlPathToMarkdownPath(target || '/'),
+			Location: isStaticRoute ? target : htmlPathToMarkdownPath(target || '/'),
 			Link: API_CATALOG_LINK,
 		},
 	});
@@ -147,7 +152,6 @@ export async function GET(
 
 	if (!page) return (await markdownRedirect(htmlPath)) ?? notFound();
 	if (page.noIndex || !page.sections?.length) return notFound();
-
 	return documentResponse(
 		pageToMarkdown(page, {
 			siteUrl: getSiteUrl(),

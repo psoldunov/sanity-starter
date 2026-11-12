@@ -23,9 +23,8 @@ export default function CardsSection(props: SectionProps<'cardsSection'>) {
 							{!!card.image && (
 								<SmartImage
 									image={card.image}
-									// Explicit dimensions: without them SmartImage requests the
-									// asset's intrinsic size, so a 2000px upload was downloaded
-									// in full to fill a 64px box.
+									// Both sides set: the CDN crops to a square, so the file
+									// matches the box `object-cover` fills, at 1x or 2x.
 									width={64}
 									height={64}
 									sizes='64px'

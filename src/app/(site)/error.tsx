@@ -7,21 +7,22 @@ import Container from '@/components/layout/Container';
 /**
  * Error boundary for the public site.
  *
- * Must be a Client Component — React needs `reset` to run in the browser. The
+ * Must be a Client Component — React needs `retry` to run in the browser. The
  * message shown to visitors is deliberately generic: in production React ships
  * only `message` and `digest` to the client, so the stack never reaches the
  * page.
  *
  * @param props.error - The thrown error, with a `digest` in production.
- * @param props.reset - Re-renders the failed segment.
+ * @param props.retry - Re-fetches and re-renders the failed segment (Next 16.3+;
+ * `reset` would only re-render, reusing the data that just failed).
  * @returns The error view.
  */
 export default function SiteError({
 	error,
-	reset,
+	retry,
 }: {
 	error: Error & { digest?: string };
-	reset: () => void;
+	retry: () => void;
 }) {
 	useEffect(() => {
 		// Runs in the browser, not on the server — this is a Client Component.
@@ -44,7 +45,7 @@ export default function SiteError({
 						Reference: {error.digest}
 					</p>
 				)}
-				<Button type='button' onClick={reset} className='mt-8'>
+				<Button type='button' onClick={() => retry()} className='mt-8'>
 					Try again
 				</Button>
 			</Container>

@@ -116,8 +116,8 @@ A few habits keep the output useful to a model:
 - Make every link absolute, because the markdown is read away from the site.
 
 The helpers in `src/lib/markdown/format.ts` cover headings, paragraphs, lists, tables, links,
-images and front matter. `table` writes a GFM table and escapes a `|` inside a cell. If a section
-needs something else, such as a code block, add a helper there.
+images and front matter. If a section needs something else, such as a table or a code block, add a
+helper there.
 
 ### A new block type in post content
 
@@ -228,6 +228,11 @@ the JSON-LD's breadcrumb and FAQ rules; the serializer output is checked by read
   `text/markdown;q=0, text/html` still gets the redirect. Agents send `text/markdown` first, so
   this has not mattered. Parse the header in a proxy if it ever does.
 - An agent that asks a `noIndex` page for markdown is redirected to a 404.
+- A page with no sections returns 404 as HTML and as markdown, so `sitemap.xml`, `/llms.txt`,
+  `/llms-full.txt` and `/sitemap.md` leave it out. `sitemap.xml` reads the same
+  `getIndexablePages` and `getIndexablePosts` as the LLM files.
+- A CMS redirect to a static route (for example `/blog` to `/posts`) answers the `.md` request with
+  the HTML path, because the static route has no markdown.
 - The blog index at `/posts` has no markdown. It is paginated, and the `Posts` group in
   `/llms.txt` lists the same documents.
 - The canonical URLs in the markdown come from `NEXT_PUBLIC_SITE_URL` (or Vercel's production

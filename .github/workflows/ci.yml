@@ -164,10 +164,10 @@ jobs:
               echo '`bun run typegen` cannot produce `src/sanity/types/sanity.types.ts`'
               echo 'and everything downstream of it is skipped.'
               echo
-              echo 'Set the `NEXT_PUBLIC_SANITY_PROJECT_ID` variable and the'
-              echo '`SANITY_API_READ_TOKEN` secret to get full coverage. Forks'
-              echo 'never receive secrets, so their PRs stop at lint, tests and'
-              echo 'the static analysers by design.'
+              echo 'Set the `NEXT_PUBLIC_SANITY_PROJECT_ID` variable to get full'
+              echo 'coverage. The `SANITY_API_READ_TOKEN` secret is optional: the'
+              echo 'build reads published content only, and needs the token just'
+              echo 'when the dataset is private.'
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
@@ -177,31 +177,11 @@ jobs:
         if: env.NEXT_PUBLIC_SANITY_PROJECT_ID != ''
         run: bun run typegen
 
-      # A fork's pull request gets `vars` but never `secrets`, so the read token
-      # can be absent while typegen above still succeeds. Record whether it is
-      # there without putting the value in workflow-level env, where every step
-      # would see it.
-      - name: Check for Sanity read token
-        id: token
-        env:
-          SANITY_API_READ_TOKEN: ${{ secrets.SANITY_API_READ_TOKEN }}
-        run: |
-          if [ -n "$SANITY_API_READ_TOKEN" ]; then
-            echo 'present=true' >> "$GITHUB_OUTPUT"
-          else
-            echo 'present=false' >> "$GITHUB_OUTPUT"
-            echo 'No SANITY_API_READ_TOKEN — skipping build, typechecking only.' >> "$GITHUB_STEP_SUMMARY"
-          fi
-
       # `next build` type-checks the whole project itself: it runs
       # `tsc --project tsconfig.json --noEmit` over everything tsconfig.json
       # selects, tests included (`runTypeCheckCli` in
-      # node_modules/next/dist/lib/typescript/, next@16.4.3). Running
-      # `bun run typecheck` before it would check the same program twice, so the
-      # standalone typecheck runs only when the build does not.
-      - name: Typecheck
-        if: steps.typegen.outcome == 'success' && steps.token.outputs.present != 'true'
-        run: bun run typecheck
+      # node_modules/next/dist/lib/typescript/, next@16.4.3). So there is no
+      # separate `bun run typecheck` step: it would check the same program twice.
 
       # `.next/cache` holds Turbopack's build cache (on by default for
       # `next build` since 16.3) and the `.tsbuildinfo` of the build's own type
@@ -220,7 +200,7 @@ jobs:
       # starts cold rather than from another version's cache.
       - name: Restore Next.js build cache
         id: next-cache
-        if: steps.typegen.outcome == 'success' && steps.token.outputs.present == 'true'
+        if: steps.typegen.outcome == 'success'
         uses: actions/cache/restore@v6
         with:
           # Must match the save step below exactly: the path is part of the
@@ -234,10 +214,14 @@ jobs:
 
       - name: Typecheck and build
         id: build
-        # Needs the generated types from typegen and a read token for the
-        # draft-mode route. Skipping beats failing a contributor's fork PR for
-        # a secret they were never going to have.
-        if: steps.typegen.outcome == 'success' && steps.token.outputs.present == 'true'
+        # Needs only the generated types from typegen. The read token is not a
+        # build requirement: the draft-mode route asserts it per request
+        # (`requireReadToken` in src/app/api/draft-mode/enable/route.ts) and
+        # `defineLive` falls back to published content without it
+        # (src/sanity/lib/live.ts). It is passed when set so a private dataset
+        # still builds. A fork's pull request receives no secrets, so there it
+        # is an empty string and the build reads a public dataset without it.
+        if: steps.typegen.outcome == 'success'
         env:
           SANITY_API_READ_TOKEN: ${{ secrets.SANITY_API_READ_TOKEN }}
         # `next build`, not `bun run build`: the script's `prebuild` hook would

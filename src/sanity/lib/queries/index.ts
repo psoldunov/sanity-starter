@@ -39,17 +39,13 @@ export const SITE_SETTINGS_QUERY = defineQuery(`*[_type == "settings"][0]{
   }
 }`);
 
-/** Routes of every page, for `generateStaticParams`. Two fields, not the tree. */
+/**
+ * Routes of every page that renders, for `generateStaticParams`. One field, not
+ * the tree. A page with no sections answers 404, so it is not prerendered;
+ * `count()` of a missing field is `null`, which fails the comparison.
+ */
 export const PAGE_ROUTES_QUERY = defineQuery(
-	`*[_type == "page" && defined(route.current)]{ "route": route.current }`,
-);
-
-/** Indexable pages for `sitemap.ts`. Excludes anything flagged `noIndex`. */
-export const PAGES_SITEMAP_QUERY = defineQuery(
-	`*[_type == "page" && defined(route.current) && noIndex != true] | order(route.current asc){
-  "route": route.current,
-  _updatedAt
-}`,
+	`*[_type == "page" && defined(route.current) && count(sections) > 0]{ "route": route.current }`,
 );
 
 /**
@@ -96,15 +92,16 @@ export const REDIRECT_QUERY = defineQuery(`*[_type == "redirect" && (
 }`);
 
 /**
- * Indexable pages for the LLM layer: the `.md` routes' static params and the
- * index files (`/llms.txt`, `/llms-full.txt`, `/sitemap.md`). The same
- * `noIndex` filter as `PAGES_SITEMAP_QUERY`, plus what an index entry reads.
+ * Indexable pages: `sitemap.xml`, the `.md` routes' static params and the index
+ * files (`/llms.txt`, `/llms-full.txt`, `/sitemap.md`). Excludes `noIndex` pages
+ * and pages with no sections, which answer 404 as HTML and as markdown.
  * `llmsListing` is filtered in code, because an unlisted page still gets its
  * markdown.
  */
 export const LLM_PAGES_QUERY = defineQuery(
-	`*[_type == "page" && defined(route.current) && noIndex != true] | order(route.current asc){
+	`*[_type == "page" && defined(route.current) && noIndex != true && count(sections) > 0] | order(route.current asc){
   "route": route.current,
+  _updatedAt,
   title,
   metaTitle,
   metaDescription,
@@ -118,18 +115,11 @@ export const POST_SLUGS_QUERY = defineQuery(
 	`*[_type == "post" && defined(slug.current)]{ "slug": slug.current }`,
 );
 
-/** Indexable posts for `sitemap.ts`. */
-export const POSTS_SITEMAP_QUERY = defineQuery(
-	`*[_type == "post" && defined(slug.current) && noIndex != true] | order(coalesce(publishedAt, _createdAt) desc){
-  "slug": slug.current,
-  _updatedAt
-}`,
-);
-
-/** Indexable posts for the LLM layer, newest first, as `LLM_PAGES_QUERY`. */
+/** Indexable posts, newest first, for the sitemap and the LLM layer. */
 export const LLM_POSTS_QUERY = defineQuery(
 	`*[_type == "post" && defined(slug.current) && noIndex != true] | order(coalesce(publishedAt, _createdAt) desc){
   "slug": slug.current,
+  _updatedAt,
   title,
   metaTitle,
   metaDescription,
