@@ -62,27 +62,19 @@ describe('getTarget', () => {
 });
 
 describe('getSiteUrl', () => {
-	test('prefers an explicit site URL and strips a trailing slash', () => {
-		process.env.NEXT_PUBLIC_SITE_URL = 'https://example.com/';
-		expect(getSiteUrl()).toBe('https://example.com');
-	});
-
 	test('uses the production URL on Vercel production', () => {
-		process.env.NEXT_PUBLIC_SITE_URL = '';
 		process.env.VERCEL_ENV = 'production';
 		process.env.VERCEL_PROJECT_PRODUCTION_URL = 'example.com';
 		expect(getSiteUrl()).toBe('https://example.com');
 	});
 
 	test('falls back to the deployment URL on a preview', () => {
-		process.env.NEXT_PUBLIC_SITE_URL = '';
 		process.env.VERCEL_ENV = 'preview';
 		process.env.VERCEL_URL = 'preview-abc.vercel.app';
 		expect(getSiteUrl()).toBe('https://preview-abc.vercel.app');
 	});
 
 	test('falls back to localhost with the configured port', () => {
-		process.env.NEXT_PUBLIC_SITE_URL = '';
 		process.env.VERCEL_ENV = '';
 		process.env.VERCEL_URL = '';
 		process.env.PORT = '4000';

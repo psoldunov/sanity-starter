@@ -20,13 +20,12 @@ In Project → Settings → Environment Variables:
 | `NEXT_PUBLIC_SANITY_PROJECT_ID` | Production, Preview, Development | Required. |
 | `NEXT_PUBLIC_SANITY_DATASET` | Production, Preview, Development | Required. |
 | `NEXT_PUBLIC_SANITY_API_VERSION` | all | Optional; pin it once live. |
-| `NEXT_PUBLIC_SITE_URL` | Production | Optional — set it if you serve from a custom domain you want canonicalised. |
 | `SANITY_API_READ_TOKEN` | all | Viewer token. Needed for draft mode and live preview. |
 | `SANITY_AUTH_TOKEN` | **Production only** | Deploy Studio token. Only used by the postinstall schema deploy. |
 
-Full descriptions in [configuration](./configuration.md). Leave
-`NEXT_PUBLIC_SITE_URL` unset on preview deployments so each preview
-canonicalises to its own `VERCEL_URL`.
+Full descriptions in [configuration](./configuration.md). The site URL is not
+on the list: Vercel supplies it (see
+[configuration → Site URL](./configuration.md#site-url)).
 
 ### 3. What postinstall does on Vercel
 
@@ -71,10 +70,10 @@ widen that policy to include its origin.
 
 ### 6. Custom domain
 
-Add the domain in Vercel, then update:
-
-- `NEXT_PUBLIC_SITE_URL` (if set)
-- the CORS origins in sanity.io/manage
+Add the domain in Vercel, add it to the CORS origins in sanity.io/manage, then
+redeploy production. Canonicals, the sitemap and the LLM files are written at
+build time from the project's shortest custom domain, so the old build keeps the
+old origin.
 
 ### 7. Skipped builds
 
@@ -102,8 +101,8 @@ need to force that build.
 
 ## Other platforms
 
-Nothing here is Vercel-specific except the `VERCEL_*` fallbacks in
-`getSiteUrl()`. Anywhere that runs a Node 22.12+ Next server works:
+Nothing here is Vercel-specific except the site URL, which `getSiteUrl()`
+reads from Vercel's variables. Anywhere that runs a Node 22.12+ Next server works:
 
 ```bash
 bun install     # runs typegen via postinstall
@@ -113,9 +112,10 @@ bun start
 
 Adjust for the platform:
 
-- **Set `NEXT_PUBLIC_SITE_URL` explicitly.** The `VERCEL_*` fallbacks will not
-  fire, so without it metadata and the sitemap fall back to
-  `http://localhost:3000`.
+- **Set `VERCEL_URL` to your domain**, without the scheme (`example.com`).
+  `getSiteUrl()` only reads Vercel's variables, so without it metadata and the
+  sitemap point at `http://localhost:3000`. Do not set `VERCEL_ENV`: it also
+  turns on the production schema deploy in postinstall.
 - **The schema deploy will not run.** It is gated on `VERCEL_ENV=production`.
   Run `bunx sanity schema deploy` manually (or in your CI pipeline) when the
   schema changes, with `SANITY_AUTH_TOKEN` in the environment.
