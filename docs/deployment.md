@@ -78,9 +78,11 @@ Add the domain in Vercel, then update:
 
 ### 7. Skipped builds
 
-[`vercel.json`](../vercel.json) sets an `ignoreCommand` so a commit that
+[`vercel.json`](../vercel.json) points `ignoreCommand` at
+[`scripts/vercel-ignore.sh`](../scripts/vercel-ignore.sh), so a commit that
 touches only prose and agent configuration does not spend a production build.
-Excluded: `docs/`, `.github/`, `.claude/`, `.vscode/`, `.ensemblr/`,
+The logic sits in a script because Vercel rejects an `ignoreCommand` longer
+than 256 characters. Excluded: `docs/`, `.github/`, `.claude/`, `.vscode/`, `.ensemblr/`,
 `.mcp.json`, `doctor.config.json`, `.fallowrc.jsonc` and any `*.md`. A skipped
 deployment shows as **"Build skipped"** in the Vercel log — that is the
 explanation.
