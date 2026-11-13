@@ -235,8 +235,9 @@ the JSON-LD's breadcrumb and FAQ rules; the serializer output is checked by read
   the HTML path, because the static route has no markdown.
 - The blog index at `/posts` has no markdown. It is paginated, and the `Posts` group in
   `/llms.txt` lists the same documents.
-- The canonical URLs in the markdown come from `NEXT_PUBLIC_SITE_URL` (or Vercel's production
-  URL). Without either, they point at `localhost`.
+- The canonical URLs in the markdown come from Vercel's production URL (see
+  [configuration → Site URL](./configuration.md#site-url)). Outside Vercel, they point at
+  `localhost` unless `VERCEL_URL` is set ([deployment → Other platforms](./deployment.md#other-platforms)).
 
 Related: [sections](./sections.md) · [content model](./content-model.md) ·
 [performance](./performance.md)

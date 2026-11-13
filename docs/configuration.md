@@ -65,30 +65,6 @@ Pin your own once the site is live so a future API change cannot alter query
 behaviour under you. See
 [Sanity API versioning](https://www.sanity.io/docs/api-versioning).
 
-### `NEXT_PUBLIC_SITE_URL`
-
-Optional. The canonical origin, used for `metadataBase`, canonical URLs,
-`sitemap.xml` and `robots.txt`. Write it without a trailing slash
-(`https://example.com`); a trailing slash is stripped anyway.
-
-The files for AI agents are built from it too (see [the LLM layer](./llm.md)):
-every URL in `/llms.txt`, `/llms-full.txt` and `/sitemap.md`, the links and
-front matter in each page's markdown, the canonical `Link` header on that
-markdown, and the `@id`s and URLs in the JSON-LD. All of these are written at
-build time, so a site built with the wrong origin serves the wrong one until
-the next build.
-
-Resolution order in [`src/lib/url.ts`](../src/lib/url.ts):
-
-1. `NEXT_PUBLIC_SITE_URL` if set.
-2. `https://$VERCEL_PROJECT_PRODUCTION_URL` when `VERCEL_ENV=production`.
-3. `https://$VERCEL_URL` (preview deployments).
-4. `http://localhost:$PORT` (default `3000`).
-
-On Vercel you can leave it unset and let steps 2 and 3 supply it. Set it
-explicitly if you serve the site from a custom domain you want canonicalised, or
-if you deploy anywhere other than Vercel.
-
 ## Secrets
 
 Server-side only. Set these in your hosting provider's environment settings, not
@@ -157,6 +133,27 @@ Read but never set by you. See [deployment](./deployment.md).
 | `VERCEL_URL` | Site URL fallback on preview deployments. |
 | `PORT` | Local URL fallback only; defaults to `3000`. |
 
+### Site URL
+
+There is no variable for the site's origin. `getSiteUrl()` in
+[`src/lib/url.ts`](../src/lib/url.ts) builds it from the variables above, in
+this order:
+
+1. `https://$VERCEL_PROJECT_PRODUCTION_URL` when `VERCEL_ENV=production`.
+   Vercel sets it to the project's shortest custom domain, or to its
+   `vercel.app` domain when it has none.
+2. `https://$VERCEL_URL` on preview deployments, so each preview canonicalises
+   to itself.
+3. `http://localhost:$PORT` (default `3000`).
+
+The origin feeds `metadataBase`, canonical URLs, `sitemap.xml` and
+`robots.txt`. The files for AI agents are built from it too (see
+[the LLM layer](./llm.md)): every URL in `/llms.txt`, `/llms-full.txt` and
+`/sitemap.md`, the links and front matter in each page's markdown, the canonical
+`Link` header on that markdown, and the `@id`s and URLs in the JSON-LD. All of
+these are written at build time, so after you add or change a custom domain,
+redeploy before the new origin shows up.
+
 ## Summary
 
 | Variable | Required | Secret | Purpose |
@@ -164,7 +161,6 @@ Read but never set by you. See [deployment](./deployment.md).
 | `NEXT_PUBLIC_SANITY_PROJECT_ID` | Yes | No | Sanity project |
 | `NEXT_PUBLIC_SANITY_DATASET` | Yes | No | Sanity dataset |
 | `NEXT_PUBLIC_SANITY_API_VERSION` | No | No | Pins the Content Lake API date |
-| `NEXT_PUBLIC_SITE_URL` | No | No | Canonical origin for metadata/sitemap |
 | `SANITY_API_READ_TOKEN` | For preview | **Yes** | Draft mode and live content (Viewer) |
 | `SANITY_AUTH_TOKEN` | Production only | **Yes** | Schema deploy in postinstall (Deploy Studio) |
 | `SKIP_SANITY_TYPEGEN` | No | No | Skip typegen during install |

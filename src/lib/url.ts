@@ -1,13 +1,11 @@
 /**
- * Gets the site URL using Vercel environment variables.
- * Falls back to VERCEL_URL for preview deployments, then localhost for local development.
+ * Gets the site URL from Vercel's system environment variables: the production
+ * domain on production (Vercel picks the shortest custom domain), the deployment
+ * URL on previews, then localhost for local development.
  *
  * @returns The full site URL (e.g., https://example.com)
  */
 export function getSiteUrl(): string {
-	const explicit = process.env.NEXT_PUBLIC_SITE_URL;
-	if (explicit) return explicit.replace(/\/$/, '');
-
 	if (process.env.VERCEL_ENV === 'production') {
 		const prodUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL;
 		if (prodUrl) return `https://${prodUrl}`;
