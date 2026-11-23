@@ -2,7 +2,7 @@ import { orderRankField } from '@sanity/orderable-document-list';
 import { FileIcon } from 'lucide-react';
 import { defineType } from 'sanity';
 import { validatePageRoute } from '@/sanity/lib/validations';
-import sectionTypes from '@/sanity/schema/objects/sections';
+import { sectionTypes } from '@/sections/schemas.generated';
 
 const page = defineType({
 	name: 'page',

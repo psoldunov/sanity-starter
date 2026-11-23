@@ -1,11 +1,6 @@
 import { defineQuery } from 'next-sanity';
-import {
-	CARDS_SECTION_FRAGMENT,
-	FAQ_SECTION_FRAGMENT,
-	HERO_SECTION_FRAGMENT,
-	IMAGE_TEXT_SECTION_FRAGMENT,
-	INTERNAL_DESTINATION_PROJECTION,
-} from '@/sanity/lib/fragments';
+import { INTERNAL_DESTINATION_PROJECTION } from '@/sanity/lib/fragments';
+import { SECTION_FRAGMENTS } from '@/sections/fragments.generated';
 
 /**
  * Every query below projects only the fields its call site actually reads.
@@ -51,6 +46,10 @@ export const PAGE_ROUTES_QUERY = defineQuery(
 /**
  * A single page with its section tree, for the catch-all route and for the
  * page's markdown, which reads `_updatedAt` for its front matter.
+ *
+ * `SECTION_FRAGMENTS` is written by `bun run sections:gen` from every
+ * `src/sections/<name>/fragment.ts`; a section with no fragment there reaches
+ * its component with unresolved image and link references.
  */
 export const PAGE_QUERY =
 	defineQuery(`*[_type == "page" && route.current == $slug][0]{
@@ -65,10 +64,7 @@ export const PAGE_QUERY =
   geo,
   sections[] {
     ...,
-    ${HERO_SECTION_FRAGMENT},
-    ${CARDS_SECTION_FRAGMENT},
-    ${IMAGE_TEXT_SECTION_FRAGMENT},
-    ${FAQ_SECTION_FRAGMENT}
+    ${SECTION_FRAGMENTS}
   }
 }`);
 

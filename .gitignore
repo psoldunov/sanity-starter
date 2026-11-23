@@ -45,6 +45,12 @@ next-env.d.ts
 /schema.json
 /src/sanity/types/sanity.types.ts
 
+# section registries, written by `bun run sections:gen`
+/src/sections/*.generated.ts
+
+# sanity-factory run state
+/.factory/
+
 # scratchpad
 /scratchpad
 
@@ -53,5 +59,9 @@ next-env.d.ts
 
 # Playwright artifacts
 .playwright-mcp
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
 # Playwright CLI output (may contain credentials)
 .playwright-cli/

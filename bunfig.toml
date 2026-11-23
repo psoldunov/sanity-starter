@@ -1,0 +1,4 @@
+[test]
+# `tests/e2e/` holds Playwright specs, run by `bun run test:e2e`. Bun's runner
+# would pick up their `*.spec.ts` names and fail on `@playwright/test`.
+pathIgnorePatterns = ["tests/e2e/**"]

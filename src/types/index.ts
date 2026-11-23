@@ -70,6 +70,18 @@ export type PublishedSection<T extends PublishedSectionData['_type']> = Extract<
 	{ _type: T }
 >;
 
+/**
+ * The default export of a section folder's optional `config.ts`, read by
+ * `bun run sections:gen`. Keep the file free of runtime imports: the generator
+ * loads it on its own, outside Next and the Studio.
+ */
+export type SectionConfig = {
+	/** The section reads `searchParams`; it lands in `DYNAMIC_SECTION_TYPES`. */
+	dynamic?: boolean;
+	/** Studio insert-menu position, lowest first. Sections without one follow, by name. */
+	order?: number;
+};
+
 /** A post as `POST_QUERY` returns it read with `stega: false`. */
 export type PublishedPost = NonNullable<POST_QUERY_RESULT>;
 

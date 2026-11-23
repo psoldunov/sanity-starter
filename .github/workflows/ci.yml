@@ -44,6 +44,13 @@ jobs:
           SKIP_SANITY_TYPEGEN: '1'
         run: bun install --frozen-lockfile
 
+      # The section registries are gitignored, and the tests and fallow below
+      # read them. postinstall writes them already; this step says so out loud
+      # and fails loudly on a broken section folder. No credentials needed, so it
+      # runs on a fork's PR too. The build job gets them from `bun run typegen`.
+      - name: Generate section registries
+        run: bun run sections:gen
+
       - name: Lint
         run: bun run lint
 

@@ -90,6 +90,14 @@
 }
 
 /*
+ * One previous/next control in `Pagination`, shared by the link and by the
+ * disabled `<span>` that stands in for it at either end of the range.
+ */
+@utility pagination-item {
+	@apply rounded-theme border border-border px-4 py-2 text-sm;
+}
+
+/*
  * Long-form body copy, used by the Portable Text renderer on post pages.
  * Written as a component class rather than per-element utilities so the
  * renderer stays a plain mapping and the typography lives in one place.

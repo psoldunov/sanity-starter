@@ -2,17 +2,22 @@
 #
 # Runs after every `bun install`.
 #
-# 1. On Vercel production only: deploy the Studio schema and extract the manifest
+# 1. Always, first: write the section registries (`bun run sections:gen`). They
+#    are gitignored, every import of the schema needs them (step 2 included),
+#    and they need no credentials, so this step is not best-effort.
+# 2. On Vercel production only: deploy the Studio schema and extract the manifest
 #    so the Sanity Dashboard, Canvas and Agent Actions can discover this studio.
-# 2. Always: regenerate the local TypeGen artefacts (`schema.json` and
+# 3. Always: regenerate the local TypeGen artefacts (`schema.json` and
 #    `src/sanity/types/sanity.types.ts`), which are gitignored and therefore
 #    absent on a fresh clone.
 #
-# Step 2 is best-effort on purpose. A fresh clone has no `.env.local` yet, and an
+# Step 3 is best-effort on purpose. A fresh clone has no `.env.local` yet, and an
 # install that hard-fails before the developer has had a chance to write one is a
 # terrible first impression. We print what to do instead and exit 0.
 
 set -e
+
+bun run sections:gen
 
 if [ "$VERCEL_ENV" = "production" ]; then
 	sanity schema deploy && sanity manifest extract --path public/admin/static

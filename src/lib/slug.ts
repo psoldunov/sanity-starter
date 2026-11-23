@@ -1,4 +1,4 @@
-import { DYNAMIC_SECTION_TYPES } from '@/config/sections';
+import { DYNAMIC_SECTION_TYPES } from '@/sections/dynamic.generated';
 
 /**
  * Normalizes slug parameters from Next.js dynamic routes.
