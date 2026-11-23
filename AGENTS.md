@@ -85,6 +85,10 @@ Then:
    resolves. **Read its output**: on a query it cannot resolve it prints
    `Error while extracting query`, still exits 0, and that query's result type is gone.
 
+After deleting or renaming a section folder, run `bun run sections:gen` before
+checking the running dev server. The generated component registry can still
+import the old path until it is regenerated.
+
 What each file must keep:
 
 - **`fragment.ts` imports only `@/sanity/lib/fragments`** (for `INTERNAL_DESTINATION_PROJECTION`),
@@ -319,6 +323,7 @@ export default function HeroSection(props: SectionProps<'heroSection'>) {
 
 - **Sanity CDN**: `cdn.sanity.io` configured in `next.config.ts`
 - **Draft mode**: `src/app/api/draft-mode/enable/route.ts`
+- **Revalidation webhook**: `src/app/api/revalidate/route.ts` (POST, dynamic)
 - **Vercel**: postinstall deploys schema when `VERCEL_ENV=production`
 - **Presentation tool**: live preview with `locations` for page/post navigation
 - **AI agents**: `.md` URLs, `/llms.txt`, `/llms-full.txt`, `/sitemap.md`, `/.well-known/api-catalog`, `Content-Signal` in `robots.txt` — see `docs/llm.md`

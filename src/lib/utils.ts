@@ -23,6 +23,7 @@ import { extendTailwindMerge } from 'tailwind-merge';
 const twMerge = extendTailwindMerge({
 	extend: {
 		theme: {
+			ease: ['accordion'],
 			radius: ['theme'],
 		},
 	},

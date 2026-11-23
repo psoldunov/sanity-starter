@@ -114,6 +114,20 @@ Studio** role.
 breaks `sanity` commands run from your machine. Set it only as a production
 environment variable on your host.
 
+### `SANITY_REVALIDATE_SECRET`
+
+Set a shared secret in the production environment and redeploy. In Sanity's API
+settings, add a POST webhook to `https://<production-domain>/api/revalidate`.
+Use the same secret, select the site's dataset, enable Create, Update and Delete,
+and leave drafts and versions off. The projection can be `{_type}`.
+
+Publish a test change and check for HTTP 200. The route verifies the signature
+and accepts timestamps up to five minutes old or one minute ahead. Validation
+failures return 401. The next request reads fresh content after revalidation.
+
+Production builds use a build-scoped Sanity request tag to get fresh data even
+when the build restores `.next/cache`.
+
 ## Build-time flags
 
 ### `SKIP_SANITY_TYPEGEN`

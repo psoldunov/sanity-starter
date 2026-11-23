@@ -18,6 +18,13 @@ import 'server-only';
 export const readToken = process.env.SANITY_API_READ_TOKEN || '';
 
 /**
+ * Shared secret that signs the Sanity revalidation webhook
+ * (`src/app/api/revalidate/route.ts`). Set the same value in the webhook's
+ * Secret field in sanity.io/manage.
+ */
+export const revalidateSecret = process.env.SANITY_REVALIDATE_SECRET || '';
+
+/**
  * Asserts the read token is configured, throwing a message that says how to fix
  * it. Called where draft mode and live content are wired up.
  *

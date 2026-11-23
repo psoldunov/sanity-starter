@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import PostBody from '@/components/blog/PostBody';
 import PostCard from '@/components/blog/PostCard';
 import Container from '@/components/layout/Container';
 import JsonLd from '@/components/utility/JsonLd';
+import RichText from '@/components/utility/RichText';
 import SmartImage from '@/components/utility/SmartImage';
 import { SITE_LOCALE } from '@/config';
 import { STATIC_ROUTES } from '@/config/linkables';
@@ -171,7 +171,7 @@ export default async function PostPage({
 						/>
 					)}
 
-					<PostBody value={post.content} />
+					<RichText value={post.content} />
 				</Container>
 			</article>
 

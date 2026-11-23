@@ -1,6 +1,6 @@
 import Container from '@/components/layout/Container';
+import NavLink from '@/components/layout/NavLink';
 import SmartImage from '@/components/utility/SmartImage';
-import SmartLink from '@/components/utility/SmartLink';
 import type { NavLinkItem, SiteSettings } from '@/types';
 
 type HeaderProps = {
@@ -37,7 +37,7 @@ export default function Header({ menu, logo, siteName }: HeaderProps) {
 			</a>
 			<Container>
 				<nav aria-label='Main' className='flex h-16 items-center gap-6'>
-					<SmartLink
+					<NavLink
 						link={{ href: '/' }}
 						className='flex shrink-0 items-center gap-2 text-lg font-semibold tracking-tight text-foreground'
 					>
@@ -52,12 +52,12 @@ export default function Header({ menu, logo, siteName }: HeaderProps) {
 						) : (
 							brand
 						)}
-					</SmartLink>
+					</NavLink>
 
 					<ul className='ml-auto hidden items-center gap-6 md:flex'>
 						{links.map((link) => (
 							<li key={link._key}>
-								<SmartLink
+								<NavLink
 									link={link}
 									className='text-sm text-muted transition-colors hover:text-foreground'
 								/>
@@ -88,7 +88,7 @@ export default function Header({ menu, logo, siteName }: HeaderProps) {
 							<ul className='absolute right-0 z-50 mt-2 flex w-56 flex-col gap-1 rounded-theme border border-border bg-background p-2 shadow-lg'>
 								{links.map((link) => (
 									<li key={link._key}>
-										<SmartLink
+										<NavLink
 											link={link}
 											className='block rounded px-3 py-2 text-sm text-muted hover:bg-surface hover:text-foreground'
 										/>

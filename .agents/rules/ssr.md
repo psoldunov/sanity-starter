@@ -94,7 +94,8 @@ what it showed. Cache Components is off here, so the legend is three symbols, no
 The baseline, on an unmodified checkout: CMS pages and posts are `●`, and so are their markdown
 copies under `/api/markdown/*.md`; `robots.txt` / `sitemap.xml` / `/_not-found` and the LLM index
 files (`/llms.txt`, `/llms-full.txt`, `/sitemap.md`, `/.well-known/api-catalog`) are `○`; and exactly
-three routes are legitimately `ƒ` — `/admin/[[...index]]`, `/api/draft-mode/enable`, and `/posts`.
+four routes are legitimately `ƒ` — `/admin/[[...index]]`, `/api/draft-mode/enable`,
+`/api/revalidate` (POST webhook), and `/posts`.
 Verified on `next@16.4.5`. The blog index is dynamic because it awaits `searchParams`
 for its `?page=` pagination. Anything else arriving at `ƒ` is a regression until proven otherwise.
 

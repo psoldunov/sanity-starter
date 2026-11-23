@@ -1,5 +1,5 @@
 import Container from '@/components/layout/Container';
-import SmartLink from '@/components/utility/SmartLink';
+import NavLink from '@/components/layout/NavLink';
 import type { FooterNavColumn } from '@/types';
 
 type FooterProps = {
@@ -49,7 +49,7 @@ export default function Footer({ nav, siteName }: FooterProps) {
 									<ul className='flex flex-col gap-2'>
 										{column.links?.map((link) => (
 											<li key={link._key}>
-												<SmartLink
+												<NavLink
 													link={link}
 													className='text-sm text-muted transition-colors hover:text-foreground'
 												/>

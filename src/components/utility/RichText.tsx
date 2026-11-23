@@ -50,12 +50,12 @@ const components: PortableTextComponents = {
 };
 
 /**
- * Renders a post body from Portable Text.
+ * Renders Portable Text.
  *
- * @param props.value - The `content` array from `POST_QUERY`.
- * @returns The rendered body, or `null` when there is no content.
+ * @param props.value - A Portable Text block array, e.g. an FAQ answer.
+ * @returns The rendered content, or `null` when there is none.
  */
-export default function PostBody({ value }: { value: unknown }) {
+export default function RichText({ value }: { value: unknown }) {
 	if (!Array.isArray(value) || value.length === 0) {
 		return null;
 	}

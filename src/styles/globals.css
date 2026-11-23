@@ -82,8 +82,11 @@
 		*,
 		*::before,
 		*::after {
+			/* biome-ignore lint/complexity/noImportantStyles: the reduced-motion reset must override component styles */
 			animation-duration: 0.01ms !important;
+			/* biome-ignore lint/complexity/noImportantStyles: the reduced-motion reset must override component styles */
 			animation-iteration-count: 1 !important;
+			/* biome-ignore lint/complexity/noImportantStyles: the reduced-motion reset must override component styles */
 			transition-duration: 0.01ms !important;
 		}
 	}
@@ -98,7 +101,7 @@
 }
 
 /*
- * Long-form body copy, used by the Portable Text renderer on post pages.
+ * Long-form body copy, used by the shared Portable Text renderer.
  * Written as a component class rather than per-element utilities so the
  * renderer stays a plain mapping and the typography lives in one place.
  */
@@ -149,5 +152,25 @@
 
 	.prose-content figcaption {
 		@apply mt-2 text-center text-muted text-sm;
+	}
+}
+
+@theme {
+	--ease-accordion: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/*
+ * Animated native `<details>`: the answer's block-size and opacity transition on
+ * open and close. Browsers without `::details-content` just open instantly.
+ */
+@utility accordion {
+	interpolate-size: allow-keywords;
+
+	&::details-content {
+		@apply h-0 flow-root overflow-clip opacity-0 transition-[height,opacity,content-visibility] transition-discrete duration-280 ease-accordion motion-reduce:transition-none;
+	}
+
+	&[open]::details-content {
+		@apply h-auto opacity-100;
 	}
 }

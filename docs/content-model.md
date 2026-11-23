@@ -113,7 +113,7 @@ dataset keeps validating after an upgrade and the templates degrade gracefully.
 sitemap, the markdown routes and `/llms.txt`).
 Ordering everywhere is `coalesce(publishedAt, _createdAt) desc`, so a post with
 no date still lands sensibly. Body rendering happens in
-[`src/components/blog/PostBody.tsx`](../src/components/blog/PostBody.tsx) via
+[`src/components/utility/RichText.tsx`](../src/components/utility/RichText.tsx) via
 `@portabletext/react`.
 
 `post` is registered in

@@ -192,7 +192,7 @@ hook that is load-bearing — see
 | Sections | `src/sections/<name>/`: `schema.ts`, `fragment.ts`, component, `markdown.ts`, optional `config.ts` |
 | Layout components | `src/components/layout/` (`Header`, `Footer`, `Container`) |
 | Shared utility components | `src/components/utility/` (`Section`, `SectionRenderer`, `SmartImage`, `SmartLink`, `Slot`, `DisableDraftMode`) |
-| Blog components | `src/components/blog/` (`PostCard`, `PostBody`, `Pagination`) |
+| Blog components | `src/components/blog/` (`PostCard`, `Pagination`) |
 | Primitives | `src/components/elements/` (`Button`) |
 | Pure utilities | `src/lib/` — `slug.ts`, `url.ts`, `links.ts`, `image.ts`, `date.ts`, `utils.ts`, `actions.ts` |
 | Configuration | `src/config/` — `index.ts`, `linkables.ts` |

@@ -75,7 +75,7 @@ const post = defineType({
 					name: 'contentImage',
 					title: 'Image',
 					hotspot: true,
-					// `PostBody` renders this as a `<figcaption>`, and `SmartImage`
+					// `RichText` renders this as a `<figcaption>`, and `SmartImage`
 					// falls back to it for alt text. Without the field both are dead.
 					fields: [
 						defineField({
