@@ -67,12 +67,12 @@ src/app/(site)/posts/
   [the LLM layer](./llm.md)).
 - The cover image is `preload` with an explicit `sizes`.
 - Body rendering goes through
-  [`PostBody`](../src/components/blog/PostBody.tsx), which maps Portable Text to
+  [`RichText`](../src/components/utility/RichText.tsx), which maps Portable Text to
   elements — only images and links are overridden; block typography lives in the
   `.prose-content` class.
 - `RELATED_POSTS_QUERY` pulls three siblings, excluding the current post.
 
-Supporting components live in `src/components/blog/`: `PostCard`, `PostBody`,
+Supporting components live in `src/components/blog/`: `PostCard` and
 `Pagination`.
 
 ## Reserving the route

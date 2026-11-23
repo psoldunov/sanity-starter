@@ -98,7 +98,7 @@
 }
 
 /*
- * Long-form body copy, used by the Portable Text renderer on post pages.
+ * Long-form body copy, used by the shared Portable Text renderer.
  * Written as a component class rather than per-element utilities so the
  * renderer stays a plain mapping and the typography lives in one place.
  */
