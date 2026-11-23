@@ -319,6 +319,7 @@ export default function HeroSection(props: SectionProps<'heroSection'>) {
 
 - **Sanity CDN**: `cdn.sanity.io` configured in `next.config.ts`
 - **Draft mode**: `src/app/api/draft-mode/enable/route.ts`
+- **Revalidation webhook**: `src/app/api/revalidate/route.ts` (POST, dynamic)
 - **Vercel**: postinstall deploys schema when `VERCEL_ENV=production`
 - **Presentation tool**: live preview with `locations` for page/post navigation
 - **AI agents**: `.md` URLs, `/llms.txt`, `/llms-full.txt`, `/sitemap.md`, `/.well-known/api-catalog`, `Content-Signal` in `robots.txt` — see `docs/llm.md`
