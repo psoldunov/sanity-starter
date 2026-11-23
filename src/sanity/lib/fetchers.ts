@@ -8,6 +8,7 @@ import {
 	REDIRECT_QUERY,
 	SITE_SETTINGS_QUERY,
 } from '@/sanity/lib/queries';
+import type { PAGE_QUERY_RESULT } from '@/sanity/types/sanity.types';
 
 /**
  * Cached read helpers.
@@ -111,15 +112,19 @@ export const getPostForMetadata = cache(async (slug: string) => {
  * @param slug - Normalised route, e.g. `/about`.
  * @returns The page, or `null` when no page owns that route.
  */
-export const getPublishedPage = cache(async (slug: string) => {
-	const { data } = await sanityFetch({
-		query: PAGE_QUERY,
-		params: { slug },
-		stega: false,
-		perspective: 'published',
-	});
-	return data;
-});
+// Annotated: TS 7 infers `unknown` here when Next's route validator asks for
+// a route's types first, and the routes then see the page as `{}`.
+export const getPublishedPage = cache(
+	async (slug: string): Promise<PAGE_QUERY_RESULT> => {
+		const { data } = await sanityFetch({
+			query: PAGE_QUERY,
+			params: { slug },
+			stega: false,
+			perspective: 'published',
+		});
+		return data;
+	},
+);
 
 /**
  * A published post and its body, for its markdown.

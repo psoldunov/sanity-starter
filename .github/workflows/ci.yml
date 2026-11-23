@@ -36,7 +36,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: '1.4.4'
+          bun-version: '1.4.5'
 
       - name: Install dependencies
         # Nothing in this job reads the generated Sanity types.
@@ -147,7 +147,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: '1.4.4'
+          bun-version: '1.4.5'
 
       - name: Install dependencies
         # postinstall runs typegen best-effort and swallows a failure, which is
