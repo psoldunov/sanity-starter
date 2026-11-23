@@ -49,7 +49,8 @@ Playwright spec at `tests/e2e/<name>.spec.ts`:
 The spec drives the flow as a user would, with role and label locators (`getByRole`,
 `getByLabel`), and asserts the outcome of the interaction: the confirmation after a submit, the
 error a bad input raises, the URL a filter lands on, the request that left. Cover the happy path
-and the main validation or error path. The appearance rules above still hold inside a spec — no
+and the main validation or error path. See `docs/forms.md` for submission safety and test destinations.
+The appearance rules above still hold inside a spec — no
 classes, no element counts, no screenshots, no pinned static copy.
 
 - `bun run test:e2e` runs `tests/e2e/` against a server that is already up: `bun dev`, or the
