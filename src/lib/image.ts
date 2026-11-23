@@ -207,12 +207,52 @@ export function resolveImagePlaceholder(
  *
  * Sanity's image pipeline does not transform SVG at all, and Next's optimiser
  * refuses it unless `dangerouslyAllowSVG` is set. A GIF is here for its
- * animation, which a resize can reduce to the first frame — so neither gets
- * the CDN loader's `w`/`h` parameters, and both render `unoptimized`.
+ * animation, which a resize can reduce to the first frame — so neither goes
+ * through the optimiser, and both render `unoptimized` from the Sanity CDN.
  *
  * @param url - An absolute image URL.
  * @returns `true` when the URL's path ends in `.svg` or `.gif`.
  */
 export function isPassThroughUrl(url: string): boolean {
 	return isSvgUrl(url) || getImagePath(url).endsWith('.gif');
+}
+
+/** Widest source the optimiser fetches: Next's largest default `deviceSizes` entry. */
+const OPTIMIZER_SOURCE_MAX_WIDTH = 3840;
+
+/** Quality of that source; the optimiser's own `quality` is the compression that shows. */
+const OPTIMIZER_SOURCE_QUALITY = 90;
+
+/**
+ * The Sanity CDN URL that Next's image optimiser fetches as its source.
+ *
+ * The optimiser resizes, re-encodes and caches every variant, so the Sanity
+ * CDN serves each one once instead of once per visitor: bandwidth is a hard
+ * cap on Sanity's free plan. The source is capped at the widest srcset width
+ * (`fit=max` never enlarges, and neither does the optimiser) and kept at high
+ * quality, so it is compressed for real only once.
+ *
+ * The optimiser resizes by width alone, so a fixed box gets its ratio from the
+ * source: when the caller sets both sides and not `fill`, `fit=min` has Sanity
+ * crop to that ratio (never enlarging) before the optimiser sees it, as
+ * `object-cover` would.
+ *
+ * @param url - A Sanity CDN image URL, with or without a crop `rect`.
+ * @param box - The caller's `width`, `height` and `fill`.
+ * @returns The same URL with the source size, fit and quality set.
+ */
+export function optimizerSourceUrl(
+	url: string,
+	{ width, height, fill }: { width?: number; height?: number; fill?: boolean },
+): string {
+	const source = new URL(url);
+	const isFixedBox = Boolean(width && height && !fill);
+	source.searchParams.set('w', String(OPTIMIZER_SOURCE_MAX_WIDTH));
+	source.searchParams.set('q', String(OPTIMIZER_SOURCE_QUALITY));
+	source.searchParams.set('fit', isFixedBox ? 'min' : 'max');
+	if (isFixedBox && width && height) {
+		const boxHeight = (OPTIMIZER_SOURCE_MAX_WIDTH * height) / width;
+		source.searchParams.set('h', String(Math.round(boxHeight)));
+	}
+	return source.toString();
 }

@@ -81,6 +81,9 @@ const nextConfig: NextConfig = {
 			{
 				protocol: 'https',
 				hostname: 'cdn.sanity.io',
+				// This project only: an open pattern would let anyone run any Sanity
+				// image through this site's optimiser, billed to this deployment.
+				pathname: `/images/${process.env.NEXT_PUBLIC_SANITY_PROJECT_ID}/**`,
 			},
 		],
 		qualities: [75, 85, 100],
