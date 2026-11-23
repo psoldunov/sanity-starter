@@ -17,5 +17,18 @@ export default defineConfig({
 			`http://localhost:${process.env.PORT ?? 3000}`,
 		trace: 'retain-on-failure',
 	},
-	projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+	projects: [
+		{
+			name: 'chromium',
+			use: {
+				...devices['Desktop Chrome'],
+				// NixOS cannot run Playwright's bundled browser.
+				...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH && {
+					launchOptions: {
+						executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
+					},
+				}),
+			},
+		},
+	],
 });

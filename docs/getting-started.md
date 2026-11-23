@@ -169,6 +169,7 @@ Complex functionality is the exception and gets a checked-in Playwright spec in
 flows, anything that sends data. [`playwright.config.ts`](../playwright.config.ts)
 runs Chromium against `E2E_BASE_URL`, or `http://localhost:$PORT` (3000 by
 default). It does not start a server, so run `bun dev` in another terminal first.
+On NixOS, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to a system Chrome (`command -v google-chrome-stable`).
 `bun run test:e2e` passes when there are no specs, which is the state of a fresh
 starter. [`bunfig.toml`](../bunfig.toml) keeps `bun test` out of `tests/e2e/`.
 
