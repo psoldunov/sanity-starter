@@ -85,6 +85,10 @@ Then:
    resolves. **Read its output**: on a query it cannot resolve it prints
    `Error while extracting query`, still exits 0, and that query's result type is gone.
 
+After deleting or renaming a section folder, run `bun run sections:gen` before
+checking the running dev server. The generated component registry can still
+import the old path until it is regenerated.
+
 What each file must keep:
 
 - **`fragment.ts` imports only `@/sanity/lib/fragments`** (for `INTERNAL_DESTINATION_PROJECTION`),
