@@ -82,8 +82,11 @@
 		*,
 		*::before,
 		*::after {
+			/* biome-ignore lint/complexity/noImportantStyles: the reduced-motion reset must override component styles */
 			animation-duration: 0.01ms !important;
+			/* biome-ignore lint/complexity/noImportantStyles: the reduced-motion reset must override component styles */
 			animation-iteration-count: 1 !important;
+			/* biome-ignore lint/complexity/noImportantStyles: the reduced-motion reset must override component styles */
 			transition-duration: 0.01ms !important;
 		}
 	}
