@@ -22,7 +22,7 @@ export default function FaqSection(props: SectionProps<'faqSection'>) {
 				)}
 				<div className='divide-y divide-border border-y border-border'>
 					{items?.map((item) => (
-						<details key={item._key} className='group'>
+						<details key={item._key} className='accordion group'>
 							<summary className='flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-lg font-medium text-foreground [&::-webkit-details-marker]:hidden'>
 								{item.question}
 								<span
