@@ -293,8 +293,10 @@ export default function HeroSection(props: SectionProps<'heroSection'>) {
 ```
 
 - **Section wrapper**: use `<Section>` from `src/components/utility/Section.tsx` for consistent padding via `PADDING_CONFIG`
-- **Images**: use `SmartImage` for Sanity images (LQIP placeholders + CDN
-  optimization; SVG and GIF bypass the optimiser). `preload` marks the LCP
+- **Images**: use `SmartImage` for Sanity images (LQIP placeholders; Next's
+  optimiser resizes and caches them so Sanity serves each variant once, which
+  keeps free-plan bandwidth flat; SVG and GIF bypass the optimiser and load
+  from the Sanity CDN). `preload` marks the LCP
   image — one per page. `priority` was removed: Next 16 deprecated it and
   throws when both are set
 - **Links**: use `SmartLink` over raw `<a>` where applicable

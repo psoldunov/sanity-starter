@@ -1,9 +1,9 @@
 import { getImage, type SanityImageSource } from '@sanity/asset-utils';
 import Image from 'next/image';
-import { Image as SanityImage } from 'next-sanity/image';
 import {
 	isDereferencedAsset,
 	isPassThroughUrl,
+	optimizerSourceUrl,
 	resolveAltText,
 	resolveImageDimensions,
 	resolveImagePlaceholder,
@@ -42,10 +42,9 @@ function warnOnMissingAlt(
  * referenced assets. Dereferenced assets carry Sanity's LQIP — a base64 data
  * URI usable as-is — which becomes the blur placeholder.
  *
- * Raster images render through `next-sanity/image`, whose loader asks the
- * Sanity CDN for each srcset width directly. Given both `width` and `height`,
- * that loader sends `fit=min`, so the CDN crops to that aspect ratio — what
- * `object-cover` would show in that box anyway, without shipping the rest.
+ * Raster images go through Next's image optimiser (`/_next/image`), which
+ * resizes one high-quality Sanity source per srcset width and caches the
+ * result: the Sanity CDN serves each variant once, not once per visitor.
  *
  * The resolution rules — alt text, dimensions, `sizes`, whether an image is
  * passed through untouched — live in `src/lib/image.ts` so they are
@@ -53,8 +52,8 @@ function warnOnMissingAlt(
  * onto `next/image`.
  *
  * @param props - Sanity image object plus `next/image` options.
- * @returns A `next/image` element pointing at the Sanity CDN, or `null` when
- *   there is no image or no asset yet.
+ * @returns A `next/image` element, or `null` when there is no image or no
+ *   asset yet.
  */
 export default function SmartImage({
 	image,
@@ -119,15 +118,9 @@ export default function SmartImage({
 		crop: unoptimized ? undefined : image.crop,
 	});
 
-	// Raster images are resized by the Sanity CDN, once per srcset candidate,
-	// through next-sanity's loader — not by Next's optimiser, which never
-	// enlarges a source, so a URL pre-shrunk to the 1x size served 1x pixels to
-	// a 2x screen.
-	const ImageComponent = unoptimized ? Image : SanityImage;
-
 	return (
-		<ImageComponent
-			src={resolvedUrl}
+		<Image
+			src={unoptimized ? resolvedUrl : optimizerSourceUrl(resolvedUrl)}
 			unoptimized={unoptimized}
 			alt={resolvedAlt}
 			width={dimensions.width}

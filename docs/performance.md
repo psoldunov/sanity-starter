@@ -89,19 +89,33 @@ const [page, settings] = await Promise.all([
 Used in the catch-all page's `generateMetadata`, the site layout (settings and
 `draftMode()` together), the article page, the blog index, and `sitemap.ts`.
 
-## 6. Images: `preload`, `sizes` and the Sanity loader
+## 6. Images: `preload`, `sizes` and the optimiser
 
 [`SmartImage`](../src/components/utility/SmartImage.tsx) renders raster images
-through `next-sanity/image`, a `next/image` wrapper whose loader asks the Sanity
-CDN for each srcset width directly (`w`, `auto=format`), so a 2x screen gets 2x
-pixels and each image is compressed once. Do not pre-size the URL and hand it to
-Next's optimiser instead: the optimiser never enlarges its source, so every
-candidate above the pre-sized width comes back at 1x.
+through Next's image optimiser (`/_next/image`). Its source is the Sanity CDN
+URL with the Studio crop, capped at 3840px wide and kept at quality 90
+(`optimizerSourceUrl()` in `src/lib/image.ts`). The optimiser resizes that
+source for each srcset width, encodes AVIF or WebP at the image's `quality` (75
+unless a component asks for another value from `images.qualities`), and caches
+the result for as long as the source's `Cache-Control` allows, which on
+Sanity's CDN is 30 days.
 
-Given both `width` and `height`, the loader sends `fit=min` and the CDN crops to
-that aspect ratio. Given one side, `SmartImage` derives the other from the
-ratio of the image actually served, after the Studio crop, so the box reserved
-before load has the right shape.
+Visitors therefore load images from the site's own origin, and the Sanity CDN
+serves each variant once instead of once per page view. That matters on
+Sanity's free plan, where bandwidth is a hard cap: past 100 GB a month, public
+requests fail until the month resets, so a busy, image-heavy site served
+straight from the Sanity CDN can take itself offline. The cost moves to the
+host's image optimisation, which bills per transformation and cache read.
+
+Keep the source at the widest srcset width. The optimiser never enlarges its
+source, so a pre-sized URL would make every candidate above that width come
+back at 1x. `images.remotePatterns` in [`next.config.ts`](../next.config.ts)
+allows only this project's images, so nobody can run other images through the
+optimiser at this site's expense.
+
+Given one side, `SmartImage` derives the other from the ratio of the image
+actually served, after the Studio crop, so the box reserved before load has the
+right shape.
 
 Dereferenced assets also get a blur placeholder. It is Sanity's
 **LQIP** — a base64 data URI usable as `blurDataURL` as-is, so no decoder ships
@@ -121,7 +135,8 @@ they had and simply render without a placeholder.
   `preload` as the wrong tool once more than one is a candidate.
 - **SVG and GIF pass through untouched.** `isPassThroughUrl()` renders both
   with plain `next/image` and `unoptimized`: Sanity cannot transform an SVG,
-  and resizing an animated GIF can reduce it to its first frame. The check
+  and resizing an animated GIF can reduce it to its first frame. Both load
+  straight from the Sanity CDN, so they still count toward its bandwidth. The check
   reads the URL path, so a crop `rect` query does not hide the extension. SVGs
   also get no blur placeholder, which would otherwise show through their
   transparency.
@@ -129,10 +144,10 @@ they had and simply render without a placeholder.
   `image.caption`, and logs in development when all three are empty. Pass
   `decorative` for genuinely presentational images — that is the only case where
   an empty `alt` is right.
-- **Formats and hosts** in [`next.config.ts`](../next.config.ts) — AVIF and
-  WebP, `cdn.sanity.io` only, qualities 75/85/100 — apply to the OG images
-  below. `SmartImage` bypasses the optimiser and gets its format from the CDN's
-  `auto=format`.
+- **Formats, hosts and qualities** in [`next.config.ts`](../next.config.ts)
+  (AVIF and WebP, this project's `cdn.sanity.io` images only, and the
+  `images.qualities` list) apply to every optimised image: `SmartImage` and the
+  OG images below.
 - **OG images** go through `getCachedOGImageUrl()`, which builds a 1200×630 JPEG
   on the Sanity CDN and routes it through `/_next/image` so Next caches it.
 
