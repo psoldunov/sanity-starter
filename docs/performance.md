@@ -113,9 +113,11 @@ back at 1x. `images.remotePatterns` in [`next.config.ts`](../next.config.ts)
 allows only this project's images, so nobody can run other images through the
 optimiser at this site's expense.
 
-Given one side, `SmartImage` derives the other from the ratio of the image
-actually served, after the Studio crop, so the box reserved before load has the
-right shape.
+The optimiser resizes by width alone. Given both `width` and `height` (and not
+`fill`), the source also gets `h` and `fit=min`, so Sanity crops it to the
+box's ratio first and never enlarges it. Given one side, `SmartImage` derives
+the other from the ratio of the image actually served, after the Studio crop,
+so the box reserved before load has the right shape.
 
 Dereferenced assets also get a blur placeholder. It is Sanity's
 **LQIP** — a base64 data URI usable as `blurDataURL` as-is, so no decoder ships

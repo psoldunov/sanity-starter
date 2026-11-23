@@ -232,13 +232,27 @@ const OPTIMIZER_SOURCE_QUALITY = 90;
  * (`fit=max` never enlarges, and neither does the optimiser) and kept at high
  * quality, so it is compressed for real only once.
  *
+ * The optimiser resizes by width alone, so a fixed box gets its ratio from the
+ * source: when the caller sets both sides and not `fill`, `fit=min` has Sanity
+ * crop to that ratio (never enlarging) before the optimiser sees it, as
+ * `object-cover` would.
+ *
  * @param url - A Sanity CDN image URL, with or without a crop `rect`.
- * @returns The same URL with the source width, fit and quality set.
+ * @param box - The caller's `width`, `height` and `fill`.
+ * @returns The same URL with the source size, fit and quality set.
  */
-export function optimizerSourceUrl(url: string): string {
+export function optimizerSourceUrl(
+	url: string,
+	{ width, height, fill }: { width?: number; height?: number; fill?: boolean },
+): string {
 	const source = new URL(url);
+	const isFixedBox = Boolean(width && height && !fill);
 	source.searchParams.set('w', String(OPTIMIZER_SOURCE_MAX_WIDTH));
-	source.searchParams.set('fit', 'max');
 	source.searchParams.set('q', String(OPTIMIZER_SOURCE_QUALITY));
+	source.searchParams.set('fit', isFixedBox ? 'min' : 'max');
+	if (isFixedBox && width && height) {
+		const boxHeight = (OPTIMIZER_SOURCE_MAX_WIDTH * height) / width;
+		source.searchParams.set('h', String(Math.round(boxHeight)));
+	}
 	return source.toString();
 }

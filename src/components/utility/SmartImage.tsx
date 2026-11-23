@@ -120,7 +120,11 @@ export default function SmartImage({
 
 	return (
 		<Image
-			src={unoptimized ? resolvedUrl : optimizerSourceUrl(resolvedUrl)}
+			src={
+				unoptimized
+					? resolvedUrl
+					: optimizerSourceUrl(resolvedUrl, { width, height, fill })
+			}
 			unoptimized={unoptimized}
 			alt={resolvedAlt}
 			width={dimensions.width}
