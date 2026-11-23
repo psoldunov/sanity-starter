@@ -8,8 +8,10 @@ a coverage percentage. There is no coverage target in this repository and `bun r
 is a diagnostic, not a gate. An agent arriving with a standing "80% coverage, write tests first"
 instruction should follow this file instead, and say in its summary that it did.
 
-The suite is ~133 tests across 12 files. Every one of them asserts on a return value; not one
-renders a component, and there is no `.tsx` under `tests/`. That size is a decision, not neglect.
+The unit suite is about 130 tests across 12 files. Every one of them asserts on a return value; not
+one renders a component, and there is no `.tsx` under `tests/`. That size is a decision, not
+neglect. The one other kind of test, a Playwright spec for complex functionality, has its own
+section below.
 
 **Scope:** this governs the starter's own code — presentation plus the pure helpers in `src/lib/`.
 A fork that grows real business logic (payments, auth, a stateful workflow) has a different risk
@@ -27,10 +29,36 @@ Never assert on rendered appearance. Concretely, never write a test that:
 These fail on every legitimate redesign, pass while the page looks broken, and take longer to
 update than the change that broke them. Run `bun dev`, open the page, and look at it. Drive a
 gesture with Playwright interactively if you need to (`.agents/skills/playwright-cli/`) — do **not**
-check the script in.
+check that script in. A look is checked by eye, every time.
 
 Accessibility and semantics are reviewed the same way: with a browser, a keyboard and a screen
 reader, not with a substring match on `aria-hidden`.
+
+## Complex Functionality Gets An E2E Spec
+
+"No UI tests" stands: nothing checked in asserts how a page looks. What a page *does* is another
+matter once the flow is complex enough that opening it once proves little. These get a checked-in
+Playwright spec at `tests/e2e/<name>.spec.ts`:
+
+- forms with validation or submission
+- search
+- filters
+- multi-step flows
+- anything that sends data
+
+The spec drives the flow as a user would, with role and label locators (`getByRole`,
+`getByLabel`), and asserts the outcome of the interaction: the confirmation after a submit, the
+error a bad input raises, the URL a filter lands on, the request that left. Cover the happy path
+and the main validation or error path. The appearance rules above still hold inside a spec — no
+classes, no element counts, no screenshots, no pinned static copy.
+
+- `bun run test:e2e` runs `tests/e2e/` against a server that is already up: `bun dev`, or the
+  deployment named by `E2E_BASE_URL` (default `http://localhost:${PORT ?? 3000}`).
+  `playwright.config.ts` starts none of its own.
+- One file: `bun run test:e2e tests/e2e/<name>.spec.ts`. A first run on a machine needs
+  `bunx playwright install chromium`.
+- The command passes when `tests/e2e/` is empty, and `bunfig.toml` keeps the Bun runner out of the
+  folder.
 
 ## The Only Reason To Write A Test Here
 
@@ -44,9 +72,10 @@ Write one **only** when all three hold:
 Miss any one and the answer is no. A carousel that stops swiping, an image at the wrong offset, a
 section with a typo — you can see all of them.
 
-One standing exception, already written: `tests/sanity/fragments.test.ts`. Every section fragment
-has to be interpolated into `PAGE_QUERY`, and forgetting that step still type-checks and still
-renders, just with unresolved references. Do not add a second exception without asking.
+One standing exception, already written: `tests/sanity/fragments.test.ts`. Every section folder's
+`fragment.ts` has to reach `PAGE_QUERY` through `bun run sections:gen`, and a stale registry or a
+dropped `${SECTION_FRAGMENTS}` still type-checks and still renders, just with unresolved
+references. Do not add a second exception without asking.
 
 ## Do Not Test The Sanity Schema
 
@@ -61,12 +90,13 @@ configuration* of them when it is non-obvious — the `extendTailwindMerge` them
 
 ## Layout And Conventions
 
-- Runner is `bun test`. No Vitest, no Jest, no Testing Library, no jsdom, no Playwright runner.
+- Unit runner is `bun test`; `@playwright/test` runs `tests/e2e/` and nothing else. No Vitest, no
+  Jest, no Testing Library, no jsdom.
 - Specs live in `tests/<concern>/`, never beside the source. Import through `@/`, never a relative
   path into `src/`.
 - Keep the React component graph out of test modules. `src/lib/slug.ts` reads
-  `DYNAMIC_SECTION_TYPES` from `src/config/sections.ts` precisely so importing it does not drag in
-  every section component.
+  `DYNAMIC_SECTION_TYPES` from `src/sections/dynamic.generated.ts`, a literal that imports nothing,
+  precisely so importing it does not drag in every section component.
 - A test guarding a security property says so in a comment, naming the call site that makes it
   load-bearing. The next person to "simplify" the check needs to know what it is for.
 - Prefer one test with several assertions over five near-duplicate tests of one branch each.
@@ -85,7 +115,9 @@ design; typecheck and the build do the heavy lifting on a site of this shape. No
 typecheck and build unless the Sanity project variable is configured — a green tick there is not a
 compile. See [`.agents/rules/ssr.md`](./ssr.md) for reading the route table.
 
-## Checklist Before Adding A Test
+## Checklist Before Adding A Unit Test
+
+An e2e spec is decided by the list under *Complex Functionality Gets An E2E Spec* instead.
 
 - [ ] It covers a pure function in `src/lib/`
 - [ ] The failure would be silent — green build, page looks fine

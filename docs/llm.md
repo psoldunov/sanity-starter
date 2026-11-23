@@ -61,7 +61,7 @@ GET /about.md
        └─ pageToMarkdown(page)                               src/lib/markdown/document.ts
             ├─ front matter: title, description, url, updated
             └─ sectionToMarkdown(section) for each visible section
-                 └─ SECTION_SERIALIZERS[section._type]       src/lib/markdown/sections.ts
+                 └─ SECTION_SERIALIZERS[section._type]       src/sections/<name>/markdown.ts
 
 GET /about   Accept: text/markdown
   └─ 307 → /about.md                                         redirects() in next.config.ts
@@ -71,25 +71,30 @@ Posts take the same route: `/posts/<slug>.md` goes through `postToMarkdown`, whi
 title, excerpt and cover image, then converts the body with `@portabletext/markdown`
 (`src/lib/markdown/portableText.ts`).
 
-Everything under `src/lib/markdown/` is plain functions with no React and no Sanity client. The
+Everything under `src/lib/markdown/`, and every section's `markdown.ts`, is plain functions with no React and no Sanity client. The
 route handlers in `src/app/` fetch the data and pass it in.
 
 ## Extending it
 
 ### A new section
 
-When you add a section with the steps in [sections](./sections.md), typecheck fails until the
-section has a serializer. `SECTION_SERIALIZERS` is typed over every section in `PAGE_QUERY`, so
-it cannot fall out of step.
+Each section has its own serializer in `src/sections/<name>/markdown.ts`, next to its schema,
+fragment and component. `bun run sections:gen` collects them into `SECTION_SERIALIZERS`
+(`src/sections/serializers.generated.ts`), which `sectionToMarkdown` in
+`src/lib/markdown/sections.ts` reads. The registry is typed `SectionSerializers`, a mapped type
+over every section in `PAGE_QUERY`, so typecheck fails when a section has no serializer or one
+for the wrong `_type`. The steps for adding a folder are in [sections](./sections.md).
 
 For the CTA section that page builds (a heading, a paragraph and a link), the serializer looks
 like this:
 
 ```ts
-// src/lib/markdown/sections.ts
+// src/sections/ctaSection/markdown.ts
+import { blocks, heading, linkTo, prose } from '@/lib/markdown/format';
 import { linkUrl } from '@/lib/markdown/links';
+import type { SectionSerializer } from '@/lib/markdown/sections';
 
-ctaSection: (section, context) => {
+const ctaSectionMarkdown: SectionSerializer<'ctaSection'> = (section, context) => {
 	const url = linkUrl(section.link, context.siteUrl);
 
 	return blocks(
@@ -97,7 +102,9 @@ ctaSection: (section, context) => {
 		prose(section.paragraph),
 		url ? linkTo(section.link?.label || url, url) : '',
 	);
-},
+};
+
+export default ctaSectionMarkdown;
 ```
 
 `linkUrl` resolves a CMS link the way `SmartLink` does and makes it absolute. It skips file

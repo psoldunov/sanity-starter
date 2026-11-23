@@ -3,7 +3,8 @@
 **Use rem for custom lengths. Built-in Tailwind utilities are always allowed, regardless of their
 underlying units. Prefer existing utilities over custom values, and shared theme tokens over
 repeated arbitrary values. An arbitrary value that is a scale step written the long way is drift —
-convert it (rule 3).** Applies to styles you add or modify; existing violations are not precedent
+convert it (rule 3). Classes live on the element, never in a constant; a reused group becomes an
+`@utility` (rule 6).** Applies to styles you add or modify; existing violations are not precedent
 for new code.
 
 This repo uses Tailwind v4's CSS-first configuration. The whole theme is
@@ -227,3 +228,40 @@ Arithmetic is not verification. Compile and compare the declarations.
 ```tsx
 className={cn('flex gap-6 p-4', isActive && 'bg-accent', className)}
 ```
+
+## 6. Never store class names in constants
+
+- Do not put Tailwind classes in a variable or constant and pass it to `className`:
+  `const card = 'rounded-lg border p-6'`, `export const focusRing = '…'`, a `styles.ts` of class
+  strings. Write the classes on the element. A constant hides the element's styling from whoever
+  reads the markup, and class sorting and IntelliSense skip plain strings.
+- When a group of classes is reused frequently, make it a custom utility with `@apply` in
+  [`src/styles/globals.css`](../../src/styles/globals.css), and use its name like any other class.
+  Check the stylesheet for an existing utility first. Name it by role (`card`, `field-label`), not
+  by look (`rounded-gray-box`).
+
+```css
+@utility card {
+  @apply rounded-theme border border-border bg-surface p-6 shadow-sm;
+}
+```
+
+```tsx
+<article className={cn('card', isFeatured && 'ring-2 ring-accent', className)}>
+```
+
+- `src/components/blog/Pagination.tsx` is the worked example: its previous/next links and the
+  disabled `<span>` at either end share `@utility pagination-item`, and each element adds only
+  what differs (`hover:bg-surface` on a link, `text-muted opacity-50` on a span).
+- Use `@utility`, not a plain `.card {}` rule: a `@utility` works with variants (`hover:card`,
+  `lg:card`) and is emitted only when used.
+- Overrides need no extra setup. v4 sorts custom utilities by how many properties they set, so a
+  single-property utility such as `p-8` in `cn('card', 'p-8')` wins over the padding inside `card`.
+  `tailwind-merge` keeps both classes, which is correct here. Rule 4's `extendTailwindMerge` entry
+  is for theme tokens; a composite utility needs none.
+- Two patterns are not constants under this rule:
+  - A lookup keyed by a prop or state that selects whole classes, `const sizes = { sm: 'h-8 px-3',
+    lg: 'h-12 px-6' }` read as `sizes[size]`, kept in the component that reads it (rule 5).
+  - `cva()` variant definitions in shadcn-style components, such as `buttonVariants`.
+- An object of named groups that is not keyed by a prop, `const styles = { card: '…', title: '…' }`,
+  is still a constant. Inline the classes, or make the reused ones utilities.

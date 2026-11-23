@@ -205,7 +205,7 @@ render pass but do not need a deploy.
 | `linkWithLabel` | same file | The same fields plus `label`. |
 | `internalDestination` | [`objects/internalDestination.ts`](../src/sanity/schema/objects/internalDestination.ts) | Document reference **or** static path. |
 | `geo` | [`objects/geo.ts`](../src/sanity/schema/objects/geo.ts) | Per-document AI controls: `llmsListing`, `llmsSummary`, `schemaType`. |
-| Section objects | [`objects/sections/`](../src/sanity/schema/objects/sections) | `heroSection`, `cardsSection`, `imageTextSection`, `faqSection`. |
+| Section objects | [`src/sections/<name>/schema.ts`](../src/sections) | `heroSection`, `cardsSection`, `imageTextSection`, `faqSection`. Collected into `sectionTypes` by `bun run sections:gen`. |
 
 Links are covered in [links](./links.md).
 
@@ -215,8 +215,8 @@ Use these instead of hand-writing repeated field definitions
 (`src/sanity/schema/constructors/`):
 
 - **`defineSection({ name, title, icon, fields, preview, disablePadding })`** —
-  every section. Adds the `padding`, `id` and `hidden` configuration fields and
-  the shared preview component.
+  every section, in `src/sections/<name>/schema.ts`. Adds the `padding`, `id` and
+  `hidden` configuration fields and the shared preview component.
 - **`defineLink({ withLabel })`** — returns `{ type: 'link' }` or
   `{ type: 'linkWithLabel' }`, a reference to the registered type rather than
   inline fields. Spread it to add `name`, `title` or `description`.

@@ -120,7 +120,9 @@ environment variable on your host.
 
 Set to `1` to make `postinstall` skip type generation entirely. Useful in a CI
 image that installs dependencies before any Sanity credentials exist. Read only
-by [`scripts/postinstall.sh`](../scripts/postinstall.sh).
+by [`scripts/postinstall.sh`](../scripts/postinstall.sh). The section registry
+generator (`bun run sections:gen`) still runs: it needs no credentials, and
+every import of a section registry depends on it.
 
 ## Supplied by Vercel
 
@@ -174,8 +176,12 @@ Not everything configurable lives in the environment:
   (paths a CMS page may not claim), `CRAWLER_DISALLOWED_PATHS`.
 - [`src/config/linkables.ts`](../src/config/linkables.ts) —
   `LINKABLE_DOCUMENTS` and `STATIC_ROUTES`. See [links](./links.md).
-- [`src/config/sections.ts`](../src/config/sections.ts) —
-  `DYNAMIC_SECTION_TYPES`, the sections that read `searchParams`.
+- [`src/sections/*/config.ts`](../src/sections) — optional per-section settings:
+  `dynamic` (the section reads `searchParams`) and `order` (Studio insert-menu
+  position). `bun run sections:gen` collects them. See [sections](./sections.md).
+- [`playwright.config.ts`](../playwright.config.ts) — end-to-end specs in
+  `tests/e2e/`. The base URL is `E2E_BASE_URL`, falling back to
+  `http://localhost:$PORT` (3000 by default). It starts no server.
 - [`src/styles/globals.css`](../src/styles/globals.css) — design tokens as CSS
   custom properties, exposed to Tailwind v4 through `@theme inline`. Rebranding
   is an edit to that one block.

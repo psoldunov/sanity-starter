@@ -48,8 +48,8 @@ bun install
 ```
 
 Either way, `postinstall`
-([`scripts/postinstall.sh`](../scripts/postinstall.sh)) runs `bun run typegen`
-after the install. On a fresh project that has no `.env.local` yet,
+([`scripts/postinstall.sh`](../scripts/postinstall.sh)) runs
+`bun run sections:gen`, then `bun run typegen`, after the install. On a fresh project that has no `.env.local` yet,
 type generation cannot reach your project and prints instructions instead of
 failing the install — that is expected, and nothing is broken. Set the
 environment up (next step) and it will succeed from then on.
@@ -80,9 +80,10 @@ bun dev
 - Site: <http://localhost:3000>
 - Studio: <http://localhost:3000/admin>
 
-`predev` runs `bun run typegen` first, so every dev start regenerates
-`schema.json` and `src/sanity/types/sanity.types.ts` from the current schema.
-Both are gitignored build artefacts — never edit them by hand.
+`predev` runs `bun run typegen` first, which runs `bun run sections:gen` and then
+regenerates `schema.json` and `src/sanity/types/sanity.types.ts` from the
+current schema. These files, and the `src/sections/*.generated.ts` registries,
+are gitignored build artefacts. Never edit them by hand.
 
 ## 5. Create your first content
 
@@ -101,6 +102,9 @@ The document types and their fields are described in
 ## What `bun dev` actually does
 
 1. `predev` → `bun run typegen`
+   - `bun run sections:gen` scans `src/sections/*/` and writes the section
+     registries (`src/sections/*.generated.ts`) that the schema, `PAGE_QUERY`
+     and `SectionRenderer` import.
    - `sanity schema extract --path=./schema.json --enforce-required-fields --force`
      serialises the Studio schema to `schema.json`.
    - `sanity typegen generate` reads that file plus every `defineQuery()` call
@@ -109,8 +113,9 @@ The document types and their fields are described in
    group and the embedded Studio from the `(studio)` group at `/admin`.
 
 Because typegen is a prestep of both `dev` and `build`, generated types can never
-drift from the schema in normal use. If you edit a schema file while the dev
-server is running, re-run `bun run typegen` to refresh the types.
+drift from the schema in normal use. If you edit a schema file or add a section
+folder while the dev server is running, re-run `bun run typegen` to refresh the
+registries and types.
 
 ## Agent tooling (optional, delete it if you do not want it)
 
@@ -141,15 +146,31 @@ without a second copy to keep in step.
 | `bun dev` | Dev server (site and Studio), typegen first. |
 | `bun run build` | Production build, typegen first. |
 | `bun start` | Serve the production build. |
-| `bun run typegen` | Extract schema and regenerate types. |
+| `bun run sections:gen` | Scan `src/sections/*/` and write the section registries. |
+| `bun run typegen` | `sections:gen`, then extract the schema and regenerate types. |
 | `bun run typegen:extract` / `bun run typegen:generate` | The two typegen steps individually. |
 | `bun run lint` | Biome check. |
 | `bun run lint:fix` | Biome check with safe fixes applied. |
 | `bun run format` | Biome formatter. |
-| `bun run typecheck` | `next typegen`, then `tsc --noEmit`. |
-| `bun test` | Unit tests (Bun's runner). |
+| `bun run typecheck` | `sections:gen`, `next typegen`, then `tsc --noEmit`. |
+| `bun test` | Unit tests (Bun's runner). Skips `tests/e2e/`. |
 | `bun run test:coverage` | Tests with a coverage report. |
+| `bun run test:e2e` | Playwright specs in `tests/e2e/` (Chromium). Start `bun dev` first. |
 | `bun run check` | Lint, then typecheck, then test — run this before pushing. |
+
+## Testing
+
+Unit tests are small on purpose: pure functions in `src/lib/` whose wrong answer
+is silent and touches security, SEO or routing. Nothing asserts on rendered
+appearance; you check that by opening the page.
+
+Complex functionality is the exception and gets a checked-in Playwright spec in
+`tests/e2e/`: forms with validation or submission, search, filters, multi-step
+flows, anything that sends data. [`playwright.config.ts`](../playwright.config.ts)
+runs Chromium against `E2E_BASE_URL`, or `http://localhost:$PORT` (3000 by
+default). It does not start a server, so run `bun dev` in another terminal first.
+`bun run test:e2e` passes when there are no specs, which is the state of a fresh
+starter. [`bunfig.toml`](../bunfig.toml) keeps `bun test` out of `tests/e2e/`.
 
 ## Next
 
