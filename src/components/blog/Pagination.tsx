@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
 
 type PaginationProps = {
 	currentPage: number;
@@ -34,11 +33,6 @@ export default function Pagination({
 	const hasPrevious = currentPage > 1;
 	const hasNext = currentPage < totalPages;
 
-	const linkClass =
-		'rounded-theme border border-border px-4 py-2 text-sm transition-colors hover:bg-surface';
-	const disabledClass =
-		'rounded-theme border border-border px-4 py-2 text-sm text-muted opacity-50';
-
 	return (
 		<nav
 			aria-label='Pagination'
@@ -54,12 +48,12 @@ export default function Pagination({
 						query: currentPage === 2 ? undefined : { page: currentPage - 1 },
 					}}
 					rel='prev'
-					className={cn(linkClass)}
+					className='transition-colors pagination-item hover:bg-surface'
 				>
 					← Newer
 				</Link>
 			) : (
-				<span className={disabledClass}>← Newer</span>
+				<span className='text-muted opacity-50 pagination-item'>← Newer</span>
 			)}
 
 			<p aria-current='page' className='text-sm text-muted'>
@@ -70,12 +64,12 @@ export default function Pagination({
 				<Link
 					href={{ pathname: basePath, query: { page: currentPage + 1 } }}
 					rel='next'
-					className={cn(linkClass)}
+					className='transition-colors pagination-item hover:bg-surface'
 				>
 					Older →
 				</Link>
 			) : (
-				<span className={disabledClass}>Older →</span>
+				<span className='text-muted opacity-50 pagination-item'>Older →</span>
 			)}
 		</nav>
 	);

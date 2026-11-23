@@ -36,6 +36,10 @@ on the list: Vercel supplies it (see
   schema so the Sanity Dashboard, Canvas and Agent Actions can discover it. It
   needs `SANITY_AUTH_TOKEN`; without it the step fails and, because the script
   runs under `set -e`, so does the install.
+- **Always, first**: `bun run sections:gen`, which writes the gitignored
+  `src/sections/*.generated.ts` registries. It runs before the schema deploy,
+  because the Studio schema imports them, and regardless of
+  `SKIP_SANITY_TYPEGEN`.
 - **Always**: `bun run typegen`, regenerating `schema.json` and
   `src/sanity/types/sanity.types.ts`. Both are gitignored, so they are absent
   from a fresh checkout and every build has to produce them. This step is

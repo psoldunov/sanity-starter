@@ -52,7 +52,7 @@ with its own shell — it must not inherit the site header, footer or fonts.
    `permanentRedirect()` (308) or `redirect()` (307), otherwise `notFound()`.
 4. Each section is handed to `SectionRenderer`
    ([`src/components/utility/SectionRenderer.tsx`](../src/components/utility/SectionRenderer.tsx)),
-   which looks the component up by `_type` in the registry.
+   which looks the component up by `_type` in `SECTION_COMPONENTS`.
 5. Each section component wraps its output in `<Section>`
    ([`src/components/utility/Section.tsx`](../src/components/utility/Section.tsx)),
    which applies padding, sets the anchor `id`, and drops hidden sections
@@ -64,32 +64,38 @@ with its own shell — it must not inherit the site header, footer or fonts.
 
 ## The section registry
 
-Two registries have to agree, both keyed on the schema `_type`:
+Every section lives in one folder, `src/sections/<name>/`, named after its
+schema `_type`. The folder holds the schema, the GROQ fragment, the component, a
+Markdown serializer and an optional config. `bun run sections:gen`
+([`scripts/sections-gen.ts`](../scripts/sections-gen.ts)) scans the folders and
+writes the registries below as gitignored `src/sections/*.generated.ts` files, so
+the schema, the query and the component can't disagree about which sections
+exist.
 
-| Registry | File | Holds |
+| Generated file | Exports | Consumer |
 | --- | --- | --- |
-| Schema | [`src/sanity/schema/objects/sections/index.ts`](../src/sanity/schema/objects/sections/index.ts) | the `sectionTypes` array |
-| GROQ | [`src/sanity/lib/fragments.ts`](../src/sanity/lib/fragments.ts) | one fragment constant per section `_type` |
-| Component | [`src/lib/sections.ts`](../src/lib/sections.ts) | `_type` → React component |
+| `schemas.generated.ts` | `sectionTypes` | [`src/sanity/schema/index.ts`](../src/sanity/schema/index.ts) and the `page` document's `sections` array |
+| `fragments.generated.ts` | `SECTION_FRAGMENTS` | `${SECTION_FRAGMENTS}` in `PAGE_QUERY` |
+| `components.generated.ts` | `SECTION_COMPONENTS` | `SectionRenderer`: `_type` → React component |
+| `serializers.generated.ts` | `SECTION_SERIALIZERS` | `sectionToMarkdown` in [`src/lib/markdown/sections.ts`](../src/lib/markdown/sections.ts): the Markdown rendering of a page |
+| `dynamic.generated.ts` | `DYNAMIC_SECTION_TYPES` | `hasDynamicParams` in [`src/lib/slug.ts`](../src/lib/slug.ts) |
 
-Fragments live apart from the schema deliberately. When they sat beside their
-schema definitions, `src/sanity/lib/queries` — and through it `robots.ts`,
-`sitemap.ts` and every page — transitively imported `defineSection` and the
+Fragments stay apart from the schema deliberately. When they sat beside their
+schema definitions, `src/sanity/lib/queries` (and through it `robots.ts`,
+`sitemap.ts` and every page) transitively imported `defineSection` and the
 whole `sanity` Studio runtime. That put the Studio in the public bundles, and
 under Next 16's `react-server` condition it failed the build outright.
-`src/sanity/lib/fragments.ts` therefore imports **nothing**, and must keep
-importing nothing.
+[`src/sanity/lib/fragments.ts`](../src/sanity/lib/fragments.ts) therefore imports
+**nothing**, and a section's `fragment.ts` may import only from it.
 
-`SectionRenderer` skips an unknown `_type` rather than throwing — an editor can
-save a section whose fragment has not reached `PAGE_QUERY` yet, and that should
-not 500 the route. In development it logs what to register.
+`DYNAMIC_SECTION_TYPES` is a literal array that imports nothing. A section opts
+in with `dynamic: true` in its `config.ts`, and the generator collects the flags.
+`src/lib/slug.ts` can read the list without pulling React and the section
+components into it, or into anything that tests it.
 
-A fourth, optional registry: `DYNAMIC_SECTION_TYPES` in
-[`src/config/sections.ts`](../src/config/sections.ts) lists sections that read
-`searchParams`. It lives in `config/` rather than next to the component registry
-on purpose — `src/lib/sections.ts` imports every section component, so reading
-the list from there would drag React and the whole component graph into
-`src/lib/slug.ts` and into anything that tests it.
+`SectionRenderer` skips an unknown `_type` rather than throwing, since an editor
+can save a section the generator has not seen yet, and that should not 500 the
+route. In development it logs what to do.
 
 Full walkthrough: [sections](./sections.md).
 
@@ -97,6 +103,7 @@ Full walkthrough: [sections](./sections.md).
 
 ```
 src/sanity/schema/**          hand-written schema (defineType/defineField)
+src/sections/*/               one folder per section; sections:gen → *.generated.ts
         │  sanity schema extract --force
         ▼
 schema.json                   generated, gitignored
@@ -114,11 +121,14 @@ Three consequences worth internalising:
 
 - **Types are derived, never hand-maintained.** Editing
   `src/sanity/types/sanity.types.ts` is pointless; it is regenerated on every
-  `bun dev` and `bun run build`.
+  `bun dev` and production build, after `sections:gen` has refreshed the section
+  registries.
 - **TypeGen resolves `${CONST}` interpolation only for plain string literal
-  constants.** Every fragment in
-  [`src/sanity/lib/fragments.ts`](../src/sanity/lib/fragments.ts) is a plain
-  template literal — no function calls, no `.join()`.
+  constants.** Every fragment, in
+  [`src/sanity/lib/fragments.ts`](../src/sanity/lib/fragments.ts) and in each
+  `src/sections/<name>/fragment.ts`, is a plain template literal: no function
+  calls, no `.join()`. That is also why `fragments.generated.ts` imports each
+  fragment through its own `<name>.fragment.generated.ts` file.
 - **Component props derive from the *branded* result.** `sanityFetch` returns
   types deep-branded as `StegaString`, because in draft mode strings may carry
   invisible click-to-edit characters. [`src/types/index.ts`](../src/types/index.ts)
@@ -134,7 +144,7 @@ Three consequences worth internalising:
 | [`src/sanity/lib/live.ts`](../src/sanity/lib/live.ts) | `defineLive` → `sanityFetch` and `<SanityLive />`. Holds the read token. |
 | [`src/sanity/lib/fetchers.ts`](../src/sanity/lib/fetchers.ts) | `React.cache()`-wrapped readers, each with a `stega: false` metadata variant. |
 | [`src/sanity/lib/queries/index.ts`](../src/sanity/lib/queries/index.ts) | Every `defineQuery()`. Projected, never `*[...]` bare. |
-| [`src/sanity/lib/fragments.ts`](../src/sanity/lib/fragments.ts) | Every shared GROQ projection: `INTERNAL_DESTINATION_PROJECTION` and one fragment per section. Imports nothing, by design. |
+| [`src/sanity/lib/fragments.ts`](../src/sanity/lib/fragments.ts) | Shared GROQ projections such as `INTERNAL_DESTINATION_PROJECTION`. Section fragments live in their section folders. Imports nothing, by design. |
 | [`src/sanity/lib/utils.ts`](../src/sanity/lib/utils.ts) | `urlFor`, `getSanityFileUrl`, `getCachedOGImageUrl`, protected-route helpers. |
 | [`src/sanity/lib/validations.ts`](../src/sanity/lib/validations.ts) | Route validation shared by `page` and `redirect`. |
 | [`src/sanity/lib/resolve.ts`](../src/sanity/lib/resolve.ts) | Presentation `locations` and `mainDocuments`. |
@@ -179,13 +189,13 @@ hook that is load-bearing — see
 
 | Concern | Location |
 | --- | --- |
-| Section components | `src/components/sections/` |
+| Sections | `src/sections/<name>/`: `schema.ts`, `fragment.ts`, component, `markdown.ts`, optional `config.ts` |
 | Layout components | `src/components/layout/` (`Header`, `Footer`, `Container`) |
 | Shared utility components | `src/components/utility/` (`Section`, `SectionRenderer`, `SmartImage`, `SmartLink`, `Slot`, `DisableDraftMode`) |
 | Blog components | `src/components/blog/` (`PostCard`, `PostBody`, `Pagination`) |
 | Primitives | `src/components/elements/` (`Button`) |
-| Pure utilities | `src/lib/` — `slug.ts`, `url.ts`, `links.ts`, `image.ts`, `date.ts`, `utils.ts`, `sections.ts`, `actions.ts` |
-| Configuration | `src/config/` — `index.ts`, `linkables.ts`, `sections.ts` |
+| Pure utilities | `src/lib/` — `slug.ts`, `url.ts`, `links.ts`, `image.ts`, `date.ts`, `utils.ts`, `actions.ts` |
+| Configuration | `src/config/` — `index.ts`, `linkables.ts` |
 | Fonts | `src/fonts/index.ts` |
 | Hooks | `src/hooks/index.ts` — all client-side, all SSR-safe |
 | Shared types | `src/types/index.ts` |
@@ -193,5 +203,6 @@ hook that is load-bearing — see
 | Styles and tokens | `src/styles/globals.css` |
 
 Unit tests live in `tests/<concern>/`, grouped by what they cover rather than
-beside the source, and run under
-`bun test`.
+beside the source, and run under `bun test`. Playwright specs for complex
+functionality live in `tests/e2e/` and run under `bun run test:e2e`; see
+[getting started](./getting-started.md#testing).

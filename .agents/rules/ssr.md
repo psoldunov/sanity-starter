@@ -31,8 +31,9 @@ data layer rather than a page.
 
    The catch-all page does not read `searchParams` unconditionally. It awaits them only when
    `hasDynamicParams(page)` says one of the page's sections needs them, which reads
-   `DYNAMIC_SECTION_TYPES` from `src/config/sections.ts`. **A section that needs query params gets
-   its `_type` registered there** — it does not reach for `searchParams` in the page. A page built
+   `DYNAMIC_SECTION_TYPES`, which `bun run sections:gen` writes. **A section that needs query
+   params sets `dynamic: true` in its `src/sections/<name>/config.ts`** — it does not reach for
+   `searchParams` in the page. A page built
    from sections that do not need them stays prerendered.
 
    `draftMode()` is the exception that does *not* cost you the route: `src/app/(site)/layout.tsx`

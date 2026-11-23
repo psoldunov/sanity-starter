@@ -1,5 +1,5 @@
 import type { ElementType } from 'react';
-import sections from '@/lib/sections';
+import { SECTION_COMPONENTS } from '@/sections/components.generated';
 import type { SectionData } from '@/types';
 
 export type { SectionData };
@@ -8,7 +8,7 @@ export type { SectionData };
  * Renders one page-builder section by looking its `_type` up in the registry.
  *
  * An unknown or missing `_type` skips the section rather than throwing. Editors
- * can save a section whose GROQ fragment has not been added to `PAGE_QUERY` yet,
+ * can save a section whose folder has not reached this deployment yet,
  * and one such section should not take the whole route down with a 500.
  *
  * @param props.section - The section object from `PAGE_QUERY`.
@@ -30,16 +30,18 @@ export function SectionRenderer({
 }) {
 	const { _type } = section;
 
-	if (!_type || !(_type in sections)) {
+	if (!_type || !(_type in SECTION_COMPONENTS)) {
 		if (process.env.NODE_ENV !== 'production') {
 			console.error(
-				`SectionRenderer: no component registered for section type "${_type ?? 'undefined'}". Register it in src/lib/sections.ts and add its fragment to PAGE_QUERY.`,
+				`SectionRenderer: no component registered for section type "${_type ?? 'undefined'}". Add a src/sections/${_type ?? '<name>'}/ folder and run "bun run sections:gen".`,
 			);
 		}
 		return null;
 	}
 
-	const Renderer = sections[_type as keyof typeof sections] as ElementType;
+	const Renderer = SECTION_COMPONENTS[
+		_type as keyof typeof SECTION_COMPONENTS
+	] as ElementType;
 
 	return (
 		<Renderer

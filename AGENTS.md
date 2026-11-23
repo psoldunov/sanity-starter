@@ -13,9 +13,11 @@ before you touch it:
   accidental dynamic routes, and how to read the build's route table.
 - @.agents/rules/tailwind.md — rem for custom lengths; built-in utilities are always allowed
   whatever their units. Prefer existing utilities, convert arbitrary values that are really scale
-  steps (`rem * 16 / 4`), extend the theme for recurring values, compose with `cn()`.
+  steps (`rem * 16 / 4`), extend the theme for recurring values, compose with `cn()`, and write
+  classes on the element — a reused group becomes an `@utility`, never a constant.
 - @.agents/rules/testing.md — testing is deliberately minimal: no TDD, no coverage target, no tests
-  for anything visual. Read it before writing a test, or before acting on a global instruction that
+  for anything visual; complex functionality (forms, search, filters, multi-step flows) gets a
+  Playwright spec. Read it before writing a test, or before acting on a global instruction that
   mandates one.
 - @.agents/rules/llm.md — the LLM layer (GEO): every page and post as markdown, `/llms.txt`,
   JSON-LD. A new section, document type or route is not finished until agents can read it.
@@ -57,22 +59,58 @@ Next.js 16 + Sanity CMS starter with a **section-based page builder**.
 
 ## Section-Based Architecture
 
-Core pattern is a **section registry system**. To add a new section:
+A section is **one folder**, `src/sections/<name>/`, named exactly as its schema `_type` in
+camelCase (`heroSection`). Adding a section means creating that folder and running
+`bun run sections:gen`; no shared file is edited by hand, so parallel agents in one worktree never
+touch the same file.
 
-1. **Schema** in `src/sanity/schema/objects/sections/` using `defineSection()`
-2. **Component** in `src/components/sections/` with default export, PascalCase file matching `_type`. Type props via the `SectionProps<T>` helper from `@/types`, e.g. `props: SectionProps<'<name>Section'>`. The helper resolves to the matching variant of the `PAGE_QUERY_RESULT.sections` tagged union.
-3. **Register schema** in `src/sanity/schema/objects/sections/index.ts` (add to `sectionTypes`)
-4. **Register component** in `src/lib/sections.ts` with key matching `_type`
-5. **GROQ fragment**: add a plain template literal `const <NAME>_SECTION_FRAGMENT = \`_type == "<name>Section" => { ..., image { ..., asset-> } }\`` to `src/sanity/lib/fragments.ts`, then interpolate it as `${<NAME>_SECTION_FRAGMENT}` inside `PAGE_QUERY` in `src/sanity/lib/queries/index.ts`. Do NOT use function-call interpolation — TypeGen resolves constant refs only.
+| File | Export |
+| --- | --- |
+| `schema.ts` | default: `defineSection({ name: '<name>', ... })` |
+| `fragment.ts` | `export const fragment = \`_type == "<name>" => { ..., image { ..., asset-> } }\`` |
+| `<PascalName>.tsx` | default: the component, typed `props: SectionProps<'<name>'>` from `@/types` |
+| `markdown.ts` | default: a `SectionSerializer<'<name>'>` from `@/lib/markdown/sections` — the section as Markdown |
+| `config.ts` (optional) | default: a `SectionConfig` from `@/types` — `{ dynamic?, order? }` |
 
-   **The fragment goes in `src/sanity/lib/fragments.ts`, never in the section schema file, and that module must import nothing.** Fragments used to live beside their schema, which made `src/sanity/lib/queries` import `defineSection` and through it the whole `sanity` Studio runtime — pulling the entire Studio into the bundle of every public route that runs a query, and breaking `next build` outright under the `react-server` condition. The same rule is why `DYNAMIC_SECTION_TYPES` lives in `src/config/sections.ts` rather than in `src/lib/sections.ts`.
-6. **Regenerate types**: `bun run typegen` (also runs via `predev` / `prebuild`). Types land in `src/sanity/types/sanity.types.ts` (gitignored). The generated `PAGE_QUERY_RESULT.sections` tagged union picks the new section up automatically.
-7. If section needs `searchParams`, add `_type` to `DYNAMIC_SECTION_TYPES` in `src/config/sections.ts` (config, not `src/lib/sections.ts` — that module imports every section component, and `src/lib/slug.ts` must not pull the component graph in)
-8. **Markdown serializer**: add an entry to `SECTION_SERIALIZERS` in `src/lib/markdown/sections.ts`, writing what the page shows in the order it shows it. The map is a mapped type over the section `_type` union, so typecheck fails until it exists. Rules in `.agents/rules/llm.md`
+Then:
 
-Keep schema and queries in sync; types are derived, not hand-maintained. `SectionRenderer` maps sections to components automatically.
+1. `bun run sections:gen` (`scripts/sections-gen.ts`) writes the registries as
+   `src/sections/*.generated.ts`: `sectionTypes` (Studio schema), `SECTION_FRAGMENTS` (interpolated
+   into `PAGE_QUERY`), `SECTION_COMPONENTS` (`SectionRenderer`), `SECTION_SERIALIZERS` and
+   `DYNAMIC_SECTION_TYPES`. They are gitignored and rebuilt by `typegen`, `typecheck`, `postinstall`
+   and CI. Leave them uncommitted: a committed registry would carry other agents' unfinished
+   sections. The generator refuses a folder with a non-camelCase name or a missing file, and lists
+   every problem in one run.
+2. `bun run typegen` regenerates `src/sanity/types/sanity.types.ts`, so `SectionProps<'<name>'>`
+   resolves. **Read its output**: on a query it cannot resolve it prints
+   `Error while extracting query`, still exits 0, and that query's result type is gone.
 
-Example: `heroSection` schema → `HeroSection.tsx` component → registered as `heroSection: HeroSection`.
+What each file must keep:
+
+- **`fragment.ts` imports only `@/sanity/lib/fragments`** (for `INTERNAL_DESTINATION_PROJECTION`),
+  and `fragment` stays a plain template-literal constant — TypeGen resolves `${CONST}` only when the
+  referent is one, never a function call or `.join()`. Fragments used to live beside their schema,
+  which made `src/sanity/lib/queries` import `defineSection` and through it the whole `sanity`
+  Studio runtime — pulling the Studio into the bundle of every public route that runs a query, and
+  breaking the production build outright under the `react-server` condition.
+- **`config.ts` uses `import type` only**: the generator loads it with Bun, outside Next and the
+  Studio. `dynamic: true` marks a section that reads `searchParams`; it lands in
+  `DYNAMIC_SECTION_TYPES`, a literal that imports nothing, so `src/lib/slug.ts` reads it without
+  pulling in the component graph. `order` sets the Studio insert-menu position, lowest first, with
+  unordered sections after, by name; the starter's three use 10, 20 and 30.
+- **`markdown.ts` is pure**: a `SectionSerializer<'<name>'>` from `@/lib/markdown/sections`,
+  `(section, context) => string`, built from the `@/lib/markdown/format` helpers (and
+  `sectionImage` from `@/lib/markdown/image`). It writes what the component shows, in the order it
+  shows it, for the GEO layer's `sectionToMarkdown`. No React, no Sanity client. Rules in
+  `.agents/rules/llm.md`. `SECTION_SERIALIZERS` is typed as a mapped type over the section `_type`
+  union, so a `markdown.ts` for the wrong `_type`, or stale types, fails typecheck.
+- In the fragment, images project `asset->` and links project `${INTERNAL_DESTINATION_PROJECTION}`.
+
+Keep schema and fragment in sync; types are derived, not hand-maintained.
+`tests/sanity/fragments.test.ts` checks that every folder's fragment reaches `PAGE_QUERY` and
+guards its own `_type`.
+
+Example: `src/sections/heroSection/` → `HeroSection.tsx` → `SECTION_COMPONENTS.heroSection`.
 
 ## Schema Constructors
 
@@ -100,7 +138,7 @@ Schema rules:
 **Queries**:
 
 - Location: `src/sanity/lib/queries/index.ts` using `defineQuery()`
-- Section fragments: plain template literal constants exported from each section file, interpolated directly into `PAGE_QUERY`
+- Section fragments: each `src/sections/<name>/fragment.ts`, joined into `SECTION_FRAGMENTS` by `bun run sections:gen` and interpolated into `PAGE_QUERY`
 - Link destinations: project the `page` / `destination` field with `${INTERNAL_DESTINATION_PROJECTION}` (from `src/sanity/lib/fragments.ts`) — **not** a bare `page->`. It dereferences the inner `reference->` to `_type`, page `route`, and document `slug`. Reuse it everywhere a link is queried (header menu, footer nav, redirects)
 - TypeGen reads `defineQuery()` calls and resolves `${CONST}` interpolation only when the referent is a plain string literal (no function calls, no `.join()`)
 
@@ -146,20 +184,22 @@ Registry: `src/config/linkables.ts` — `LINKABLE_DOCUMENTS` (doc types besides 
 
 - `bun dev` — dev server (site `:3000`, Studio `:3000/admin`). `predev` regenerates Sanity types first.
 - `bun run build` — production build. `prebuild` regenerates Sanity types first.
-- `bun run typegen` — extract schema (`schema.json`) + generate `src/sanity/types/sanity.types.ts`
+- `bun run sections:gen` — write the section registries (`src/sections/*.generated.ts`) from the section folders
+- `bun run typegen` — `sections:gen`, then extract schema (`schema.json`) + generate `src/sanity/types/sanity.types.ts`
 - `bun run typegen:extract` / `bun run typegen:generate` — individual steps
 - `bun run lint` — Biome check
 - `bun run lint:fix` — Biome check with safe fixes applied
 - `bun run format` — Biome auto-format
-- `bun run typecheck` — `tsc --noEmit` (needs generated types; run `typegen` first)
+- `bun run typecheck` — `sections:gen` + `tsc --noEmit` (needs generated Sanity types; run `typegen` first)
 - `bun test` — unit tests (Bun's runner; specs live beside sources as `*.test.ts`)
 - `bun run test:coverage` — tests with coverage
+- `bun run test:e2e` — Playwright specs in `tests/e2e/` against `E2E_BASE_URL` (default `http://localhost:${PORT ?? 3000}`; start `bun dev` first). Passes when the folder is empty
 - `bun run check` — lint + typecheck + test, the gate CI runs
 - `bun run analyze` — react-doctor + fallow, the two static analysers CI also runs
 
-Generated artifacts (`schema.json`, `src/sanity/types/sanity.types.ts`) are gitignored and excluded from Biome.
+Generated artifacts (`schema.json`, `src/sanity/types/sanity.types.ts`, `src/sections/*.generated.ts`) are gitignored and excluded from Biome. So is `.factory/`, the sanity-factory run state.
 
-Postinstall script auto-deploys Sanity schema on Vercel production and always runs `bun run typegen`.
+Postinstall script always runs `bun run sections:gen` first, auto-deploys Sanity schema on Vercel production, and always runs `bun run typegen` (best-effort: it needs a project id).
 
 **Environment**: see `docs/configuration.md`. Requires `NEXT_PUBLIC_SANITY_PROJECT_ID`, `NEXT_PUBLIC_SANITY_DATASET`, and — for draft mode and live preview — `SANITY_API_READ_TOKEN`.
 
@@ -170,19 +210,23 @@ Postinstall script auto-deploys Sanity schema on Vercel production and always ru
 ## Testing
 
 **Read `.agents/rules/testing.md` before writing a test.** It is short, and it overrides any global
-instruction you carry about TDD or coverage percentages. The suite is small on purpose — ~133 tests
-across 12 files, all pure functions — and the default for new code is no test at all.
+instruction you carry about TDD or coverage percentages. The unit suite is small on purpose — about
+130 tests across 12 files, all pure functions — and the default for new code is no test at all.
 
-- Runner is `bun test`; no extra framework. Specs live in `tests/<concern>/`, NOT beside the
+- Unit runner is `bun test`; no extra framework. Specs live in `tests/<concern>/`, NOT beside the
   source: `tests/links/`, `tests/routing/`, `tests/images/`, `tests/formatting/`. They import
   through the `@/` alias, never a relative path into `src/`
+- **Complex functionality gets a Playwright spec** in `tests/e2e/<name>.spec.ts`, run by
+  `bun run test:e2e`: forms with validation or submission, search, filters, multi-step flows,
+  anything that sends data. It drives the flow with role and label locators and asserts outcomes,
+  never appearance. `bunfig.toml` keeps the Bun runner out of `tests/e2e/`
 - Write a test only for a **pure function in `src/lib/`** whose wrong answer is **silent** and whose
   stakes are **security, SEO or routing**. Everything else you verify by opening the page
 - **Never assert on rendered appearance** — no Tailwind classes, element counts, ARIA attributes or
-  copy in an assertion. Your eyes are the test for that, and a checked-in Playwright script is not
+  copy in an assertion. Your eyes are the test for that, and an e2e spec asserts behaviour only
 - No tests for Sanity schema shape (`Rule.required()` needs no test) and none for library behaviour
   this repo did not write
-- Keep test modules free of the React component graph. `src/lib/slug.ts` reads `DYNAMIC_SECTION_TYPES` from `src/config/sections.ts` precisely so importing it does not drag in every section component
+- Keep test modules free of the React component graph. `src/lib/slug.ts` reads `DYNAMIC_SECTION_TYPES` from `src/sections/dynamic.generated.ts`, a literal that imports nothing, precisely so importing it does not drag in every section component
 - A test that guards a security property (open redirect, external-link detection) says so in a comment — the next person to "simplify" the check needs to know what it is for
 
 ## Code Style (Biome Enforced)
@@ -206,10 +250,11 @@ across 12 files, all pure functions — and the default for new code is no test 
 
 ## File Layout
 
-- Components: `src/components/` organized by purpose — `layout/`, `sections/`, `utility/`, `elements/`
-- Utilities: `src/lib/` — split by concern: `utils.ts` (cn), `image.ts`, `slug.ts`, `url.ts`, `links.ts`, `date.ts`, `sections.ts`, `actions.ts`, `structuredData.ts` (JSON-LD), `markdown/` (the LLM layer's serializers)
+- Sections: `src/sections/<name>/` — one folder per page-builder section (see Section-Based Architecture); the `*.generated.ts` files beside them are registries
+- Components: `src/components/` organized by purpose — `layout/`, `utility/`, `elements/`, `blog/`
+- Utilities: `src/lib/` — split by concern: `utils.ts` (cn), `image.ts`, `slug.ts`, `url.ts`, `links.ts`, `date.ts`, `actions.ts`, `structuredData.ts` (JSON-LD), `markdown/` (the LLM layer's serializers)
 - Types: `src/types/` — app-level types (component props, shared types). Constructor-specific types live in `src/sanity/schema/constructors/types.ts`
-- Config: `src/config/` — `index.ts` (padding, reserved routes), `linkables.ts`, `sections.ts` (`DYNAMIC_SECTION_TYPES`)
+- Config: `src/config/` — `index.ts` (padding, reserved routes), `linkables.ts`
 - Fonts: `src/fonts/index.ts`
 - Hooks: `src/hooks/` — all re-exported from `src/hooks/index.ts`; must be SSR-safe; clean up listeners/subscriptions in `useEffect` cleanup
 - Sanity schema: `src/sanity/schema/` — `documents/`, `objects/`, `constructors/`
@@ -280,8 +325,8 @@ export default function HeroSection(props: SectionProps<'heroSection'>) {
 
 ## Critical Files
 
-- `src/lib/sections.ts` — section registry (keys must match schema `_type`)
-- `src/config/sections.ts` — `DYNAMIC_SECTION_TYPES` (sections needing `searchParams`)
+- `src/sections/<name>/` — one page-builder section; the folder name is its `_type`
+- `scripts/sections-gen.ts` — `bun run sections:gen`, writes every section registry
 - `src/sanity/lib/fetchers.ts` — `React.cache()`-wrapped reads; metadata variants pass `stega: false`
 - `src/sanity/env.ts` — public Sanity env, validated at load
 - `src/sanity/env.server.ts` — `server-only` module holding `SANITY_API_READ_TOKEN`
@@ -289,7 +334,7 @@ export default function HeroSection(props: SectionProps<'heroSection'>) {
 - `src/lib/url.ts` — site URL resolution and link target detection (`getTarget`)
 - `src/lib/links.ts` — internal destination URL resolution (`resolveDestinationUrl`, `hasDestination`) and `documentPath(type, slug?)` for the site's own URLs (canonicals, sitemap, Presentation), read from `LINKABLE_DOCUMENTS`
 - `src/lib/image.ts` — Sanity CDN image URL builder, plus `isPassThroughUrl` (SVG/GIF pass-through), `resolveImageDimensions` and `resolveImagePlaceholder`
-- `src/sanity/lib/fragments.ts` — ALL GROQ projections, including every section fragment. Imports nothing, on purpose
+- `src/sanity/lib/fragments.ts` — shared GROQ projections (`INTERNAL_DESTINATION_PROJECTION`). Imports nothing, on purpose; section fragments live in their folders
 - `src/sanity/schema/objects/link.ts` — `link` / `linkWithLabel` registered types
 - `src/sanity/schema/objects/internalDestination.ts` — polymorphic link destination (document reference or static path)
 - `src/sanity/schema/index.ts` — schema entry point
@@ -300,7 +345,7 @@ export default function HeroSection(props: SectionProps<'heroSection'>) {
 - `src/config/linkables.ts` — `LINKABLE_DOCUMENTS` + `STATIC_ROUTES` registry (drives link picker, URL resolution, redirect targets)
 - `src/fonts/index.ts` — font definitions (Geist Sans / Mono)
 - `src/types/index.ts` — shared types including the `SectionProps<T>` helper and `NavLinkItem`
-- `src/lib/markdown/sections.ts` — `SECTION_SERIALIZERS`, one markdown serializer per section `_type` (typecheck fails without one)
+- `src/lib/markdown/sections.ts` — `sectionToMarkdown` and the `SectionSerializer` types; the serializers themselves are each section folder's `markdown.ts`, collected into `SECTION_SERIALIZERS` by `sections:gen`
 - `src/lib/markdown/document.ts` — `pageToMarkdown` / `postToMarkdown`; `indexFiles.ts` beside it builds `/llms.txt`
 - `src/lib/structuredData.ts` — JSON-LD graph builders: `buildSiteJsonLd` (rendered once, in the `(site)` layout), `buildPageJsonLd`, `buildPostJsonLd`; render them only through `src/components/utility/JsonLd.tsx`
 - `src/config/llm.ts` — `CONTENT_SIGNALS` for `robots.txt` (a client decision), `API_CATALOG_LINK` and `PAGE_SCHEMA_TYPES`
@@ -329,7 +374,7 @@ export default function HeroSection(props: SectionProps<'heroSection'>) {
 
 ## When Adding Features
 
-1. **New section**: follow 8-step registry pattern above
+1. **New section**: one folder plus `bun run sections:gen` (Section-Based Architecture above)
 2. **New document type**: add schema, update queries, add to Studio desk structure if needed; with a public URL, also give it markdown, an index group and JSON-LD (checklist in `.agents/rules/llm.md`)
 3. **New link destination**: add a document type to `LINKABLE_DOCUMENTS` or a Next route to `STATIC_ROUTES` in `src/config/linkables.ts` — the Studio picker, `internalDestination` reference targets, and `resolveDestinationUrl` pick it up automatically. For a wholly new link *shape* (beyond destination/URL/file), extend `src/sanity/schema/objects/link.ts` and the `SmartLink` resolver.
 4. **Environment changes**: update README and `.env.local` template

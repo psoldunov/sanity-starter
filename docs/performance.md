@@ -173,11 +173,16 @@ edge:
   and under Next 16's `react-server` condition it broke the production build
   outright: `sanity` reaches `swr`, which has no default export under that
   condition. Adding an import to that file re-creates the problem.
-- **[`src/config/sections.ts`](../src/config/sections.ts) holds
-  `DYNAMIC_SECTION_TYPES` so that [`src/lib/slug.ts`](../src/lib/slug.ts) can
-  read it without importing [`src/lib/sections.ts`](../src/lib/sections.ts),
-  which imports every section component.** Same principle one layer down: keep
-  the component graph out of modules the server and the unit tests import.
+- **A section's `fragment.ts` imports only from `@/sanity/lib/fragments`.** The
+  generated `fragments.generated.ts` then reaches the query without touching a
+  schema or a component.
+- **[`src/sections/dynamic.generated.ts`](../src/sections/dynamic.generated.ts)
+  holds `DYNAMIC_SECTION_TYPES` as a literal array that imports nothing, so that
+  [`src/lib/slug.ts`](../src/lib/slug.ts) can read it without importing
+  `components.generated.ts`, which imports every section component.** Same
+  principle one layer down: keep the component graph out of modules the server
+  and the unit tests import. A section sets `dynamic: true` in its `config.ts`
+  and `bun run sections:gen` writes the list.
 
 When you add a module that both the Studio and the site touch, check what it
 drags along before importing it from a route.
@@ -228,7 +233,7 @@ bun run check     # lint + typecheck + test
 Watch the build output's route table: routes you expect to be static should be
 marked as such. A route that unexpectedly went dynamic usually means something
 now reads `searchParams`, `cookies()` or `headers()` on a path that previously
-did not — check `DYNAMIC_SECTION_TYPES` in
-[`src/config/sections.ts`](../src/config/sections.ts) first.
+did not. Check which sections set `dynamic: true` in their `config.ts` first;
+`bun run sections:gen` turns those into `DYNAMIC_SECTION_TYPES`.
 
 Related: [architecture](./architecture.md) · [templated pages](./templated-pages.md)

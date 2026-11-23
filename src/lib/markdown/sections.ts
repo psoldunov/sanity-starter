@@ -1,15 +1,10 @@
-import { isDereferencedAsset, resolveAltText } from '@/lib/image';
-import {
-	blocks,
-	heading,
-	image,
-	prose,
-	type Text,
-} from '@/lib/markdown/format';
+import { SECTION_SERIALIZERS } from '@/sections/serializers.generated';
 import type { PublishedSection, PublishedSectionData } from '@/types';
 
 /*
- * One markdown serializer per section `_type`.
+ * One markdown serializer per section `_type`, each in its section folder:
+ * `src/sections/<name>/markdown.ts`. `bun run sections:gen` collects them into
+ * `SECTION_SERIALIZERS`.
  *
  * Each writes what its component shows, in the order it shows it, from the
  * section data rather than the rendered HTML. That keeps the copy clean: no
@@ -20,9 +15,9 @@ import type { PublishedSection, PublishedSectionData } from '@/types';
  * page's `#`, every other section opens at `##`, and items inside a section
  * sit at `###`. A model reads the outline, so keep it honest.
  *
- * This module tree (`src/lib/markdown/`) stays free of React, components and
- * the Sanity client — the same rule `src/config/sections.ts` follows — so the
- * route handlers and the tests import it without dragging either in.
+ * This module tree (`src/lib/markdown/`) and every `markdown.ts` stay free of
+ * React, components and the Sanity client, so the route handlers and the tests
+ * import them without dragging either in.
  */
 
 type SectionType = PublishedSectionData['_type'];
@@ -33,73 +28,22 @@ export type MarkdownContext = {
 	siteUrl: string;
 };
 
-type SectionSerializer<T extends SectionType> = (
+/**
+ * The default export of `src/sections/<name>/markdown.ts`.
+ *
+ * @template T Section `_type`.
+ */
+export type SectionSerializer<T extends SectionType> = (
 	section: PublishedSection<T>,
 	context: MarkdownContext,
 ) => string;
 
-/** An image field as `PAGE_QUERY` projects it: `asset->` dereferenced. */
-type ImageField = {
-	asset?: unknown;
-	caption?: Text;
-} | null;
-
 /**
- * An image as markdown, with the alt text `SmartImage` would render.
- *
- * @param field - The image field.
- * @returns The image, or an empty string when it has no alt text or asset.
+ * The type of `SECTION_SERIALIZERS`: one serializer per section `_type`. A
+ * mapped type over the union, so a section whose types are stale or whose
+ * `markdown.ts` serializes the wrong `_type` fails typecheck.
  */
-function sectionImage(field: ImageField | undefined): string {
-	const asset = field?.asset;
-	if (!isDereferencedAsset(asset)) return '';
-
-	const alt = resolveAltText({
-		altText: asset.altText,
-		caption: field?.caption,
-	});
-	return image(alt, asset.url);
-}
-
-/**
- * The serializer for every section `_type`. A mapped type over the union, so
- * a section added to `PAGE_QUERY` without an entry here fails typecheck —
- * which is the point: a section with no serializer is a section agents never
- * see. Exported so `tests/sanity/fragments.test.ts` can check that each key has
- * a GROQ fragment.
- */
-export const SECTION_SERIALIZERS: { [T in SectionType]: SectionSerializer<T> } =
-	{
-		heroSection: (section) =>
-			blocks(
-				heading(1, section.heading),
-				prose(section.paragraph),
-				sectionImage(section.image),
-			),
-
-		cardsSection: (section) =>
-			blocks(
-				heading(2, section.heading),
-				(section.cards ?? []).map((card) =>
-					blocks(heading(3, card.heading), prose(card.paragraph)),
-				),
-			),
-
-		imageTextSection: (section) =>
-			blocks(
-				heading(2, section.heading),
-				prose(section.paragraph),
-				sectionImage(section.image),
-			),
-
-		faqSection: (section) =>
-			blocks(
-				heading(2, section.heading),
-				(section.items ?? []).map((item) =>
-					blocks(heading(3, item.question), prose(item.answer)),
-				),
-			),
-	};
+export type SectionSerializers = { [T in SectionType]: SectionSerializer<T> };
 
 /**
  * One section as markdown.
@@ -117,7 +61,7 @@ export function sectionToMarkdown(
 	context: MarkdownContext,
 ): string {
 	// TypeScript cannot correlate `section._type` with the serializer it picks,
-	// so the lookup is widened; the mapped type above is what keeps it honest.
+	// so the lookup is widened; the registry's `SectionSerializers` type keeps it honest.
 	const serialize = SECTION_SERIALIZERS[section._type] as
 		| ((value: PublishedSectionData, context: MarkdownContext) => string)
 		| undefined;

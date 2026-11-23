@@ -10,7 +10,8 @@ templated blog, and generated TypeScript types for every query.
 ## Features
 
 - **Section-based page builder** — pages are an ordered array of section
-  objects; a registry maps each `_type` to a React component.
+  objects; each section is one folder in `src/sections/`, and a generator builds
+  the schema, query and component registries from them.
 - **Embedded Studio** at `/admin`, with Presentation, live preview and draft
   mode wired up.
 - **Generated types** — Sanity TypeGen derives types from the schema and every
@@ -85,11 +86,13 @@ Conventions for contributors and AI coding agents live in
 | `bun dev` | Dev server; runs typegen first. |
 | `bun run build` | Production build; runs typegen first. |
 | `bun start` | Serve the production build. |
-| `bun run typegen` | Extract the schema and regenerate types. |
+| `bun run sections:gen` | Scan `src/sections/*/` and write the section registries. |
+| `bun run typegen` | `sections:gen`, then extract the schema and regenerate types. |
 | `bun run lint` / `bun run lint:fix` | Biome check, optionally with fixes. |
 | `bun run format` | Biome formatter. |
-| `bun run typecheck` | `tsc --noEmit`. |
+| `bun run typecheck` | `sections:gen`, `next typegen`, then `tsc --noEmit`. |
 | `bun test` / `bun run test:coverage` | Unit tests, optionally with coverage. |
+| `bun run test:e2e` | Playwright specs in `tests/e2e/`. Start `bun dev` first. |
 | `bun run check` | Lint + typecheck + test. Run before pushing. |
 
 Bun only — do not introduce npm or yarn commands.
@@ -105,19 +108,20 @@ src/
 │   ├── llms.txt/ llms-full.txt/ sitemap.md/ .well-known/   files for AI agents
 │   ├── robots.ts
 │   └── sitemap.ts
-├── components/          sections/ layout/ utility/ elements/ blog/
-├── config/              padding, protected routes, linkables, dynamic sections
+├── components/          layout/ utility/ elements/ blog/
+├── config/              padding, protected routes, linkables
+├── sections/            one folder per section: schema, fragment, component, markdown
 ├── fonts/               Geist Sans + Mono
 ├── hooks/               client-side, SSR-safe
-├── lib/                 slug, url, links, image, date, section registry, JSON-LD,
+├── lib/                 slug, url, links, image, date, JSON-LD,
 │                        markdown/ (the LLM layer)
 ├── sanity/              schema, queries, fetchers, client, Studio inputs
 ├── styles/              design tokens + Tailwind entry
 └── types/               shared types, incl. SectionProps<T>
 ```
 
-`schema.json` and `src/sanity/types/sanity.types.ts` are generated and
-gitignored. Never edit them by hand.
+`schema.json`, `src/sanity/types/sanity.types.ts` and `src/sections/*.generated.ts`
+are generated and gitignored. Never edit them by hand.
 
 ## Contributing
 
@@ -127,8 +131,8 @@ Contributing to the starter itself? Clone it rather than using `bun create`:
 1. Follow the conventions in [`AGENTS.md`](./AGENTS.md).
 2. Add JSDoc to exported functions and hooks (no `@example` blocks).
 3. Keep TypeScript strict — no `any` without a reason.
-4. Keep schema, GROQ fragment and query in sync; regenerate with
-   `bun run typegen`.
+4. Keep schema, GROQ fragment and component together in the section's folder;
+   regenerate with `bun run typegen`.
 5. Run `bun run check` before pushing.
 6. Update the relevant page under `docs/` in the same change.
 

@@ -24,12 +24,13 @@ change here.
 ## Non-negotiables
 
 1. **Markdown is built from the data, never from rendered HTML.** Serializers read the query
-   result. `src/lib/markdown/` must import no React, no component and no Sanity client — the same
-   rule as `src/config/sections.ts` — so route handlers and tests can load it.
-2. **Every section `_type` has a serializer** in `SECTION_SERIALIZERS`
-   (`src/lib/markdown/sections.ts`). The map is a mapped type over the `PAGE_QUERY_RESULT` section
-   union, so typecheck fails until it exists. Never silence that with a cast or a stub returning
-   `''` for a section that shows text.
+   result. `src/lib/markdown/` and every `src/sections/<name>/markdown.ts` must import no React, no
+   component and no Sanity client, so route handlers and tests can load them.
+2. **Every section `_type` has a serializer**: the default export of its folder's `markdown.ts`,
+   typed `SectionSerializer<'<name>'>` from `src/lib/markdown/sections.ts`. `bun run sections:gen`
+   refuses a folder without one and collects them into `SECTION_SERIALIZERS`, typed as a mapped type
+   over the `PAGE_QUERY_RESULT` section union, so a serializer for the wrong `_type` fails typecheck.
+   Never silence that with a cast or a stub returning `''` for a section that shows text.
 3. **Write what the page shows, in the order it shows it.** Headings follow the page outline, not
    the component's tag: a hero heading is `#`, other section headings `##`, items inside a section
    `###`. Drop what carries no meaning outside the page: decorative images (no alt text), button
@@ -71,10 +72,11 @@ change here.
 
 ### Adding a page-builder section
 
-The steps in `AGENTS.md` (step 8 is the serializer), plus:
+The section folder in `AGENTS.md` (its `markdown.ts` is the serializer), plus:
 
-- [ ] A serializer in `SECTION_SERIALIZERS`, written to rule 3. Reuse the helpers in
-      `src/lib/markdown/format.ts`; add one there only when a second serializer will need it
+- [ ] `src/sections/<name>/markdown.ts`, written to rule 3. Reuse the helpers in
+      `src/lib/markdown/format.ts` and `sectionImage` in `src/lib/markdown/image.ts`; add one there
+      only when a second serializer will need it
 - [ ] Links resolved and made absolute with `linkUrl` (`src/lib/markdown/links.ts`); a link that
       can carry a file goes through `resolveLinkHref` with the file URL, then `absoluteUrl`;
       in-page actions dropped

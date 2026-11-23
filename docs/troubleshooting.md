@@ -36,6 +36,9 @@ clone never has them.
 bun run typegen
 ```
 
+The same goes for `src/sections/*.generated.ts`: `typegen` regenerates them
+through `bun run sections:gen`.
+
 ### `Error: Schema file already exists`
 
 `sanity schema extract` refusing to overwrite `schema.json`. The `--force` flag
@@ -54,7 +57,18 @@ explanation in
 
 Expected on a fresh clone with no `.env.local`. Dependencies installed fine.
 Configure the environment, then `bun run typegen`. The postinstall script exits
-0 on purpose here rather than failing the install.
+0 on purpose here rather than failing the install. It runs
+`bun run sections:gen` first and unconditionally, so the section registries
+exist either way.
+
+### `bun run sections:gen` fails
+
+The generator validates every folder under `src/sections/` and names the
+offender. The usual causes: the folder name is not the camelCase `_type` (for
+example `heroSection`), a required file is missing (`schema.ts`, `fragment.ts`,
+the PascalCase component, `markdown.ts`), or `config.ts` has a non-boolean
+`dynamic`, a non-number `order`, or runtime imports. See
+[sections](./sections.md).
 
 ### `Type 'StegaString<...>' is not assignable to '"..." | "..."'`
 
@@ -79,8 +93,8 @@ Then hard-reload. Check the browser console for the exact rejected origin.
 ### `/admin` fails to load after a schema edit
 
 A schema module that throws takes the whole Studio down. Check the terminal and
-the browser console. Common causes: a `_type` used in `sectionTypes` that no
-longer exists, a circular import between a schema file and a Studio component,
+the browser console. Common causes: a `schema.ts` under `src/sections/` that
+throws, a circular import between a schema file and a Studio component,
 or a typo in a `defineType` name.
 
 ```bash
@@ -89,10 +103,12 @@ bun run typegen   # surfaces schema errors outside the browser
 
 ### A new section does not appear in the Studio insert menu
 
-It is not in `sectionTypes` in
-[`src/sanity/schema/objects/sections/index.ts`](../src/sanity/schema/objects/sections/index.ts).
-The `page` document builds its `sections` array from that list. See
-[sections](./sections.md).
+The section folder is missing or the registries are stale. Check that
+`src/sections/<name>/schema.ts` exists, then run `bun run sections:gen` (or
+`bun run typegen`) and restart the dev server. The `page` document builds its
+`sections` array from the generated `sectionTypes` in
+`src/sections/schemas.generated.ts`. To reorder the menu, set `order` in the
+section's `config.ts`. See [sections](./sections.md).
 
 ## Rendering
 
@@ -100,12 +116,14 @@ The `page` document builds its `sections` array from that list. See
 
 Three candidate causes, in order of likelihood:
 
-1. **Not registered as a component.** Add it to
-   [`src/lib/sections.ts`](../src/lib/sections.ts) under its exact `_type`. In
-   development `SectionRenderer` logs:
+1. **The registries are stale.** Check that the folder
+   `src/sections/<name>/` exists with the exact `_type` as its name, then run
+   `bun run sections:gen`. In development `SectionRenderer` logs:
    `no component registered for section type "..."`.
-2. **Fragment missing from `PAGE_QUERY`.** References and images come back
-   unresolved without it. See [sections](./sections.md#4-add-the-fragment-to-page_query).
+2. **The fragment does not resolve its references.** References and images come
+   back unresolved without a proper projection in
+   `src/sections/<name>/fragment.ts`. See
+   [sections](./sections.md#2-fragment).
 3. **The section is flagged `hidden`.** It renders dimmed in draft mode and not
    at all on the live site — by design.
 
@@ -228,9 +246,11 @@ exactly, leading slash included.
   typegen, which needs the project ID and dataset.
 - `SANITY_AUTH_TOKEN` missing on production, where postinstall runs
   `sanity schema deploy` under `set -e`.
-- A generated artefact you have locally but CI does not: `schema.json` and
-  `src/sanity/types/sanity.types.ts` are gitignored and must be produced by the
-  build.
+- A generated artefact you have locally but CI does not: `schema.json`,
+  `src/sanity/types/sanity.types.ts` and the `src/sections/*.generated.ts`
+  registries are gitignored and must be produced by the build.
+  `bun run sections:gen` produces the registries and `bun run typegen` runs it,
+  so a pipeline that skips both fails on a missing import.
 
 See [deployment](./deployment.md).
 

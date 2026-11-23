@@ -9,10 +9,14 @@
  * Next 16's `react-server` condition it failed the build outright (`sanity`
  * reaches `swr`, which has no default export there).
  *
- * Keeping every fragment here, as a plain string-literal constant with no
+ * Keeping projections here, as plain string-literal constants with no
  * imports, is what keeps the Studio out of the site. It is also what Sanity
  * TypeGen requires: it resolves `${...}` interpolation only when the referent
  * is a constant string, never a function call or runtime concatenation.
+ *
+ * Section fragments follow the same rule from their own folders: each
+ * `src/sections/<name>/fragment.ts` may import from this module and nothing
+ * else, and `bun run sections:gen` joins them into `SECTION_FRAGMENTS`.
  */
 
 /**
@@ -29,46 +33,3 @@ export const INTERNAL_DESTINATION_PROJECTION = `{
 		"slug": slug.current
 	}
 }`;
-
-/**
- * Section fragments, one per registered section `_type`.
- *
- * Adding a section means adding its fragment here and interpolating it into
- * `PAGE_QUERY`. Dereference image assets with `asset->` so `SmartImage` gets the
- * LQIP placeholder and intrinsic dimensions rather than a bare reference.
- */
-
-export const HERO_SECTION_FRAGMENT = `
-	_type == "heroSection" => {
-		...,
-		image {
-			...,
-			asset->,
-		},
-	}`;
-
-export const CARDS_SECTION_FRAGMENT = `
-	_type == "cardsSection" => {
-		...,
-		cards[] {
-			...,
-			image {
-				...,
-				asset->,
-			},
-		},
-	}`;
-
-export const IMAGE_TEXT_SECTION_FRAGMENT = `
-	_type == "imageTextSection" => {
-		...,
-		image {
-			...,
-			asset->,
-		},
-	}`;
-
-export const FAQ_SECTION_FRAGMENT = `
-	_type == "faqSection" => {
-		...,
-	}`;

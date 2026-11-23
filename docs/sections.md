@@ -1,33 +1,32 @@
 # Adding a section
 
 A page is an ordered array of sections, each one a Sanity object type with a
-matching React component. Adding a new one is eight mechanical steps. Miss one
-and the failure is quiet: the section saves in the Studio but renders nothing.
+matching React component. Each section lives in its own folder under
+[`src/sections/`](../src/sections), and the folder name is the schema `_type`.
+You create the folder and run a generator. No shared file is edited by hand.
 
-The worked example below builds a **CTA Section** — a heading, a paragraph and
-a link — end to end.
+The worked example below builds a **CTA Section**: a heading, a paragraph and a
+link.
 
-## The eight steps
+## What a section folder holds
 
-1. Schema in `src/sanity/schema/objects/sections/<name>Section.ts`, built with
-   `defineSection()`.
-2. Register it in `src/sanity/schema/objects/sections/index.ts`.
-3. Add its GROQ fragment to `src/sanity/lib/fragments.ts`.
-4. Interpolate that fragment into `PAGE_QUERY` in
-   `src/sanity/lib/queries/index.ts`.
-5. Component in `src/components/sections/<Name>Section.tsx`, default export,
-   PascalCase filename matching `_type`.
-6. Register the component in `src/lib/sections.ts`.
-7. `bun run typegen`.
-8. Add a markdown serializer to `SECTION_SERIALIZERS` in
-   `src/lib/markdown/sections.ts`, so AI agents can read the section.
+`src/sections/ctaSection/`:
 
-Step 9, only if the section reads `searchParams`: add its `_type` to
-`DYNAMIC_SECTION_TYPES` in [`src/config/sections.ts`](../src/config/sections.ts).
+| File | Required | Holds |
+| --- | --- | --- |
+| `schema.ts` | yes | Default export of `defineSection({...})`. |
+| `fragment.ts` | yes | `export const fragment`, the GROQ projection. |
+| `CtaSection.tsx` | yes | Default-export component, PascalCase of the folder name. |
+| `markdown.ts` | yes | Default-export serializer that renders the section as Markdown. |
+| `config.ts` | no | `{ dynamic?, order? }`: search-param use and Studio menu position. |
+
+The folder name must be camelCase and match the schema `name`, for example
+`heroSection`. `bun run sections:gen` rejects a folder with a wrong name or a
+missing required file.
 
 ## 1. Schema
 
-`src/sanity/schema/objects/sections/ctaSection.ts`:
+`src/sections/ctaSection/schema.ts`:
 
 ```ts
 import { MegaphoneIcon } from 'lucide-react';
@@ -73,8 +72,8 @@ const ctaSection = defineSection({
 export default ctaSection;
 ```
 
-**Do not export a GROQ fragment from this file.** Fragments live in
-`src/sanity/lib/fragments.ts` — step 3 explains why.
+**Do not put the GROQ fragment in this file.** It goes in `fragment.ts`, and the
+reason is in step 2.
 
 `defineSection()`
 ([source](../src/sanity/schema/constructors/defineSection.ts)) adds, in a
@@ -88,37 +87,14 @@ export default ctaSection;
 
 Your own fields go into a **Content** group automatically.
 
-## 2. Register the schema
+## 2. Fragment
 
-`src/sanity/schema/objects/sections/index.ts`:
-
-```ts
-import cardsSection from './cardsSection';
-import ctaSection from './ctaSection';
-import faqSection from './faqSection';
-import heroSection from './heroSection';
-import imageTextSection from './imageTextSection';
-
-const sectionTypes = [
-	heroSection,
-	cardsSection,
-	imageTextSection,
-	faqSection,
-	ctaSection,
-];
-
-export default sectionTypes;
-```
-
-The `page` document builds its `sections` array from `sectionTypes`, so the new
-type appears in the Studio insert menu as soon as it is in that list.
-
-## 3. Add the fragment
-
-`src/sanity/lib/fragments.ts`:
+`src/sections/ctaSection/fragment.ts`:
 
 ```ts
-export const CTA_SECTION_FRAGMENT = `
+import { INTERNAL_DESTINATION_PROJECTION } from '@/sanity/lib/fragments';
+
+export const fragment = `
 	_type == "ctaSection" => {
 		...,
 		link {
@@ -128,75 +104,33 @@ export const CTA_SECTION_FRAGMENT = `
 	}`;
 ```
 
-Two rules govern that file, and both are load-bearing:
+Two rules apply, and both are load-bearing:
 
-- **It must never import anything.** Fragments used to sit beside their schema
-  definitions, which meant `src/sanity/lib/queries` — and through it
-  `robots.ts`, `sitemap.ts` and every page — transitively imported
-  `defineSection`, and through *that* the entire `sanity` Studio runtime. The
-  whole Studio ended up in the public server and client bundles, and under Next
-  16's `react-server` condition it failed the build outright: `sanity` reaches
-  `swr`, which has no default export under that condition. Keeping every
-  fragment in an import-free module is what keeps the Studio out of the site.
-- **Every fragment must be a plain template literal constant.** Sanity TypeGen
+- **Import only from `@/sanity/lib/fragments`.** Fragments used to sit beside
+  their schema definitions, which meant `src/sanity/lib/queries`, and through it
+  `robots.ts`, `sitemap.ts` and every page, imported `defineSection` and then the
+  entire `sanity` Studio runtime. The whole Studio ended up in the public server
+  and client bundles, and under Next 16's `react-server` condition it failed the
+  build outright: `sanity` reaches `swr`, which has no default export under that
+  condition. [`src/sanity/lib/fragments.ts`](../src/sanity/lib/fragments.ts)
+  imports nothing, so a fragment that imports only from it keeps the Studio out
+  of the site. Do not import the schema, a component or `sanity` here.
+- **The fragment must be a plain template literal constant.** Sanity TypeGen
   statically resolves `${CONST}` references only when the referent is a string
-  literal — a function call or a `.join()` there silently produces untyped
-  results.
+  literal. A function call or a `.join()` silently produces untyped results.
 
 Two projection details:
 
 - **Links** must project their destination with
-  `INTERNAL_DESTINATION_PROJECTION` (defined at the top of the same file). A
-  bare `page->` returns a reference the resolver cannot use.
+  `INTERNAL_DESTINATION_PROJECTION`. A bare `page->` returns a reference the
+  resolver cannot use.
 - **Images** need `image { ..., asset-> }`, otherwise `SmartImage` gets an
-  unresolved reference and loses its LQIP placeholder and intrinsic
-  dimensions. See
-  `HERO_SECTION_FRAGMENT` in the same file.
+  unresolved reference and loses its LQIP placeholder and intrinsic dimensions.
+  See [`src/sections/heroSection/fragment.ts`](../src/sections/heroSection/fragment.ts).
 
-## 4. Add the fragment to `PAGE_QUERY`
+## 3. The component
 
-`src/sanity/lib/queries/index.ts`:
-
-```ts
-import {
-	CARDS_SECTION_FRAGMENT,
-	CTA_SECTION_FRAGMENT,
-	FAQ_SECTION_FRAGMENT,
-	HERO_SECTION_FRAGMENT,
-	IMAGE_TEXT_SECTION_FRAGMENT,
-	INTERNAL_DESTINATION_PROJECTION,
-} from '@/sanity/lib/fragments';
-
-export const PAGE_QUERY =
-	defineQuery(`*[_type == "page" && route.current == $slug][0]{
-  _id,
-  _updatedAt,
-  title,
-  "route": route.current,
-  metaTitle,
-  metaDescription,
-  noIndex,
-  ogImage,
-  geo,
-  sections[] {
-    ...,
-    ${HERO_SECTION_FRAGMENT},
-    ${CARDS_SECTION_FRAGMENT},
-    ${IMAGE_TEXT_SECTION_FRAGMENT},
-    ${FAQ_SECTION_FRAGMENT},
-    ${CTA_SECTION_FRAGMENT}
-  }
-}`);
-```
-
-Skipping this step is the most common mistake. The section still saves and still
-comes back from `sections[] { ... }`, but its references and image assets are
-never dereferenced, so the generated union has no variant for it and
-`SectionProps<'ctaSection'>` will not compile.
-
-## 5. The component
-
-`src/components/sections/CtaSection.tsx`:
+`src/sections/ctaSection/CtaSection.tsx`:
 
 ```tsx
 import Container from '@/components/layout/Container';
@@ -235,97 +169,143 @@ Rules that are not optional:
 - **Spread the whole props object into `<Section>`.** `padding`, `id` and
   `hidden` live on those props; destructuring only your own fields and passing
   nothing through silently breaks all three.
-- **Type props with `SectionProps<'<name>Section'>`**, never by hand. The helper
+- **Type props with `SectionProps<'<name>'>`**, never by hand. The helper
   extracts the matching variant of the generated, stega-branded union.
 - **Server Component by default.** Add `'use client'` only if the section needs
   browser APIs, and push it as far down the tree as you can.
 - **Guard optional fields.** Sanity content is user-entered; `!!heading &&` is
   the house style.
 
-## 6. Register the component
+## 4. The Markdown serializer
 
-`src/lib/sections.ts`:
+`src/sections/ctaSection/markdown.ts`:
 
 ```ts
-import CardsSection from '@/components/sections/CardsSection';
-import CtaSection from '@/components/sections/CtaSection';
-import FaqSection from '@/components/sections/FaqSection';
-import HeroSection from '@/components/sections/HeroSection';
-import ImageTextSection from '@/components/sections/ImageTextSection';
+import { blocks, heading, linkTo, prose } from '@/lib/markdown/format';
+import { linkUrl } from '@/lib/markdown/links';
+import type { SectionSerializer } from '@/lib/markdown/sections';
 
-const sections = {
-	heroSection: HeroSection,
-	cardsSection: CardsSection,
-	imageTextSection: ImageTextSection,
-	faqSection: FaqSection,
-	ctaSection: CtaSection,
+/**
+ * Markdown for `ctaSection`: the heading, the copy, then the link.
+ *
+ * @param section - The section, read without stega.
+ * @param context - The site URL, for absolute links.
+ * @returns The section as Markdown.
+ */
+const ctaSectionMarkdown: SectionSerializer<'ctaSection'> = (
+	section,
+	context,
+) => {
+	const url = linkUrl(section.link, context.siteUrl);
+
+	return blocks(
+		heading(2, section.heading),
+		prose(section.paragraph),
+		url ? linkTo(section.link?.label || url, url) : '',
+	);
 };
 
-export default sections;
+export default ctaSectionMarkdown;
 ```
 
-Keys must match `_type` exactly. `SectionRenderer` looks the component up by the
-`_type` that comes back from `PAGE_QUERY`; an unregistered type renders nothing
-and logs in development:
+A serializer is a `(section, context) => string` function typed with
+`SectionSerializer<'<name>'>` from `@/lib/markdown/sections`. It writes what the
+page shows, in the order it shows it, from the query data rather than the
+rendered HTML. Use the helpers in
+[`src/lib/markdown/format.ts`](../src/lib/markdown/format.ts) (`blocks`,
+`heading`, `prose`, `bulletList`, `linkTo`) and make links absolute with
+`linkUrl`. The heading level follows the page outline: the hero heading is `#`,
+other sections open at `##` and items inside them use `###`. Keep the file free
+of React, components and the Sanity client. The rules and the reasoning are in
+[LLM layer](./llm.md).
 
-```
-SectionRenderer: no component registered for section type "ctaSection". Register it in src/lib/sections.ts and add its fragment to PAGE_QUERY.
+## 5. Optional config
+
+`src/sections/ctaSection/config.ts`:
+
+```ts
+import type { SectionConfig } from '@/types';
+
+const config: SectionConfig = { order: 50 };
+
+export default config;
 ```
 
-## 7. Regenerate types
+| Key | Effect |
+| --- | --- |
+| `order` | Position in the Studio insert menu, lowest first. Sections without one follow, sorted by name. The four starter sections use 10, 20, 30 and 40. |
+| `dynamic` | The section reads `searchParams`. See below. |
+
+`config.ts` must have no runtime imports (`import type` is fine). The generator
+loads it with Bun on its own, outside the Next.js build.
+
+## 6. Generate the registries and types
 
 ```bash
+bun run sections:gen
 bun run typegen
 ```
 
-`bun dev` and `bun run build` both do this first, so restarting the dev server
-is equivalent. After it runs, `PAGE_QUERY_RESULT.sections` carries a
+`sections:gen` ([`scripts/sections-gen.ts`](../scripts/sections-gen.ts)) scans
+`src/sections/*/`, validates each folder and writes deterministic, gitignored
+files next to the folders:
+
+| Generated file | Exports | Used by |
+| --- | --- | --- |
+| `src/sections/schemas.generated.ts` | `sectionTypes` | [`src/sanity/schema/index.ts`](../src/sanity/schema/index.ts) and the `page` document's `sections` array |
+| `src/sections/fragments.generated.ts` | `SECTION_FRAGMENTS` | `${SECTION_FRAGMENTS}` in `PAGE_QUERY` |
+| `src/sections/components.generated.ts` | `SECTION_COMPONENTS` | `SectionRenderer` |
+| `src/sections/serializers.generated.ts` | `SECTION_SERIALIZERS`, typed `SectionSerializers` | `sectionToMarkdown` in [`src/lib/markdown/sections.ts`](../src/lib/markdown/sections.ts), the Markdown rendering of a page |
+| `src/sections/dynamic.generated.ts` | `DYNAMIC_SECTION_TYPES` | `hasDynamicParams` in [`src/lib/slug.ts`](../src/lib/slug.ts) |
+
+`fragments.generated.ts` imports each fragment through a small
+`<name>.fragment.generated.ts` file. Sanity TypeGen resolves an import by its
+local name only, so `import { fragment as x }` would fail, and TypeGen still
+exits 0 with a warning.
+
+`bun run typegen` runs `sections:gen` first, so `bun dev`, the production build,
+`bun run typecheck` and the postinstall script all pick up a new folder without
+a separate step. After `typegen`, `PAGE_QUERY_RESULT.sections` carries a
 `ctaSection` variant and `SectionProps<'ctaSection'>` resolves.
 
-## 8. Markdown serializer
+An unregistered `_type` renders nothing and logs in development:
 
-Every page is also served to AI agents as markdown (see [the LLM layer](./llm.md)), and each
-section type needs a function that writes its content. Typecheck fails until `SECTION_SERIALIZERS`
-in [`src/lib/markdown/sections.ts`](../src/lib/markdown/sections.ts) has an entry for
-`ctaSection`. The serializer for this section, and the habits that make one useful to a model, are
-in [the LLM layer guide](./llm.md#a-new-section).
-
-Check the result by opening the markdown of a page that uses the section, such as
-`http://localhost:3000/about.md`.
+```
+SectionRenderer: no component registered for section type "ctaSection". Add a src/sections/ctaSection/ folder and run "bun run sections:gen".
+```
 
 ## Sections that read search params
 
-A section needing `searchParams` (a filter, a paginated list) must declare
-itself, because the catch-all page only awaits `searchParams` when a page
-actually contains one — awaiting it unconditionally would make every page
-dynamic.
+A section needing `searchParams` (a filter, a paginated list) sets
+`dynamic: true` in its `config.ts`, because the catch-all page only awaits
+`searchParams` when a page actually contains one. Awaiting it unconditionally
+would make every page dynamic.
 
 ```ts
-// src/config/sections.ts
-export const DYNAMIC_SECTION_TYPES: readonly string[] = ['filteredListSection'];
+// src/sections/filteredListSection/config.ts
+import type { SectionConfig } from '@/types';
+
+const config: SectionConfig = { dynamic: true };
+
+export default config;
 ```
 
-That list lives in `src/config/` rather than next to the component registry for
-the same reason fragments live in `src/sanity/lib/fragments.ts`:
-`src/lib/sections.ts` imports every section component, so reading the list from
-there would pull React and the whole component graph into `src/lib/slug.ts` and
-into anything that tests it.
+The generator collects those flags into `DYNAMIC_SECTION_TYPES`, a literal array
+that imports nothing. `src/lib/slug.ts` reads it without pulling React or the
+component graph in, and neither does anything that tests `slug.ts`.
 
 `SectionRenderer` forwards `searchParams` to every section; only the declared
 ones receive a populated object.
 
 ## Checklist
 
-- [ ] Schema file exists and uses `defineSection()`
-- [ ] Added to `sectionTypes` in the sections index
-- [ ] Fragment added to `src/sanity/lib/fragments.ts` as a plain string constant
-- [ ] That file still imports nothing
-- [ ] Fragment interpolated into `PAGE_QUERY`
+- [ ] Folder `src/sections/<name>/` named after the camelCase `_type`
+- [ ] `schema.ts` uses `defineSection()`
+- [ ] `fragment.ts` is a plain template literal and imports only from `@/sanity/lib/fragments`
 - [ ] Component created, props spread into `<Section>`
-- [ ] Registered in `src/lib/sections.ts` under the exact `_type`
-- [ ] `bun run typegen` run, `bun run check` passes
-- [ ] Serializer added to `SECTION_SERIALIZERS`, and the page's `.md` URL reads well
-- [ ] Added to `DYNAMIC_SECTION_TYPES` if it reads `searchParams`
+- [ ] `markdown.ts` serializes the content
+- [ ] `config.ts` sets `dynamic: true` if the section reads `searchParams`
+- [ ] `bun run sections:gen` and `bun run typegen` run, `bun run check` passes
 
 Related: [architecture](./architecture.md) · [links](./links.md) ·
-[performance](./performance.md)
+[LLM layer](./llm.md) · [performance](./performance.md)
