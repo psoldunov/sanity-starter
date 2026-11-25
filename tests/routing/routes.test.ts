@@ -31,6 +31,8 @@ describe('isProtectedRoute', () => {
 		expect(isProtectedRoute('/api/webhook')).toBe(true);
 		expect(isProtectedRoute('/admin')).toBe(true);
 		expect(isProtectedRoute('/admin/desk')).toBe(true);
+		expect(isProtectedRoute('/index')).toBe(true);
+		expect(isProtectedRoute('/index/news')).toBe(false);
 	});
 
 	test('reserves linkable document base paths', () => {

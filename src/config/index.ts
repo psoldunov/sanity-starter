@@ -65,6 +65,7 @@ export const PADDING_CONFIG: Record<
 export const PROTECTED_ROUTE_PATTERNS: readonly string[] = [
 	'/api/*',
 	'/admin/*',
+	'/index',
 	...LINKABLE_DOCUMENTS.map((document) => `${document.basePath}/*`),
 	...STATIC_ROUTES.map((route) => route.path),
 ];
