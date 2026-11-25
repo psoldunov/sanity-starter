@@ -138,7 +138,7 @@
 			{
 				// React components. Long because JSX is verbose, not branchy —
 				// the cyclomatic and cognitive ceilings stay at their defaults.
-				"files": ["src/components/**", "src/app/**"],
+				"files": ["src/components/**", "src/app/**", "src/sections/**/*.tsx"],
 				"maxUnitSize": 120,
 				"maxCrap": 400
 			},
@@ -172,7 +172,7 @@
 			{
 				// Schema definitions are one large declarative object literal
 				// each. Splitting them would scatter a single field list.
-				"files": ["src/sanity/schema/**"],
+				"files": ["src/sanity/schema/**", "src/sections/*/schema.ts"],
 				"maxUnitSize": 200,
 				"maxCrap": 400
 			}
