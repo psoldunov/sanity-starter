@@ -36,11 +36,11 @@ export const SITE_SETTINGS_QUERY = defineQuery(`*[_type == "settings"][0]{
 
 /**
  * Routes of every page that renders, for `generateStaticParams`. One field, not
- * the tree. A page with no sections answers 404, so it is not prerendered;
+ * the tree. A page with no visible sections answers 404, so it is not prerendered;
  * `count()` of a missing field is `null`, which fails the comparison.
  */
 export const PAGE_ROUTES_QUERY = defineQuery(
-	`*[_type == "page" && defined(route.current) && count(sections) > 0]{ "route": route.current }`,
+	`*[_type == "page" && defined(route.current) && count(sections[hidden != true]) > 0]{ "route": route.current }`,
 );
 
 /**
@@ -90,12 +90,12 @@ export const REDIRECT_QUERY = defineQuery(`*[_type == "redirect" && (
 /**
  * Indexable pages: `sitemap.xml`, the `.md` routes' static params and the index
  * files (`/llms.txt`, `/llms-full.txt`, `/sitemap.md`). Excludes `noIndex` pages
- * and pages with no sections, which answer 404 as HTML and as markdown.
+ * and pages with no visible sections, which answer 404 as HTML and as markdown.
  * `llmsListing` is filtered in code, because an unlisted page still gets its
  * markdown.
  */
 export const LLM_PAGES_QUERY = defineQuery(
-	`*[_type == "page" && defined(route.current) && noIndex != true && count(sections) > 0] | order(route.current asc){
+	`*[_type == "page" && defined(route.current) && noIndex != true && count(sections[hidden != true]) > 0] | order(route.current asc){
   "route": route.current,
   _updatedAt,
   title,

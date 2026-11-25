@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { draftMode } from 'next/headers';
 import { notFound, permanentRedirect, redirect } from 'next/navigation';
 import JsonLd from '@/components/utility/JsonLd';
 import { SectionRenderer } from '@/components/utility/SectionRenderer';
@@ -45,7 +46,7 @@ export async function generateMetadata({
 		getSettingsForMetadata(),
 	]);
 
-	if (!page) {
+	if (!page?.sections?.some((section) => !section.hidden)) {
 		return { title: 'Not found' };
 	}
 
@@ -177,6 +178,8 @@ export default async function PageComponent({
 	const firstVisibleIndex = page.sections.findIndex(
 		(section) => !section.hidden,
 	);
+
+	if (firstVisibleIndex === -1 && !(await draftMode()).isEnabled) notFound();
 
 	return (
 		<main id='main'>

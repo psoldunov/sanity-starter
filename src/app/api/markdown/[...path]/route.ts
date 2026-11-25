@@ -151,7 +151,8 @@ export async function GET(
 	]);
 
 	if (!page) return (await markdownRedirect(htmlPath)) ?? notFound();
-	if (page.noIndex || !page.sections?.length) return notFound();
+	if (page.noIndex || !page.sections?.some((section) => !section.hidden))
+		return notFound();
 	return documentResponse(
 		pageToMarkdown(page, {
 			siteUrl: getSiteUrl(),
