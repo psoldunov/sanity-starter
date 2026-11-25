@@ -49,15 +49,37 @@ const components: PortableTextComponents = {
 	},
 };
 
+const inlineComponents: PortableTextComponents = {
+	block: { normal: ({ children }) => <>{children}</> },
+	marks: components.marks,
+};
+
 /**
  * Renders Portable Text.
  *
  * @param props.value - A Portable Text block array, e.g. an FAQ answer.
+ * @param props.inline - Render a single normal paragraph inside a heading.
  * @returns The rendered content, or `null` when there is none.
  */
-export default function RichText({ value }: { value: unknown }) {
+export default function RichText({
+	value,
+	inline = false,
+}: {
+	value: unknown;
+	inline?: boolean;
+}) {
 	if (!Array.isArray(value) || value.length === 0) {
 		return null;
+	}
+
+	if (inline) {
+		const block = value.find(
+			(item) =>
+				item?._type === 'block' && item.style === 'normal' && !item.listItem,
+		);
+		return block ? (
+			<PortableText value={block} components={inlineComponents} />
+		) : null;
 	}
 
 	return (
