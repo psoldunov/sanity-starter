@@ -1,6 +1,8 @@
 import { LINKABLE_DOCUMENTS, STATIC_ROUTES } from '@/config/linkables';
 import type { PaddingSize } from '@/types';
 
+export const DEFAULT_SITE_NAME = 'Sanity Starter';
+
 export const PADDING_CONFIG: Record<
 	PaddingSize,
 	{

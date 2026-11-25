@@ -3,8 +3,9 @@ import { draftMode } from 'next/headers';
 import { notFound, permanentRedirect, redirect } from 'next/navigation';
 import JsonLd from '@/components/utility/JsonLd';
 import { SectionRenderer } from '@/components/utility/SectionRenderer';
-import { SITE_LOCALE } from '@/config';
+import { DEFAULT_SITE_NAME, SITE_LOCALE } from '@/config';
 import { htmlPathToMarkdownPath } from '@/lib/markdown/paths';
+import { stripSiteTitleSuffix } from '@/lib/metadataTitles';
 import { resolveRedirect } from '@/lib/redirects';
 import { hasDynamicParams, normalizeSlug, splitSlug } from '@/lib/slug';
 import { buildPageJsonLd } from '@/lib/structuredData';
@@ -50,12 +51,15 @@ export async function generateMetadata({
 		return { title: 'Not found' };
 	}
 
+	const siteName = settings?.siteName || DEFAULT_SITE_NAME;
 	const siteUrl = getSiteUrl();
 	const canonicalUrl = toAbsoluteUrl(siteUrl, currentPath);
 	const ogImage = page.ogImage ?? settings?.siteOgImage;
 
 	return {
-		title: page.metaTitle || page.title || undefined,
+		title:
+			stripSiteTitleSuffix(page.metaTitle, siteName) ||
+			stripSiteTitleSuffix(page.title, siteName),
 		description: page.metaDescription || settings?.siteDescription || undefined,
 		// Without this, a page flagged `noIndex` in the Studio is still indexable —
 		// robots.txt asks crawlers not to fetch it, it does not stop indexing.

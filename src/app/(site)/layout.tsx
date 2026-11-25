@@ -6,7 +6,7 @@ import Footer from '@/components/layout/Footer';
 import Header from '@/components/layout/Header';
 import DisableDraftMode from '@/components/utility/DisableDraftMode';
 import JsonLd from '@/components/utility/JsonLd';
-import { SITE_LOCALE } from '@/config';
+import { DEFAULT_SITE_NAME, SITE_LOCALE } from '@/config';
 import { geistMono, geistSans } from '@/fonts';
 import { buildSiteJsonLd } from '@/lib/structuredData';
 import { getSiteUrl } from '@/lib/url';
@@ -34,8 +34,8 @@ export async function generateMetadata(): Promise<Metadata> {
 	return {
 		metadataBase: new URL(getSiteUrl()),
 		title: {
-			default: settings?.siteName || 'Sanity Starter',
-			template: `%s | ${settings?.siteName || 'Sanity Starter'}`,
+			default: settings?.siteName || DEFAULT_SITE_NAME,
+			template: `%s | ${settings?.siteName || DEFAULT_SITE_NAME}`,
 		},
 		description: settings?.siteDescription || '',
 		openGraph: {

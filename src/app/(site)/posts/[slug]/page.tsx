@@ -5,12 +5,13 @@ import Container from '@/components/layout/Container';
 import JsonLd from '@/components/utility/JsonLd';
 import RichText from '@/components/utility/RichText';
 import SmartImage from '@/components/utility/SmartImage';
-import { SITE_LOCALE } from '@/config';
+import { DEFAULT_SITE_NAME, SITE_LOCALE } from '@/config';
 import { STATIC_ROUTES } from '@/config/linkables';
 import { formatPostDate } from '@/lib/date';
 import { isDereferencedAsset } from '@/lib/image';
 import { documentPath } from '@/lib/links';
 import { htmlPathToMarkdownPath } from '@/lib/markdown/paths';
+import { stripSiteTitleSuffix } from '@/lib/metadataTitles';
 import { buildPostJsonLd } from '@/lib/structuredData';
 import { getSiteUrl } from '@/lib/url';
 import {
@@ -50,13 +51,16 @@ export async function generateMetadata({
 		return { title: 'Not found' };
 	}
 
+	const siteName = settings?.siteName || DEFAULT_SITE_NAME;
 	const siteUrl = getSiteUrl();
 	const path = documentPath('post', slug);
 	const canonicalUrl = `${siteUrl}${path}`;
 	const ogImage = post.ogImage ?? post.coverImage ?? settings?.siteOgImage;
 
 	return {
-		title: post.metaTitle || post.title || undefined,
+		title:
+			stripSiteTitleSuffix(post.metaTitle, siteName) ||
+			stripSiteTitleSuffix(post.title, siteName),
 		description: post.metaDescription || post.excerpt || undefined,
 		robots: post.noIndex ? { index: false, follow: false } : undefined,
 		alternates: {
